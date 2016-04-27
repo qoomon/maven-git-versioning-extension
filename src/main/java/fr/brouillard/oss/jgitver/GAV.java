@@ -17,29 +17,60 @@ package fr.brouillard.oss.jgitver;
 
 import org.apache.maven.project.MavenProject;
 
-public class GAV {
+/**
+ * Wrapper for a maven project/dependency identified by a groupId/artifactId/version.
+ */
+public class GAV { // SUPPRESS CHECKSTYLE AbbreviationAsWordInName
     private String groupId;
     private String artifactId;
     private String version;
 
+    /**
+     * Builds an immutable GAV object.
+     * 
+     * @param groupId the groupId of the maven object
+     * @param artifactId the artifactId of the maven object
+     * @param version the version of the maven object
+     */
     public GAV(String groupId, String artifactId, String version) {
         this.groupId = groupId;
         this.artifactId = artifactId;
         this.version = version;
     }
 
+    /**
+     * Retrieves the groupId.
+     * 
+     * @return the groupId
+     */
     public String getGroupId() {
         return groupId;
     }
 
+    /**
+     * Retrieves the artifactId.
+     * 
+     * @return the artifactId
+     */
     public String getArtifactId() {
         return artifactId;
     }
 
+    /**
+     * Retrieves the version.
+     * 
+     * @return the version
+     */
     public String getVersion() {
         return version;
     }
-    
+
+    /**
+     * Builds a GAV object from the given MavenProject object.
+     * 
+     * @param project the project to extract info from
+     * @return a new GAV object
+     */
     public static GAV from(MavenProject project) {
         return new GAV(project.getGroupId(), project.getArtifactId(), project.getVersion());
     }
@@ -56,28 +87,37 @@ public class GAV {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
+        }
         GAV other = (GAV) obj;
         if (artifactId == null) {
-            if (other.artifactId != null)
+            if (other.artifactId != null) {
                 return false;
-        } else if (!artifactId.equals(other.artifactId))
+            }
+        } else if (!artifactId.equals(other.artifactId)) {
             return false;
+        }
         if (groupId == null) {
-            if (other.groupId != null)
+            if (other.groupId != null) {
                 return false;
-        } else if (!groupId.equals(other.groupId))
+            }
+        } else if (!groupId.equals(other.groupId)) {
             return false;
+        }
         if (version == null) {
-            if (other.version != null)
+            if (other.version != null) {
                 return false;
-        } else if (!version.equals(other.version))
+            }
+        } else if (!version.equals(other.version)) {
             return false;
+        }
         return true;
     }
 }

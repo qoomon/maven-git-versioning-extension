@@ -21,7 +21,16 @@
     <property name="severity" value="warning" />
 
     <property name="fileExtensions" value="java, properties, xml" />
+
+    <module name="SuppressionCommentFilter">
+        <property name="offCommentFormat" value="CSOFF (\w+)" />
+        <property name="onCommentFormat" value="CSON (\w+)" />
+        <property name="checkFormat" value="$1" />
+        <property name="messageFormat" value=".*" />
+    </module>
     
+    <module name="SuppressWithNearbyCommentFilter" />
+
     <module name="SuppressionFilter">
         <property name="file" value="${checkstyle.suppression.file}" />
     </module>
@@ -33,6 +42,7 @@
     </module>
 
     <module name="TreeWalker">
+        <module name="FileContentsHolder"/>
         <module name="OuterTypeFilename" />
         <module name="IllegalTokenText">
             <property name="tokens" value="STRING_LITERAL, CHAR_LITERAL" />

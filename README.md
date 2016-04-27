@@ -15,13 +15,14 @@ cat > pom.xml << EOF
     <version>0</version>
     <packaging>pom</packaging>
     <build>
-        <extensions>
-            <extension>
+        <plugins>
+            <plugin>
                 <groupId>fr.brouillard.oss</groupId>
                 <artifactId>jgitver-maven-plugin</artifactId>
                 <version>0.0.1-SNAPSHOT</version>
-            </extension>
-        </extensions>
+                <extensions>true</extensions>
+            </plugin>
+        </plugins>
     </build>
 </project>
 EOF
@@ -31,7 +32,6 @@ git add content
 git commit -m "initial commit"
 echo B > content && git add -u && git commit -m "added B data"
 git tag 1.0 -m "release 1.0"
-git tag 2.0
 echo C > content && git add -u && git commit -m "added C data"
 git checkout -b cool-feature
 echo D > content && git add -u && git commit -m "added D data"

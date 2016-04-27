@@ -15,17 +15,56 @@
  */
 package fr.brouillard.oss.jgitver;
 
+import java.util.Optional;
+
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 
 /**
- * This plugin should only be used as an extension.
+ * jgitver plugin, should only be used as an extension. We use it for configuration purpose of the extension.
  */
-@Mojo(name = "jgitver")
+@Mojo(name = "jgitver", defaultPhase = LifecyclePhase.NONE)
 public class JGitverMojo extends AbstractMojo {
+    @Parameter(property = "jgitver.autoIncrementPatch", defaultValue = "true")
+    private Boolean autoIncrementPatch;
+
+    @Parameter(property = "jgitver.useCommitDistance", defaultValue = "true")
+    private Boolean useCommitDistance;
+
+    @Parameter(property = "jgitver.useGitCommitId", defaultValue = "false")
+    private Boolean useGitCommitId;
+
+    @Parameter(property = "jgitver.gitCommitIdLength", defaultValue = "8")
+    private Integer gitCommitIdLength;
+
+    @Parameter(property = "jgitver.nonQualifierBranches", defaultValue = "master")
+    private String nonQualifierBranches;
+
     public void execute() throws MojoExecutionException {
-        getLog().warn("the plugin [jgitver-maven-plugin] should not be executed alone, verify <extensions>true</extensions> is set on the plugin configuration");
+        getLog().warn("the plugin [jgitver-maven-plugin] should not be executed alone," 
+                + " verify <extensions>true</extensions> is set on the plugin configuration");
+    }
+
+    boolean autoIncrementPatch() {
+        return Optional.ofNullable(autoIncrementPatch).orElse(Boolean.TRUE);
+    }
+
+    boolean useCommitDistance() {
+        return Optional.ofNullable(useCommitDistance).orElse(Boolean.TRUE);
+    }
+
+    boolean useGitCommitId() {
+        return Optional.ofNullable(useGitCommitId).orElse(Boolean.FALSE);
+    }
+
+    int gitCommitIdLength() {
+        return Optional.ofNullable(gitCommitIdLength).orElse(8);
+    }
+
+    String nonQualifierBranches() {
+        return Optional.ofNullable(nonQualifierBranches).orElse("master");
     }
 }
