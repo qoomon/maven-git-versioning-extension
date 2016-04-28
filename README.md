@@ -1,5 +1,12 @@
 # jgitver-maven-plugin [![Build Status](https://travis-ci.org/jgitver/jgitver-maven-plugin.svg?branch=master)](https://travis-ci.org/jgitver/jgitver-maven-plugin)
 
+> DISCLAIMER  
+> This plugin has been highly inspired by the work of [Brian Demers](https://github.com/bdemers) in his [maven-external-version](https://github.com/bdemers/maven-external-version/) plugin.  
+> I rewrote such a plugin mainly to simplify usage compared to a [maven-external-version](https://github.com/bdemers/maven-external-version/) extension (which I wrote also as [maven-external-version-jgitver](https://github.com/jgitver/maven-external-version-jgitver)).  
+> Such a simplification leads to:
+> - usage as pure extension without configuration 
+> - benefit from a direct configuration on the plugin allowing for example IDE completion & -D property usage 
+
 This plugin allows to define the pom version of your project using the information from your git history. 
 It calculates the version, a little bit like `git describe` would do but in a more efficient way for maven projects:
 
@@ -10,7 +17,6 @@ It calculates the version, a little bit like `git describe` would do but in a mo
     - allow SNAPSHOTS
 - minimal setup via maven extension
 
-> DISCLAIMER: This plugin has been highly inspired by the work of [Brian Demers](https://github.com/bdemers) in his [maven-external-version](https://github.com/bdemers/maven-external-version/) plugin.
 
 Here is an illustration of the capabilities of the plugin
 

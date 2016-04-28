@@ -15,6 +15,8 @@
  */
 package fr.brouillard.oss.jgitver;
 
+import org.apache.maven.model.Model;
+import org.apache.maven.model.Parent;
 import org.apache.maven.project.MavenProject;
 
 /**
@@ -74,7 +76,27 @@ public class GAV { // SUPPRESS CHECKSTYLE AbbreviationAsWordInName
     public static GAV from(MavenProject project) {
         return new GAV(project.getGroupId(), project.getArtifactId(), project.getVersion());
     }
+    
+    /**
+     * Builds a GAV object from the given Model object.
+     * 
+     * @param model the project model to extract info from
+     * @return a new GAV object
+     */
+    public static GAV from(Model model) {
+        return new GAV(model.getGroupId(), model.getArtifactId(), model.getVersion());
+    }
 
+    /**
+     * Builds a GAV object from the given Parent object.
+     * 
+     * @param parent the parent to extract info from
+     * @return a new GAV object
+     */
+    public static GAV from(Parent parent) {
+        return new GAV(parent.getGroupId(), parent.getArtifactId(), parent.getVersion());
+    }
+    
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -125,4 +147,5 @@ public class GAV { // SUPPRESS CHECKSTYLE AbbreviationAsWordInName
     public String toString() {
         return String.format("%s::%s::%s", groupId, artifactId, version);
     }
+
 }

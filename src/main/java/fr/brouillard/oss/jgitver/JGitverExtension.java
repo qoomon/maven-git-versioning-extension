@@ -15,18 +15,29 @@
  */
 package fr.brouillard.oss.jgitver;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 import org.apache.maven.AbstractMavenLifecycleParticipant;
 import org.apache.maven.MavenExecutionException;
 import org.apache.maven.execution.MavenSession;
+import org.apache.maven.model.Model;
 import org.apache.maven.model.Plugin;
+import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
+import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.PlexusContainer;
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.logging.Logger;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
+import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 
 @Component(role = AbstractMavenLifecycleParticipant.class, hint = "jgitver")
 public class JGitverExtension extends AbstractMavenLifecycleParticipant {
@@ -38,16 +49,77 @@ public class JGitverExtension extends AbstractMavenLifecycleParticipant {
 
     @Override
     public void afterProjectsRead(MavenSession session) throws MavenExecutionException {
-        logger.info("jgitver-maven-plugin is about to change project version");
+        logger.info("jgitver-maven-plugin is about to change project(s) version(s)");
 
         MavenProject rootProject = session.getTopLevelProject();
-        GAV rootProjectInitialGAV = GAV.from(rootProject);      // SUPPRESS CHECKSTYLE AbbreviationAsWordInName
-
-        String newVersion = calculateVersionForProject(rootProject);
-        rootProject.setVersion(newVersion);
-        rootProject.getArtifact().setVersion(newVersion);
         
-        logger.info("    " + rootProjectInitialGAV.toString() + " -> " + newVersion);
+        String initialVersion = rootProject.getVersion();
+        String newVersion = calculateVersionForProject(rootProject);
+
+        Map<GAV, String> newProjectVersions = new LinkedHashMap<>();
+        
+        // Let's modify in memory resolved projects model
+        for (MavenProject project: session.getAllProjects()) {
+            GAV projectGAV = GAV.from(project);      // SUPPRESS CHECKSTYLE AbbreviationAsWordInName
+            
+            // First the project itself
+            project.setVersion(newVersion);
+            project.getArtifact().setVersion(newVersion);
+            project.getBuild().setFinalName(rootProject.getBuild().getFinalName().replaceAll(Pattern.quote(initialVersion), newVersion));
+            
+            newProjectVersions.put(projectGAV, newVersion);
+            
+            // No need to worry about parent link, because model is in memory
+            
+            // TODO dependencyManagement?
+            // TODO dependencies?
+        }
+        
+        // Then attache modified POM files to the projects so install/deployed files contains new version
+        for (MavenProject project: session.getAllProjects()) {
+            try {
+                Model model = loadInitialModel(project.getFile());
+                GAV initalProjectGAV = GAV.from(model);     // SUPPRESS CHECKSTYLE AbbreviationAsWordInName
+                model.setVersion(newProjectVersions.get(initalProjectGAV));
+                
+                if (model.getParent() != null) {
+                    GAV parentGAV = GAV.from(model.getParent());    // SUPPRESS CHECKSTYLE AbbreviationAsWordInName
+                    
+                    if (newProjectVersions.keySet().contains(parentGAV)) {
+                        // parent has been modified
+                        model.getParent().setVersion(newProjectVersions.get(parentGAV));
+                    }
+                }
+                
+                // TODO dependencyManagement?
+                // TODO dependencies?
+                File newPom = createPomDumpFile();
+                writeModelPom(model, newPom);
+                project.setPomFile(newPom);
+            } catch (IOException | XmlPullParserException ex) {
+                throw new MavenExecutionException("cannot write new POM file for " + project.getGroupId() + "::", ex);
+            }
+        }
+        
+        newProjectVersions.entrySet().forEach(e -> logger.info("    " + e.getKey().toString() + " -> " + e.getValue()));
+    }
+
+    private Model loadInitialModel(File pomFile) throws IOException, XmlPullParserException {
+        try (FileReader fileReader = new FileReader(pomFile)) {
+            return new MavenXpp3Reader().read(fileReader);
+        }
+    }
+
+    private void writeModelPom(Model mavenModel, File pomFile) throws IOException {
+        try (FileWriter fileWriter = new FileWriter(pomFile)) {
+            new MavenXpp3Writer().write(fileWriter, mavenModel);
+        }
+    }
+
+    private File createPomDumpFile() throws IOException {
+        File tmp = File.createTempFile("pom", ".jgitver-maven-plugin");
+        tmp.deleteOnExit();
+        return tmp;
     }
 
     private String calculateVersionForProject(MavenProject rootProject) throws MavenExecutionException {

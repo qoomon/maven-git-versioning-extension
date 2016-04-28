@@ -13,6 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-File touchFile = new File( basedir, "target/touch.txt" );
 
-assert touchFile.isFile()
+def baseDir = new File("$basedir")
+
+// println "Directory: " + 'pwd'.execute(null, baseDir).text
+
+println 'git init'.execute(null, baseDir).text
+println 'echo A > content'.execute(null, baseDir).text 
+println 'git add .'.execute(null, baseDir).text
+println 'git commit -m "initial commit"'.execute(null, baseDir).text
+println 'git tag -a 1.0.0 -m "release 1.0.0"'.execute(null, baseDir).text 
+println 'echo B > content'.execute(null, baseDir).text
+println 'git add -u'.execute(null, baseDir).text
+println 'git commit -m "added B data"'.execute(null, baseDir).text
+
+return true
