@@ -15,6 +15,8 @@
  */
 package fr.brouillard.oss.jgitver;
 
+import java.util.Optional;
+
 import org.apache.maven.AbstractMavenLifecycleParticipant;
 import org.apache.maven.MavenExecutionException;
 import org.apache.maven.execution.MavenSession;
@@ -39,9 +41,13 @@ public class JGitverExtension extends AbstractMavenLifecycleParticipant {
         logger.info("jgitver-maven-plugin is about to change project version");
 
         MavenProject rootProject = session.getTopLevelProject();
+        GAV rootProjectInitialGAV = GAV.from(rootProject);      // SUPPRESS CHECKSTYLE AbbreviationAsWordInName
 
         String newVersion = calculateVersionForProject(rootProject);
         rootProject.setVersion(newVersion);
+        rootProject.getArtifact().setVersion(newVersion);
+        
+        logger.info("    " + rootProjectInitialGAV.toString() + " -> " + newVersion);
     }
 
     private String calculateVersionForProject(MavenProject rootProject) throws MavenExecutionException {
@@ -51,8 +57,13 @@ public class JGitverExtension extends AbstractMavenLifecycleParticipant {
             gvc = GitVersionCalculator.location(rootProject.getBasedir());
 
             Plugin plugin = rootProject.getPlugin("fr.brouillard.oss:jgitver-maven-plugin");
-            Xpp3Dom pluginConfigNode = (Xpp3Dom) plugin.getConfiguration();
-            JGitverPluginConfiguration pluginConfig = new JGitverPluginConfiguration(pluginConfigNode);
+            
+            JGitverPluginConfiguration pluginConfig =
+                    new JGitverPluginConfiguration(
+                        Optional.ofNullable(plugin)
+                        .map(Plugin::getConfiguration)
+                        .map(Xpp3Dom.class::cast)
+                    );
             
             gvc.setAutoIncrementPatch(pluginConfig.autoIncrementPatch())
                 .setUseDistance(pluginConfig.useCommitDistance())

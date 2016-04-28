@@ -1,0 +1,17 @@
+language: java
+
+script:
+  - mvn clean install
+
+install: /bin/true
+
+jdk:
+  - oraclejdk8
+
+branches:
+    except:
+        - gh-pages
+
+notifications:
+  email:
+    - matthieu@brouillard.fr

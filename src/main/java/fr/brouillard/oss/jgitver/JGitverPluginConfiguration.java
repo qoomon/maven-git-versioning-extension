@@ -19,41 +19,40 @@ import java.util.Optional;
 
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 
-public class JGitverPluginConfiguration {
-    private Xpp3Dom pomPluginConfiguration;
+class JGitverPluginConfiguration {
+    private Optional<Xpp3Dom> pomPluginConfiguration;
 
-    public JGitverPluginConfiguration(Xpp3Dom pomPluginConfiguration) {
+    JGitverPluginConfiguration(Optional<Xpp3Dom> pomPluginConfiguration) {
         this.pomPluginConfiguration = pomPluginConfiguration;
     }
     
-    public boolean autoIncrementPatch() {
+    boolean autoIncrementPatch() {
         return booleanConfigChild("autoIncrementPatch", true);
     }
 
-    public boolean useCommitDistance() {
+    boolean useCommitDistance() {
         return booleanConfigChild("useCommitDistance", true);
     }
     
-    public boolean useGitCommitId() {
+    boolean useGitCommitId() {
         return booleanConfigChild("useGitCommitId", false);
     }
     
-    public int gitCommitIdLength() {
+    int gitCommitIdLength() {
         return intConfigChild("gitCommitIdLength", 8);
     }
     
-    public String nonQualifierBranches() {
-        return Optional.ofNullable(pomPluginConfiguration)
-                .map(node -> node.getChild("nonQualifierBranches")).map(Xpp3Dom::getValue).orElse("master");
+    String nonQualifierBranches() {
+        return pomPluginConfiguration.map(node -> node.getChild("nonQualifierBranches")).map(Xpp3Dom::getValue).orElse("master");
     }
 
     private boolean booleanConfigChild(String childName, boolean defaultValue) {
-        return Optional.ofNullable(pomPluginConfiguration)
-                .map(node -> node.getChild(childName)).map(Xpp3Dom::getValue).map(Boolean::valueOf).orElse(Boolean.valueOf(defaultValue));
+        return pomPluginConfiguration.map(node -> node.getChild(childName))
+                .map(Xpp3Dom::getValue).map(Boolean::valueOf).orElse(Boolean.valueOf(defaultValue));
     }
 
     private int intConfigChild(String childName, int defaultValue) {
-        return Optional.ofNullable(pomPluginConfiguration)
-                .map(node -> node.getChild(childName)).map(Xpp3Dom::getValue).map(Integer::parseInt).orElse(Integer.valueOf(defaultValue));
+        return pomPluginConfiguration.map(node -> node.getChild(childName))
+                .map(Xpp3Dom::getValue).map(Integer::parseInt).orElse(Integer.valueOf(defaultValue));
     }
 }

@@ -20,7 +20,7 @@
 
     <groupId>fr.brouillard.oss</groupId>
     <artifactId>jgitver-maven-plugin</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
     <packaging>maven-plugin</packaging>
 
     <name>jgitver Maven Plugin</name>

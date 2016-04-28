@@ -120,4 +120,9 @@ public class GAV { // SUPPRESS CHECKSTYLE AbbreviationAsWordInName
         }
         return true;
     }
+
+    @Override
+    public String toString() {
+        return String.format("%s::%s::%s", groupId, artifactId, version);
+    }
 }
