@@ -25,6 +25,7 @@ import java.util.Optional;
 
 import org.apache.maven.AbstractMavenLifecycleParticipant;
 import org.apache.maven.MavenExecutionException;
+import org.apache.maven.artifact.versioning.VersionRange;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Plugin;
@@ -62,7 +63,7 @@ public class JGitverExtension extends AbstractMavenLifecycleParticipant {
             
             // First the project itself
             project.setVersion(newVersion);
-            project.getArtifact().setVersion(newVersion);
+            project.getArtifact().setVersionRange(VersionRange.createFromVersion(newVersion));
             
             newProjectVersions.put(projectGAV, newVersion);
             
