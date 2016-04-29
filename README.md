@@ -94,8 +94,9 @@ Then play around with it doing:
 - `git checkout XXXX`
 
 ```
+cd /d
 rm -rf /d/demo-jgitver-maven-plugin
-mkdir /d/demo-jgitver-maven-plugin
+mkdir -p /d/demo-jgitver-maven-plugin
 cd /d/demo-jgitver-maven-plugin
 git init
 cat > pom.xml << EOF
@@ -110,7 +111,7 @@ cat > pom.xml << EOF
             <extension>
                 <groupId>fr.brouillard.oss</groupId>
                 <artifactId>jgitver-maven-plugin</artifactId>
-                <version>[0.0.2-SNAPSHOT,)</version>
+                <version>[0.0.2,)</version>
             </extension>
         </extensions>
     </build>
@@ -127,4 +128,5 @@ git checkout -b cool-feature
 echo D > content && git add -u && git commit -m "added D data"
 git checkout master
 echo E > content && git add -u && git commit -m "added E data"
+mvn validate
 ```

@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.regex.Pattern;
 
 import org.apache.maven.AbstractMavenLifecycleParticipant;
 import org.apache.maven.MavenExecutionException;
@@ -53,7 +52,6 @@ public class JGitverExtension extends AbstractMavenLifecycleParticipant {
 
         MavenProject rootProject = session.getTopLevelProject();
         
-        String initialVersion = rootProject.getVersion();
         String newVersion = calculateVersionForProject(rootProject);
 
         Map<GAV, String> newProjectVersions = new LinkedHashMap<>();
@@ -65,17 +63,13 @@ public class JGitverExtension extends AbstractMavenLifecycleParticipant {
             // First the project itself
             project.setVersion(newVersion);
             project.getArtifact().setVersion(newVersion);
-            project.getBuild().setFinalName(rootProject.getBuild().getFinalName().replaceAll(Pattern.quote(initialVersion), newVersion));
             
             newProjectVersions.put(projectGAV, newVersion);
             
             // No need to worry about parent link, because model is in memory
-            
-            // TODO dependencyManagement?
-            // TODO dependencies?
         }
         
-        // Then attache modified POM files to the projects so install/deployed files contains new version
+        // Then attach modified POM files to the projects so install/deployed files contains new version
         for (MavenProject project: session.getAllProjects()) {
             try {
                 Model model = loadInitialModel(project.getFile());
@@ -91,8 +85,6 @@ public class JGitverExtension extends AbstractMavenLifecycleParticipant {
                     }
                 }
                 
-                // TODO dependencyManagement?
-                // TODO dependencies?
                 File newPom = createPomDumpFile();
                 writeModelPom(model, newPom);
                 project.setPomFile(newPom);
