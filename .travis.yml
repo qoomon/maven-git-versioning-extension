@@ -5,6 +5,9 @@ script:
 
 install: /bin/true
 
+after_failure:
+  - find target/it -name build.log -exec echo {} \; -exec cat {} \;
+
 jdk:
   - oraclejdk8
 
