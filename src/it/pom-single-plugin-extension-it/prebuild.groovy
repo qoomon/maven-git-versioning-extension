@@ -16,15 +16,16 @@
 
 def baseDir = new File("$basedir")
 
-// println "Directory: " + 'pwd'.execute(null, baseDir).text
+File actions = new File(baseDir, "actions-prebuild.log")
+actions.write 'Actions started at: ' + new Date() + '\n'
 
-println 'git init'.execute(null, baseDir).text
-println 'echo A > content'.execute(null, baseDir).text 
-println 'git add .'.execute(null, baseDir).text
-println 'git commit -m "initial commit"'.execute(null, baseDir).text
-println 'git tag -a 1.0.0 -m "release 1.0.0"'.execute(null, baseDir).text 
-println 'echo B > content'.execute(null, baseDir).text
-println 'git add -u'.execute(null, baseDir).text
-println 'git commit -m "added B data"'.execute(null, baseDir).text
+actions << 'git init'.execute(null, baseDir).text
+actions << 'echo A > content'.execute(null, baseDir).text 
+actions << 'git add .'.execute(null, baseDir).text
+actions << 'git commit -m "initial commit"'.execute(null, baseDir).text
+actions << 'git tag -a 1.0.0 -m "release 1.0.0"'.execute(null, baseDir).text 
+actions << 'echo B > content'.execute(null, baseDir).text
+actions << 'git add -u'.execute(null, baseDir).text
+actions << 'git commit -m "added B data"'.execute(null, baseDir).text
 
 return true

@@ -16,7 +16,7 @@
 
 def baseDir = new File("$basedir")
 
-File actions = new File(baseDir, "prebuild-actions.log")
+File actions = new File(baseDir, "actions-prebuild.log")
 actions.write 'Actions started at: ' + new Date() + '\n'
 
 actions << 'git init'.execute(null, baseDir).text

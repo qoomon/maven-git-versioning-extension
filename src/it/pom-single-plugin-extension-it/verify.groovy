@@ -15,7 +15,11 @@
  */
 
 def baseDir = new File("$basedir")
-println 'rm -rf .git'.execute(null, baseDir).text
+
+File actions = new File(baseDir, "verify-actions.log")
+actions.write 'Actions started at: ' + new Date() + '\n'
+
+actions << 'rm -rf .git'.execute(null, baseDir).text
 
 // Check the version was used by the plugin execution
 def foundLines = new File("$basedir", "build.log").readLines().findAll { it =~ /fr.brouillard.oss.it::pom-single-plugin-extension-it::0 -> 1.0.1-1/ } 
