@@ -1,7 +1,7 @@
 language: java
 
 script:
-  - mvn -Prun-its clean install
+  - mvn clean install
 
 install: /bin/true
 
@@ -11,6 +11,10 @@ after_failure:
 jdk:
   - oraclejdk8
 
+cache:
+  directories:
+  - $HOME/.m2
+  
 branches:
     except:
         - gh-pages
