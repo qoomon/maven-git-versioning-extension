@@ -54,17 +54,20 @@ public class JGitverExtension extends AbstractMavenLifecycleParticipant {
         MavenProject rootProject = session.getTopLevelProject();
         
         String newVersion = calculateVersionForProject(rootProject);
-
+        
         Map<GAV, String> newProjectVersions = new LinkedHashMap<>();
         
         // Let's modify in memory resolved projects model
         for (MavenProject project: session.getAllProjects()) {
             GAV projectGAV = GAV.from(project);      // SUPPRESS CHECKSTYLE AbbreviationAsWordInName
             
+            logger.debug("about to change in memory POM for: " + projectGAV);
             // First the project itself
             project.setVersion(newVersion);
-            project.getArtifact().setVersionRange(VersionRange.createFromVersion(newVersion));
-            
+            logger.debug("    version set to " + newVersion);
+            VersionRange newVersionRange = VersionRange.createFromVersion(newVersion);
+            project.getArtifact().setVersionRange(newVersionRange);
+            logger.debug("    artifact version range set to " + newVersionRange);
             newProjectVersions.put(projectGAV, newVersion);
             
             // No need to worry about parent link, because model is in memory
@@ -75,6 +78,9 @@ public class JGitverExtension extends AbstractMavenLifecycleParticipant {
             try {
                 Model model = loadInitialModel(project.getFile());
                 GAV initalProjectGAV = GAV.from(model);     // SUPPRESS CHECKSTYLE AbbreviationAsWordInName
+
+                logger.debug("about to change file pom for: " + initalProjectGAV);
+                
                 model.setVersion(newProjectVersions.get(initalProjectGAV));
                 
                 if (model.getParent() != null) {
@@ -88,8 +94,11 @@ public class JGitverExtension extends AbstractMavenLifecycleParticipant {
                 
                 File newPom = createPomDumpFile();
                 writeModelPom(model, newPom);
+                logger.debug("    new pom file created for " + initalProjectGAV + " under " + newPom);
                 project.setPomFile(newPom);
+                logger.debug("    pom file set");
             } catch (IOException | XmlPullParserException ex) {
+                logger.warn("failure while changing pom file for " + GAV.from(project));
                 throw new MavenExecutionException("cannot write new POM file for " + project.getGroupId() + "::", ex);
             }
         }
@@ -119,6 +128,7 @@ public class JGitverExtension extends AbstractMavenLifecycleParticipant {
         GitVersionCalculator gvc = null;
 
         try {
+            logger.debug("using jgitver on directory: " + rootProject.getBasedir());
             gvc = GitVersionCalculator.location(rootProject.getBasedir());
 
             Plugin plugin = rootProject.getPlugin("fr.brouillard.oss:jgitver-maven-plugin");
@@ -136,7 +146,9 @@ public class JGitverExtension extends AbstractMavenLifecycleParticipant {
                 .setGitCommitIdLength(pluginConfig.gitCommitIdLength())
                 .setNonQualifierBranches(pluginConfig.nonQualifierBranches());
 
-            return gvc.getVersion();
+            String version = gvc.getVersion();
+            logger.debug("jgitver calculated version number: " + version);
+            return version;
         } finally {
             if (gvc != null) {
                 try {
