@@ -140,7 +140,8 @@ public class JGitverExtension extends AbstractMavenLifecycleParticipant {
                         .map(Xpp3Dom.class::cast)
                     );
             
-            gvc.setAutoIncrementPatch(pluginConfig.autoIncrementPatch())
+            gvc.setMavenLike(pluginConfig.mavenLike())
+                .setAutoIncrementPatch(pluginConfig.autoIncrementPatch())
                 .setUseDistance(pluginConfig.useCommitDistance())
                 .setUseGitCommitId(pluginConfig.useGitCommitId())
                 .setGitCommitIdLength(pluginConfig.gitCommitIdLength())

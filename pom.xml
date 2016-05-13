@@ -104,7 +104,7 @@
         <dependency>
             <groupId>fr.brouillard.oss</groupId>
             <artifactId>jgitver</artifactId>
-            <version>0.0.1</version>
+            <version>[0.1.0,)</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -119,7 +119,7 @@
             <extension>
                 <groupId>fr.brouillard.oss</groupId>
                 <artifactId>jgitver-maven-plugin</artifactId>
-                <version>[0.0.2,)</version>
+                <version>[0.0.3,)</version>
             </extension>
         </extensions>
         <plugins>

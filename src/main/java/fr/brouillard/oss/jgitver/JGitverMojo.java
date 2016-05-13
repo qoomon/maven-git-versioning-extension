@@ -15,8 +15,6 @@
  */
 package fr.brouillard.oss.jgitver;
 
-import java.util.Optional;
-
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -28,6 +26,9 @@ import org.apache.maven.plugins.annotations.Parameter;
  */
 @Mojo(name = "jgitver", defaultPhase = LifecyclePhase.NONE)
 public class JGitverMojo extends AbstractMojo {
+    @Parameter(property = "jgitver.mavenLike", defaultValue = "true")
+    private Boolean mavenLike;
+
     @Parameter(property = "jgitver.autoIncrementPatch", defaultValue = "true")
     private Boolean autoIncrementPatch;
 
@@ -46,25 +47,5 @@ public class JGitverMojo extends AbstractMojo {
     public void execute() throws MojoExecutionException {
         getLog().warn("the plugin [jgitver-maven-plugin] should not be executed alone," 
                 + " verify <extensions>true</extensions> is set on the plugin configuration");
-    }
-
-    boolean autoIncrementPatch() {
-        return Optional.ofNullable(autoIncrementPatch).orElse(Boolean.TRUE);
-    }
-
-    boolean useCommitDistance() {
-        return Optional.ofNullable(useCommitDistance).orElse(Boolean.TRUE);
-    }
-
-    boolean useGitCommitId() {
-        return Optional.ofNullable(useGitCommitId).orElse(Boolean.FALSE);
-    }
-
-    int gitCommitIdLength() {
-        return Optional.ofNullable(gitCommitIdLength).orElse(8);
-    }
-
-    String nonQualifierBranches() {
-        return Optional.ofNullable(nonQualifierBranches).orElse("master");
     }
 }

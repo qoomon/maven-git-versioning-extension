@@ -14,13 +14,11 @@ It calculates the version, a little bit like `git describe` would do but in a mo
 - version calculation is based on git tags
 - git lightweight tags allow for intermediate version controlling between releases
     - allow to define what is the _next_ version pattern to use
-    - allow SNAPSHOTS
 - minimal setup via maven extension
-
 
 Here is an illustration of the capabilities of the plugin
 
-![Example](src/doc/images/s7_linear_with_SNAPSHOT_tags_and_branch.gif?raw=true "Example")
+![Example](src/doc/images/jgitver-maven-like.gif?raw=true "Example")
 
 ## Usage
 
@@ -48,9 +46,7 @@ Using the module as pure maven extension, allows a minimal setup inside your pom
 
 Used like that _i.e._ as a pure extension, [jgitver](https://github.com/jgitver/jgitver) will be used with the following parameters:
 
-- __autoIncrementPatch__: `true` 
-- __useDistance__: `true`
-- __useGitCommitId__: `false` 
+- __mavenLike__: `true` 
 - __nonQualifierBranches__: `master` 
 
 ### plugin extension with configuration
@@ -71,6 +67,7 @@ The plugin can also be defined as a plugin extension so that you have the possib
                 <version>X.Y.Z</version>
                 <extensions>true</extensions>
                 <configuration>
+                    <mavenLike>true/false</mavenLike>
                     <autoIncrementPatch>true/false</autoIncrementPatch>
                     <useCommitDistance>true/false</useCommitDistance>
                     <useGitCommitId>true/false</useGitCommitId>
@@ -82,6 +79,8 @@ The plugin can also be defined as a plugin extension so that you have the possib
     </build>
 </project>
 ```
+
+Please consult [jgitver](https://github.com/jgitver/jgitver#configuration-modes--strategies) documentation to fully understand what the parameters do.
 
 ## Example
 
@@ -111,7 +110,7 @@ cat > pom.xml << EOF
             <extension>
                 <groupId>fr.brouillard.oss</groupId>
                 <artifactId>jgitver-maven-plugin</artifactId>
-                <version>[0.0.2,)</version>
+                <version>[0.0.3,)</version>
             </extension>
         </extensions>
     </build>
@@ -130,3 +129,18 @@ git checkout master
 echo E > content && git add -u && git commit -m "added E data"
 mvn validate
 ```
+
+## Build & release
+
+### Normal build
+
+- `mvn clean install`
+
+### Release
+
+- `mvn -Poss clean install`: this will simulate a full build for oss delivery (javadoc, source attachement, GPG signature, ...)
+- `git tag -a -s -m "release X.Y.Z, additionnal reason" X.Y.Z`: tag the current HEAD with the given tag name. The tag is signed by the author of the release. Adapt with gpg key of maintainer.
+    - Matthieu Brouillard command:  `git tag -a -s -u 2AB5F258 -m "release X.Y.Z, additionnal reason" X.Y.Z`
+    - Matthieu Brouillard [public key](https://sks-keyservers.net/pks/lookup?op=get&search=0x8139E8632AB5F258)
+- `mvn -Poss,release -DskipTests deploy`
+- `git push --follow-tags origin master`

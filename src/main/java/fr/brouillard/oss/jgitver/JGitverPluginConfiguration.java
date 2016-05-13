@@ -26,6 +26,10 @@ class JGitverPluginConfiguration {
         this.pomPluginConfiguration = pomPluginConfiguration;
     }
     
+    boolean mavenLike() {
+        return booleanConfigChild("mavenLike", true);
+    }
+
     boolean autoIncrementPatch() {
         return booleanConfigChild("autoIncrementPatch", true);
     }
