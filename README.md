@@ -134,7 +134,7 @@ mvn validate
 
 ### Normal build
 
-- `mvn clean install`
+- `mvn -Prun-its clean install`
 
 ### Release
 

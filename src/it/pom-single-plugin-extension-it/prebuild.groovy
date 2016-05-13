@@ -28,4 +28,8 @@ actions << 'echo B > content'.execute(null, baseDir).text
 actions << 'git add -u'.execute(null, baseDir).text
 actions << 'git commit -m "added B data"'.execute(null, baseDir).text
 
+// $ git lg
+// * d86e12c - (4 minutes ago) added B data - Matthieu Brouillard (HEAD -> master)
+// * 9103c75 - (4 minutes ago) initial commit - Matthieu Brouillard (tag: 1.0.0)
+
 return true

@@ -22,12 +22,12 @@ actions.write 'Actions started at: ' + new Date() + '\n'
 actions << 'rm -rf .git'.execute(null, baseDir).text
 
 // Check the version was used by the plugin execution
-def foundLines = new File("$basedir", "build.log").readLines().findAll { it =~ /fr.brouillard.oss.it::pom-single-plugin-extension-it::0 -> 1.0.1-1/ } 
+def foundLines = new File("$basedir", "build.log").readLines().findAll { it =~ /fr.brouillard.oss.it::pom-single-plugin-extension-it::0 -> 1.0.1-SNAPSHOT/ } 
 assert 0 < foundLines.size
 
 // And check that the produced artifact was installed with the good version
-File installedPomFile = new File("$basedir" + "/../../local-repo/fr/brouillard/oss/it/pom-single-plugin-extension-it/1.0.1-1/", "pom-single-plugin-extension-it-1.0.1-1.pom")
+File installedPomFile = new File("$basedir" + "/../../local-repo/fr/brouillard/oss/it/pom-single-plugin-extension-it/1.0.1-SNAPSHOT/", "pom-single-plugin-extension-it-1.0.1-SNAPSHOT.pom")
 assert installedPomFile.isFile()
-assert 1 == installedPomFile.readLines().findAll { it =~ /<version>1.0.1-1<\/version>/ }.size()
+assert 1 == installedPomFile.readLines().findAll { it =~ /<version>1.0.1-SNAPSHOT<\/version>/ }.size()
 
 return true
