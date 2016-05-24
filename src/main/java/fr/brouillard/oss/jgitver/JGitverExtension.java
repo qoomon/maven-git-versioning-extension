@@ -19,7 +19,9 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -56,9 +58,10 @@ public class JGitverExtension extends AbstractMavenLifecycleParticipant {
         String newVersion = calculateVersionForProject(rootProject);
         
         Map<GAV, String> newProjectVersions = new LinkedHashMap<>();
+        List<MavenProject> projects = locateProjects(session, rootProject.getModules());
         
         // Let's modify in memory resolved projects model
-        for (MavenProject project: session.getAllProjects()) {
+        for (MavenProject project: projects) {
             GAV projectGAV = GAV.from(project);      // SUPPRESS CHECKSTYLE AbbreviationAsWordInName
             
             logger.debug("about to change in memory POM for: " + projectGAV);
@@ -74,7 +77,7 @@ public class JGitverExtension extends AbstractMavenLifecycleParticipant {
         }
         
         // Then attach modified POM files to the projects so install/deployed files contains new version
-        for (MavenProject project: session.getAllProjects()) {
+        for (MavenProject project: projects) {
             try {
                 Model model = loadInitialModel(project.getFile());
                 GAV initalProjectGAV = GAV.from(model);     // SUPPRESS CHECKSTYLE AbbreviationAsWordInName
@@ -95,7 +98,8 @@ public class JGitverExtension extends AbstractMavenLifecycleParticipant {
                 File newPom = createPomDumpFile();
                 writeModelPom(model, newPom);
                 logger.debug("    new pom file created for " + initalProjectGAV + " under " + newPom);
-                project.setPomFile(newPom);
+                
+                setProjectPomFile(project, newPom);
                 logger.debug("    pom file set");
             } catch (IOException | XmlPullParserException ex) {
                 logger.warn("failure while changing pom file for " + GAV.from(project));
@@ -104,6 +108,59 @@ public class JGitverExtension extends AbstractMavenLifecycleParticipant {
         }
         
         newProjectVersions.entrySet().forEach(e -> logger.info("    " + e.getKey().toString() + " -> " + e.getValue()));
+    }
+
+    private void setProjectPomFile(MavenProject project, File newPom) {
+        try {
+            project.setPomFile(newPom);
+        } catch (Throwable unused) {
+            logger.warn("maven version might be <= 3.2.4, changing pom file using old mechanism");
+            File initialBaseDir = project.getBasedir();
+            project.setFile(newPom);
+            File newBaseDir = project.getBasedir();
+            try {
+                if (!initialBaseDir.getCanonicalPath().equals(newBaseDir.getCanonicalPath())) {
+                    changeBaseDir(project, initialBaseDir);
+                }
+            } catch (Exception ex) {
+                GAV gav = GAV.from(project);
+                logger.warn("cannot reset basedir of project " + gav.toString(), ex);
+            }
+        }
+    }
+
+    private void changeBaseDir(MavenProject project, File initialBaseDir) throws Exception {
+        Field basedirField = project.getClass().getField("basedir");
+        basedirField.setAccessible(true);
+        basedirField.set(project, initialBaseDir);
+    }
+
+    private List<MavenProject> locateProjects(MavenSession session, List<String> modules) {
+        List<MavenProject> projects;
+        projects = session.getProjects();
+        List<MavenProject> allProjects = null;
+        boolean multiModule = (modules != null) && (modules.size() > 0);
+        try {
+            allProjects = session.getAllProjects();
+            if (allProjects != null) {
+                projects = allProjects;
+            }
+        } catch (Throwable error) {
+            if ((error instanceof NoSuchMethodError) || (error instanceof NoSuchMethodException)) {
+                logger.warn("your maven version is <= 3.2.0 ; you should upgrade to enable jgitver-maven-plugin full integration"); 
+            } else {
+                // rethrow
+                throw error;
+            }
+        }
+        
+        if (allProjects == null && multiModule) {
+            // warn only in case of multimodules
+            logger.warn("maven object model partially initialized, " 
+                    + "jgitver-maven-plugin will use filtered list of maven projects in case reactor was filtered with -pl");
+        }
+        
+        return projects;
     }
 
     private Model loadInitialModel(File pomFile) throws IOException, XmlPullParserException {
