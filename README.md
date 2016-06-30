@@ -1,11 +1,8 @@
 # jgitver-maven-plugin [![Build Status](https://travis-ci.org/jgitver/jgitver-maven-plugin.svg?branch=master)](https://travis-ci.org/jgitver/jgitver-maven-plugin)
 
-> DISCLAIMER  
-> This plugin has been highly inspired by the work of [Brian Demers](https://github.com/bdemers) in his [maven-external-version](https://github.com/bdemers/maven-external-version/) plugin.  
-> I rewrote such a plugin mainly to simplify usage compared to a [maven-external-version](https://github.com/bdemers/maven-external-version/) extension (which I wrote also as [maven-external-version-jgitver](https://github.com/jgitver/maven-external-version-jgitver)).  
-> Such a simplification leads to:
-> - usage as pure extension without configuration 
-> - benefit from a direct configuration on the plugin allowing for example IDE completion & -D property usage 
+> *__IntelliJ IDEA users__*: due to [IDEA-155733](https://youtrack.jetbrains.com/issue/IDEA-155733) update your IDE to version >= `2016.1.3` and use jgtiver-maven-plugin >= `0.1.1`  
+>  
+> If you cannot update due to old perpetual licenses in use for example, as a workaround, you can move the plugin into a profile as described [here](#maven-dependency-management-is-broken-under-intellij-idea).
 
 This plugin allows to define the pom version of your project using the information from your git history. 
 It calculates the version, a little bit like `git describe` would do but in a more efficient way for maven projects:
@@ -144,3 +141,50 @@ mvn validate
     - Matthieu Brouillard [public key](https://sks-keyservers.net/pks/lookup?op=get&search=0x8139E8632AB5F258)
 - `mvn -Poss,release -DskipTests deploy`
 - `git push --follow-tags origin master`
+
+> DISCLAIMER  
+> This plugin has been highly inspired by the work of [Brian Demers](https://github.com/bdemers) in his [maven-external-version](https://github.com/bdemers/maven-external-version/) plugin.  
+> I rewrote such a plugin mainly to simplify usage compared to a [maven-external-version](https://github.com/bdemers/maven-external-version/) extension (which I wrote also as [maven-external-version-jgitver](https://github.com/jgitver/maven-external-version-jgitver)).  
+> Such a simplification leads to:
+> - usage as pure extension without configuration 
+> - benefit from a direct configuration on the plugin allowing for example IDE completion & -D property usage 
+
+## Known issues
+
+### Maven dependency management is broken under Intellij IDEA
+
+due to [IDEA-155733](https://youtrack.jetbrains.com/issue/IDEA-155733), Intellij IDEA versions lower than `2016.1.3` _(this includes of course all 14.X & 15.X versions)_ do not handle correctly the plugin. This results in having the IDEA-maven integration being broken:
+- no update of dependencies
+- other issues, ...
+ 
+If you can, upgrade to Intellij IDEA >= `2016.1.3`, [IDEA-155733](https://youtrack.jetbrains.com/issue/IDEA-155733) has been resolved in this version.
+
+If you cannot upgrade, the solution is to disable the plugin usage in Intellij by moving it inside a maven profile. Then you have the choice to either deactivate the profile in Intellij or have the profile deactivated by default (thus not working in Intellij) and manually activating it on your CI/build system.
+
+Here is an example configuration that deactivates the plugin:
+```
+...
+<profiles>
+    ...
+    <profile>
+        <id>jgitver</id>
+        <activation>
+            <activeByDefault>false</activeByDefault>
+        </activation>
+        <build>
+            <plugins>
+                <plugin>
+                    <groupId>fr.brouillard.oss</groupId>
+                    <artifactId>jgitver-maven-plugin</artifactId>
+                    <version>0.1.1</version>
+                    <extensions>true</extensions>
+                </plugin>
+            </plugins>
+        </build>
+    </profile>
+    ...
+</profiles>
+```
+
+Then on your build system, you would just have to activate the profile to have the magic happen again:  
+`mvn install -Pjgitver`
