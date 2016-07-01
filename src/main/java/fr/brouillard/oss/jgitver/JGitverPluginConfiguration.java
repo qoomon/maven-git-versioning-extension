@@ -42,6 +42,10 @@ class JGitverPluginConfiguration {
         return booleanConfigChild("useGitCommitId", false);
     }
     
+    boolean useDirty() {
+        return booleanConfigChild("useDirty", false);
+    }
+    
     int gitCommitIdLength() {
         return intConfigChild("gitCommitIdLength", 8);
     }

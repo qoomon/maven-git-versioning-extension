@@ -20,10 +20,13 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 
 import org.apache.maven.AbstractMavenLifecycleParticipant;
 import org.apache.maven.MavenExecutionException;
@@ -40,6 +43,8 @@ import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.logging.Logger;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
+
+import fr.brouillard.oss.jgitver.metadata.Metadatas;
 
 @Component(role = AbstractMavenLifecycleParticipant.class, hint = "jgitver")
 public class JGitverExtension extends AbstractMavenLifecycleParticipant {
@@ -202,10 +207,14 @@ public class JGitverExtension extends AbstractMavenLifecycleParticipant {
                 .setUseDistance(pluginConfig.useCommitDistance())
                 .setUseGitCommitId(pluginConfig.useGitCommitId())
                 .setGitCommitIdLength(pluginConfig.gitCommitIdLength())
+                .setUseDirty(pluginConfig.useDirty())
                 .setNonQualifierBranches(pluginConfig.nonQualifierBranches());
 
             String version = gvc.getVersion();
             logger.debug("jgitver calculated version number: " + version);
+            
+            fillPropertiesFromMetadatas(rootProject.getProperties(), gvc);
+            
             return version;
         } finally {
             if (gvc != null) {
@@ -217,5 +226,15 @@ public class JGitverExtension extends AbstractMavenLifecycleParticipant {
                 }
             }
         }
+    }
+
+    private void fillPropertiesFromMetadatas(Properties properties, GitVersionCalculator gvc) {
+        Arrays.asList(Metadatas.values()).stream().forEach(metaData -> {
+            Optional<String> metaValue = gvc.meta(metaData);
+            String propertyName = "jgitver." + metaData.name().toLowerCase(Locale.ENGLISH); 
+            String value = metaValue.orElse("");
+            properties.put(propertyName, value);
+            logger.debug("setting property " + propertyName + " with \"" + value + "\"");
+        });
     }
 }

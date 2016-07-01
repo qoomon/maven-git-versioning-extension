@@ -44,6 +44,9 @@ public class JGitverMojo extends AbstractMojo {
     @Parameter(property = "jgitver.nonQualifierBranches", defaultValue = "master")
     private String nonQualifierBranches;
 
+    @Parameter(property = "jgitver.useDirty", defaultValue = "false")
+    private Boolean useDirty;
+
     public void execute() throws MojoExecutionException {
         getLog().warn("the plugin [jgitver-maven-plugin] should not be executed alone," 
                 + " verify <extensions>true</extensions> is set on the plugin configuration");

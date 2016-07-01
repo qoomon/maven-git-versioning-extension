@@ -67,6 +67,7 @@ The plugin can also be defined as a plugin extension so that you have the possib
                     <mavenLike>true/false</mavenLike>
                     <autoIncrementPatch>true/false</autoIncrementPatch>
                     <useCommitDistance>true/false</useCommitDistance>
+                    <useDirty>true/false</useDirty>
                     <useGitCommitId>true/false</useGitCommitId>
                     <gitCommitIdLength>integer</gitCommitIdLength>  <!-- between [8,40] -->
                     <nonQualifierBranches>master</nonQualifierBranches> <!-- comma separated, example "master,integration" -->
@@ -78,6 +79,72 @@ The plugin can also be defined as a plugin extension so that you have the possib
 ```
 
 Please consult [jgitver](https://github.com/jgitver/jgitver#configuration-modes--strategies) documentation to fully understand what the parameters do.
+
+### available properties
+
+Since `0.2.0`, the plugin exposes git calculated properties available during the maven build.
+Those are available under the following properties name: "jgitver.meta" where `meta` is one of [Metadatas](https://github.com/jgitver/jgitver/blob/0.2.0-alpha1/src/main/java/fr/brouillard/oss/jgitver/metadata/Metadatas.java#L25) name in lowercase.
+
+You can then use them as standard maven properties in your build:
+
+```
+<plugin>
+    <artifactId>maven-antrun-plugin</artifactId>
+    <executions>
+        <execution>
+            <phase>validate</phase>
+            <goals>
+                <goal>run</goal>
+            </goals>
+            <configuration>
+                <tasks>
+                    <echo>dirty: ${jgitver.dirty}</echo>
+                    <echo>head_committer_name: ${jgitver.head_committer_name}</echo>
+                    <echo>head_commiter_email: ${jgitver.head_commiter_email}</echo>
+                    <echo>head_commit_datetime: ${jgitver.head_commit_datetime}</echo>
+                    <echo>git_sha1_full: ${jgitver.git_sha1_full}</echo>
+                    <echo>git_sha1_8: ${jgitver.git_sha1_8}</echo>
+                    <echo>branch_name: ${jgitver.branch_name}</echo>
+                    <echo>head_tags: ${jgitver.head_tags}</echo>
+                    <echo>head_annotated_tags: ${jgitver.head_annotated_tags}</echo>
+                    <echo>head_lightweight_tags: ${jgitver.head_lightweight_tags}</echo>
+                    <echo>base_tag: ${jgitver.base_tag}</echo>
+                    <echo>all_tags: ${jgitver.all_tags}</echo>
+                    <echo>all_annotated_tags: ${jgitver.all_annotated_tags}</echo>
+                    <echo>all_lightweight_tags: ${jgitver.all_lightweight_tags}</echo>
+                    <echo>all_version_tags: ${jgitver.all_version_tags}</echo>
+                    <echo>all_version_annotated_tags: ${jgitver.all_version_annotated_tags}</echo>
+                    <echo>all_version_lightweight_tags: ${jgitver.all_version_lightweight_tags}</echo>
+                </tasks>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
+```
+
+resulted in my case 
+
+```
+[INFO] Executing tasks
+     [echo] dirty: true
+     [echo] head_committer_name: Matthieu Brouillard
+     [echo] head_commiter_email: matthieu@brouillard.fr
+     [echo] head_commit_datetime: Thu Jun 30 14:06:14 2016 +0200
+     [echo] git_sha1_full: fadd88e04b25c794cea876b03d8234df5bf4e37b
+     [echo] git_sha1_8: fadd88e0
+     [echo] branch_name: master
+     [echo] head_tags:
+     [echo] head_annotated_tags:
+     [echo] head_lightweight_tags:
+     [echo] base_tag: v0.2.0
+     [echo] all_tags: v0.2.0,0.1.1,0.1.0,0.0.3,0.0.2,0.0.1
+     [echo] all_annotated_tags: 0.1.1,0.1.0,0.0.3,0.0.2,0.0.1
+     [echo] all_lightweight_tags: v0.2.0
+     [echo] all_version_tags: v0.2.0,0.1.1,0.1.0,0.0.3,0.0.2,0.0.1
+     [echo] all_version_annotated_tags: 0.1.1,0.1.0,0.0.3,0.0.2,0.0.1
+     [echo] all_version_lightweight_tags: v0.2.0
+[INFO] Executed tasks
+```
 
 ## Example
 
