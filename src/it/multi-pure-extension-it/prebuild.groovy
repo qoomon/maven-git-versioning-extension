@@ -20,6 +20,8 @@ File actions = new File(baseDir, "actions-prebuild.log")
 actions.write 'Actions started at: ' + new Date() + '\n'
 
 actions << 'git init'.execute(null, baseDir).text
+actions << 'git config user.name "nobody"'.execute(null, baseDir).text 
+actions << 'git config user.email "nobody@nowhere.com"'.execute(null, baseDir).text 
 actions << 'echo A > content'.execute(null, baseDir).text 
 actions << 'git add .'.execute(null, baseDir).text
 actions << 'git commit -m "initial commit"'.execute(null, baseDir).text
