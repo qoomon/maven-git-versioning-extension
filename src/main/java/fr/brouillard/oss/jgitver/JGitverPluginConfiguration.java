@@ -15,7 +15,11 @@
  */
 package fr.brouillard.oss.jgitver;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 
@@ -49,9 +53,28 @@ class JGitverPluginConfiguration {
     int gitCommitIdLength() {
         return intConfigChild("gitCommitIdLength", 8);
     }
-    
-    String nonQualifierBranches() {
-        return pomPluginConfiguration.map(node -> node.getChild("nonQualifierBranches")).map(Xpp3Dom::getValue).orElse("master");
+
+    List<String> nonQualifierBranches() {
+        return pomPluginConfiguration
+          .map(node -> {
+              //Check if there is a direct configuration as string or with children
+              Xpp3Dom nonQualifierBranchesNode = node.getChild("nonQualifierBranches");
+              String value = nonQualifierBranchesNode.getValue();
+
+              //The children
+              Xpp3Dom[] children = nonQualifierBranchesNode.getChildren();
+
+              //Backwards compatibility, we have a string
+              if (children.length == 0 && value != null) {
+                  return Arrays.asList(value.split("\\s*,\\s*"));
+              }
+
+              //we do have children
+              return Arrays.stream(children)
+                .map(Xpp3Dom::getValue)
+                .collect(Collectors.toList());
+          })
+          .orElse(Collections.singletonList("master"));
     }
 
     private boolean booleanConfigChild(String childName, boolean defaultValue) {

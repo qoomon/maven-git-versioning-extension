@@ -27,6 +27,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 import org.apache.maven.AbstractMavenLifecycleParticipant;
 import org.apache.maven.MavenExecutionException;
@@ -208,7 +209,7 @@ public class JGitverExtension extends AbstractMavenLifecycleParticipant {
                 .setUseGitCommitId(pluginConfig.useGitCommitId())
                 .setGitCommitIdLength(pluginConfig.gitCommitIdLength())
                 .setUseDirty(pluginConfig.useDirty())
-                .setNonQualifierBranches(pluginConfig.nonQualifierBranches());
+                .setNonQualifierBranches(pluginConfig.nonQualifierBranches().stream().collect(Collectors.joining(",")));
 
             String version = gvc.getVersion();
             logger.debug("jgitver calculated version number: " + version);

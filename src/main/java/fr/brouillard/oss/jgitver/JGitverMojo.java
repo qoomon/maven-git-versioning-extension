@@ -15,6 +15,8 @@
  */
 package fr.brouillard.oss.jgitver;
 
+import java.util.List;
+
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -43,6 +45,9 @@ public class JGitverMojo extends AbstractMojo {
 
     @Parameter(property = "jgitver.nonQualifierBranches", defaultValue = "master")
     private String nonQualifierBranches;
+
+    @Parameter(property = "jgitver.nonQualifierBranchesList", defaultValue = "master")
+    private List<String> nonQualifierBranchesList;
 
     @Parameter(property = "jgitver.useDirty", defaultValue = "false")
     private Boolean useDirty;
