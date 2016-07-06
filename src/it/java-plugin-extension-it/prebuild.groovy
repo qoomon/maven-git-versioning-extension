@@ -15,20 +15,39 @@
  */
 
 def baseDir = new File("$basedir")
+def isWindows = {
+    return System.properties['os.name'].toLowerCase().contains('windows')
+}
+
+def toFilePath = { filename ->
+    isWindows() ? filename : "$basedir/" + filename
+}
+
+def runCommand = { command, basedir ->
+    def commandToExecute = isWindows() ? command : command.replace('"', '\'')
+    def proc = commandToExecute.execute(null, basedir) 
+    def sout = new StringBuilder(), serr = new StringBuilder()
+    proc.waitForProcessOutput(sout, serr)
+    return commandToExecute + "\n" + "out:\n" + sout.toString() + "err:\n" + serr.toString()
+}
 
 File actions = new File(baseDir, "actions-prebuild.log")
-actions.write 'Actions started at: ' + new Date() + '\n'
 
-actions << 'git init'.execute(null, baseDir).text
-actions << 'git config user.name "nobody"'.execute(null, baseDir).text 
-actions << 'git config user.email "nobody@nowhere.com"'.execute(null, baseDir).text 
-actions << 'echo A > content'.execute(null, baseDir).text 
-actions << 'git add .'.execute(null, baseDir).text
-actions << 'git commit -m "initial commit"'.execute(null, baseDir).text
-actions << 'git tag -a 1.0.0 -m "release 1.0.0"'.execute(null, baseDir).text 
-actions << 'echo B > content'.execute(null, baseDir).text
-actions << 'git add -u'.execute(null, baseDir).text
-actions << 'git commit -m "added B data"'.execute(null, baseDir).text
+actions.write "Actions started at: " + new Date() + " in: $basedir\n"
+
+actions << runCommand("git --version", baseDir)
+actions << runCommand("git init", baseDir)
+actions << runCommand("git config user.name \"nobody\"", baseDir) 
+actions << runCommand("git config user.email \"nobody@nowhere.com\"", basedir) 
+actions << runCommand("echo A > " + toFilePath("content"), basedir) 
+actions << runCommand("git add " + toFilePath("."), basedir)
+actions << runCommand("git commit --message=initial_commit", basedir)
+actions << runCommand("git tag -a 1.0.0 --message=release_1.0.0", basedir) 
+actions << runCommand("echo B > " + toFilePath("content"), basedir)
+actions << runCommand("git add -u", basedir)
+actions << runCommand("git commit --message=added_B_data", basedir)
+actions << runCommand("git log --graph --oneline", basedir)
+// actions << runCommand('git log  --graph --abbrev-commit --all --format=format:"%h - (%ar) %s - %an%d"', basedir)
 
 // $ git lg
 // * 25ba22f - (46 seconds ago) added B data - Matthieu Brouillard (HEAD -> master)
