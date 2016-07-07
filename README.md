@@ -1,4 +1,6 @@
-# jgitver-maven-plugin [![Build Status](https://travis-ci.org/jgitver/jgitver-maven-plugin.svg?branch=master)](https://travis-ci.org/jgitver/jgitver-maven-plugin)
+# jgitver-maven-plugin 
+
+[![Build Status](https://travis-ci.org/jgitver/jgitver-maven-plugin.svg?branch=master)](https://travis-ci.org/jgitver/jgitver-maven-plugin)
 
 > *__IntelliJ IDEA users__*: due to [IDEA-155733](https://youtrack.jetbrains.com/issue/IDEA-155733) update your IDE to version >= `2016.1.3` and use jgtiver-maven-plugin >= `0.1.1`  
 >  
@@ -193,6 +195,20 @@ git checkout master
 echo E > content && git add -u && git commit -m "added E data"
 mvn validate
 ```
+
+## Requirements
+
+### Maven requirements
+
+[jgitver-maven-plugin](#jgitver-maven-plugin) requires at least maven-3.2.0 to work correctly.
+
+Think to modify your IDE settings regarding maven version ; if required do not use  the embedded maven version of your IDE but an external one that fulfill the maven minimal requirements.  
+
+### Supported IDEs
+
+- Eclipse: tested with Eclipse Mars.2 Release 4.5.2
+- Netbeans: tested with NetBeans IDE 8.1 Build 201510222201
+- Intellij IDEA: tested with 2016.1.3, see [known issues](#known-issues) for lower versions
 
 ## Build & release
 
