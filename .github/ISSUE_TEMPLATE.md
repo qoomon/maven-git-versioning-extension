@@ -1,7 +1,7 @@
 ### Before submitting an issue I have first:
 
-- [] searched for similar already existing issue
-- [] read the documentation and [wiki](https://github.com/jgitver/jgitver-maven-plugin/wiki) 
+- [ ] searched for similar already existing issue
+- [ ] read the documentation and [wiki](https://github.com/jgitver/jgitver-maven-plugin/wiki) 
 
 *(if you have performed all the above, remove the paragraph and continue describing the issue with template below)*
 
@@ -13,10 +13,10 @@ We know that your time is precious, we are thankful that you take time to report
 
 **usage context**:
 
-- [] maven command line: _replace with version_  
-- [] eclipse: _replace with version_
-- [] netbeans: _replace with version_
-- [] Intellij IDEA: _replace with version_ 
+- [ ] maven command line: _replace with version_  
+- [ ] eclipse: _replace with version_
+- [ ] netbeans: _replace with version_
+- [ ] Intellij IDEA: _replace with version_ 
 
 **Problem description**:
 
