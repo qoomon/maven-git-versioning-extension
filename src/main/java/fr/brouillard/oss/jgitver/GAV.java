@@ -27,6 +27,9 @@ public class GAV { // SUPPRESS CHECKSTYLE AbbreviationAsWordInName
     private String artifactId;
     private String version;
 
+    public GAV() {
+    }
+
     /**
      * Builds an immutable GAV object.
      * 
@@ -65,6 +68,18 @@ public class GAV { // SUPPRESS CHECKSTYLE AbbreviationAsWordInName
      */
     public String getVersion() {
         return version;
+    }
+
+    public void setGroupId(String groupId) {
+        this.groupId = groupId;
+    }
+
+    public void setArtifactId(String artifactId) {
+        this.artifactId = artifactId;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
     }
 
     /**

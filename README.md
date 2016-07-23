@@ -21,6 +21,34 @@ Here is an illustration of the capabilities of the plugin
 
 ## Usage
 
+### as native maven extension (experimental)
+Authored by https://github.com/xeagle2 
+
+1. Create ${maven.projectBasedir}/.mvn/extensions.xml under a root directory of project.
+2. Put the following content to ${maven.projectBasedir}/.mvn/extensions.xml (adapt the version).
+```
+<extensions xmlns="http://maven.apache.org/EXTENSIONS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/EXTENSIONS/1.0.0 http://maven.apache.org/xsd/core-extensions-1.0.0.xsd">
+  <extension>
+    <groupId>fr.brouillard.oss</groupId>
+    <artifactId>jgitver-maven-plugin</artifactId>
+    <version>0.2.0-SNAPSHOT</version>
+  </extension>
+</extensions>
+```
+3. Adding the plugin to project .pom files is not necessary anymore.
+
+Other parameters could be passed through ${maven.projectBasedir}/.mvn/maven.config as
+
+```
+-Dvariable_name1=variable_value1 -Dvariable_name2=variable_value2
+```
+
+**Known issues**
+1. Feature is not available if building with Jenkins <a href="https://issues.jenkins-ci.org/browse/JENKINS-30058?jql=project%20%3D%20JENKINS%20AND%20status%20in%20(Open%2C%20%22In%20Progress%22%2C%20Reopened)%20AND%20component%20%3D%20maven-plugin%20AND%20text%20~%20%22extensions%22">JENKINS-30058</a>
+
+**Quick note:** please pay attention that other listed below methods are limited in functionality and impact or even break the build process for complex build configurations (works for simple build configurations).
+
 ### pure extension
 
 Using the module as pure maven extension, allows a minimal setup inside your pom.
