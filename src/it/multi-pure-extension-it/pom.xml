@@ -30,19 +30,6 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
-    <build>
-        <extensions>
-            <extension>
-                <groupId>@project.groupId@</groupId>
-                <artifactId>@project.artifactId@</artifactId>
-                <version>@project.version@</version>
-<!--                 <groupId>fr.brouillard.oss</groupId> -->
-<!--                 <artifactId>jgitver-maven-plugin</artifactId> -->
-<!--                 <version>0.0.3-2</version> -->
-            </extension>
-        </extensions>
-    </build>
-
     <modules>
         <module>module</module>
     </modules>

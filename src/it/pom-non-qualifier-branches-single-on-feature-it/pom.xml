@@ -30,6 +30,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
+    <!--
+        TODO move this configuration using new jgitver configuration
     <build>
         <plugins>
             <plugin>
@@ -43,4 +45,5 @@
             </plugin>
         </plugins>
     </build>
+    -->
 </project>

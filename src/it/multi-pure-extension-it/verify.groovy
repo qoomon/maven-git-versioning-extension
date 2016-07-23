@@ -32,7 +32,7 @@ assert 1 == installedPomFile.readLines().findAll { it =~ /<version>1.0.1-SNAPSHO
 
 File installedJarPomFile = new File("$basedir" + "/../../local-repo/fr/brouillard/oss/it/multi/multi-pure-extension-it-module/1.0.1-SNAPSHOT/", "multi-pure-extension-it-module-1.0.1-SNAPSHOT.pom")
 assert installedJarPomFile.isFile()
-assert 1 == installedJarPomFile.readLines().findAll { it =~ /<version>1.0.1-SNAPSHOT<\/version>/ }.size()
+assert 2 == installedJarPomFile.readLines().findAll { it =~ /<version>1.0.1-SNAPSHOT<\/version>/ }.size()
 
 File installedJarFile = new File("$basedir" + "/../../local-repo/fr/brouillard/oss/it/multi/multi-pure-extension-it-module/1.0.1-SNAPSHOT/", "multi-pure-extension-it-module-1.0.1-SNAPSHOT.jar")
 assert installedJarFile.isFile()
