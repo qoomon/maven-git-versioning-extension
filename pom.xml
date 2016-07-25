@@ -71,20 +71,20 @@
             </roles>
         </developer>
         <developer>
-          <id>xeagle2</id>
-          <name>Yuriy Zaplavnov</name>
-          <url>https://github.com/xeagle2</url>
-          <roles>
-            <role>contributor</role>
-          </roles>
+            <id>xeagle2</id>
+            <name>Yuriy Zaplavnov</name>
+            <url>https://github.com/xeagle2</url>
+            <roles>
+                <role>contributor</role>
+            </roles>
         </developer>
         <developer>
-          <id>jschneider</id>
-          <name>Johannes Schneider</name>
-          <url>https://github.com/jschneider</url>
-          <roles>
-            <role>contributor</role>
-          </roles>
+            <id>jschneider</id>
+            <name>Johannes Schneider</name>
+            <url>https://github.com/jschneider</url>
+            <roles>
+                <role>contributor</role>
+            </roles>
         </developer>
     </developers>
 

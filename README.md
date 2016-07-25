@@ -21,27 +21,48 @@ Here is an illustration of the capabilities of the plugin
 
 ## Usage
 
+### Activation by maven core extension
+
 Since version `0.3.0` [jgitver-maven-plugin](#jgitver-maven-plugin) needs to be run as a maven core extension
 
 1. Create a directory `.mvn` under the root directory of your project.
 1. Create file `.mvn/extensions.xml`
 1. Put the following content to `.mvn/extensions.xml` (adapt the version).
-```
-<extensions xmlns="http://maven.apache.org/EXTENSIONS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/EXTENSIONS/1.0.0 http://maven.apache.org/xsd/core-extensions-1.0.0.xsd">
-  <extension>
-    <groupId>fr.brouillard.oss</groupId>
-    <artifactId>jgitver-maven-plugin</artifactId>
-    <version>0.3.0-SNAPSHOT</version>
-  </extension>
-</extensions>
-```
+    ```
+    <extensions xmlns="http://maven.apache.org/EXTENSIONS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://maven.apache.org/EXTENSIONS/1.0.0 http://maven.apache.org/xsd/core-extensions-1.0.0.xsd">
+      <extension>
+        <groupId>fr.brouillard.oss</groupId>
+        <artifactId>jgitver-maven-plugin</artifactId>
+        <version>0.3.0-SNAPSHOT</version>
+      </extension>
+    </extensions>
+    ```
 1. Remove the old declarations/usages of [jgitver-maven-plugin](#jgitver-maven-plugin) from the project pom
 
-**Known issues**
-1. Feature is not working correctly if building with Jenkins <a href="https://issues.jenkins-ci.org/browse/JENKINS-30058?jql=project%20%3D%20JENKINS%20AND%20status%20in%20(Open%2C%20%22In%20Progress%22%2C%20Reopened)%20AND%20component%20%3D%20maven-plugin%20AND%20text%20~%20%22extensions%22">JENKINS-30058</a>
+### Configuration
 
-### available properties
+In order to control [jgitver-maven-plugin](#jgitver-maven-plugin) behavior, you can provide a configuration 
+file under `$rootProjectDir/.mvn/jgtiver.config.xml` having the following format:
+
+```
+<configuration>
+    <mavenLike>true/false</mavenLike>
+    <autoIncrementPatch>true/false</autoIncrementPatch>
+    <useCommitDistance>true/false</useCommitDistance>
+    <useDirty>true/false</useDirty>
+    <useGitCommitId>true/false</useGitCommitId>
+    <gitCommitIdLength>integer</gitCommitIdLength>  <!-- between [8,40] -->
+    <nonQualifierBranches>master</nonQualifierBranches> <!-- comma separated, example "master,integration" -->
+</configuration>
+```
+
+Please consult [jgitver](https://github.com/jgitver/jgitver#configuration-modes--strategies) documentation to fully understand what the parameters do.
+
+**Known issues**
+1. Due to a Jenkins/Maven incompatibility feature might not work correctly due to Jenkins issue <a href="https://issues.jenkins-ci.org/browse/JENKINS-30058?jql=project%20%3D%20JENKINS%20AND%20status%20in%20(Open%2C%20%22In%20Progress%22%2C%20Reopened)%20AND%20component%20%3D%20maven-plugin%20AND%20text%20~%20%22extensions%22">JENKINS-30058</a>
+
+### Available properties
 
 Since `0.2.0`, the plugin exposes git calculated properties available during the maven build.
 Those are available under the following properties name: "jgitver.meta" where `meta` is one of [Metadatas](https://github.com/jgitver/jgitver/blob/0.2.0-alpha1/src/main/java/fr/brouillard/oss/jgitver/metadata/Metadatas.java#L25) name in lowercase.
@@ -152,7 +173,7 @@ mvn validate
 
 ### Maven requirements
 
-[jgitver-maven-plugin](#jgitver-maven-plugin) requires at least maven-3.2.0 to work correctly.
+[jgitver-maven-plugin](#jgitver-maven-plugin) requires at least maven-3.3.x to work correctly.
 
 Think to modify your IDE settings regarding maven version ; if required do not use  the embedded maven version of your IDE but an external one that fulfill the maven minimal requirements.  
 
