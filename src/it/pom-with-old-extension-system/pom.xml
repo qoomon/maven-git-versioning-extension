@@ -33,12 +33,12 @@
     <build>
         <extensions>
             <extension>
-<!--                 <groupId>@project.groupId@</groupId> -->
-<!--                 <artifactId>@project.artifactId@</artifactId> -->
-<!--                 <version>@project.version@</version> -->
-                <groupId>fr.brouillard.oss</groupId>
-                <artifactId>jgitver-maven-plugin</artifactId>
-                <version>0.2.0-xeagle2_master-SNAPSHOT</version>
+                <groupId>@project.groupId@</groupId>
+                <artifactId>@project.artifactId@</artifactId>
+                <version>@project.version@</version>
+<!--                 <groupId>fr.brouillard.oss</groupId> -->
+<!--                 <artifactId>jgitver-maven-plugin</artifactId> -->
+<!--                 <version>0.2.0-xeagle2_master-SNAPSHOT</version> -->
             </extension>
         </extensions>
     </build>

@@ -1,20 +1,16 @@
-language: java
+language: bash
+
+sudo: required
+
+services:
+  - docker
 
 script:
-  - mvn -Prun-its clean install
-
-install: /bin/true
+  - docker run --rm -v $(pwd):/root/sources -w /root/sources maven:3.3.9-jdk-8 mvn -Prun-its clean install
 
 after_failure:
   - find target/it -name *.log -exec echo {} \; -exec cat {} \;
 
-jdk:
-  - oraclejdk8
-
-cache:
-  directories:
-  - $HOME/.m2
-  
 branches:
     except:
         - gh-pages
