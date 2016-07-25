@@ -208,6 +208,7 @@
                         <exclude>.*</exclude>
                         <exclude>src/quality/**</exclude>
                         <exclude>src/it/resources/**</exclude>
+                        <exclude>src/it/**/invoker.properties</exclude>
                         <exclude>src/test/resources/**</exclude>
                         <exclude>src/main/resources/**</exclude>
                     </excludes>

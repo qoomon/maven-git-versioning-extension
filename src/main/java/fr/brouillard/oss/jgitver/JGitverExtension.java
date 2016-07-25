@@ -54,9 +54,21 @@ public class JGitverExtension extends AbstractMavenLifecycleParticipant {
 
         if (JGitverModelProcessor.class.isAssignableFrom(modelProcessor.getClass())) {
             JGitverModelProcessor jGitverModelProcessor = JGitverModelProcessor.class.cast(modelProcessor);
-            JGitverModelProcessorWorkingConfiguration workingConfiguration = jGitverModelProcessor
-                    .getWorkingConfiguration();
+            JGitverModelProcessorWorkingConfiguration workingConfiguration = jGitverModelProcessor.getWorkingConfiguration();
 
+            if (workingConfiguration == null) {
+                logger.warn("");
+                logger.warn("jgitver has changed!");
+                logger.warn("");
+                logger.warn("it now requires the usage of maven core extensions instead of standard plugin extensions.");
+                logger.warn("The plugin must be now declared in a `.mvn/extensions.xml` file.");
+                logger.warn("");
+                logger.warn("    read https://github.com/jgitver/jgitver-maven-plugin for further information");
+                logger.warn("");
+                throw new MavenExecutionException("detection of jgitver old setting mechanism", 
+                        new IllegalStateException("jgitver must now use maven core extensions"));
+            }
+            
             newProjectVersions = workingConfiguration.getNewProjectVersions();
         } else {
             logger.info("jgitver-maven-plugin is about to change project(s) version(s)");

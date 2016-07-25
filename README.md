@@ -21,94 +21,25 @@ Here is an illustration of the capabilities of the plugin
 
 ## Usage
 
-### as native maven extension (experimental)
-Authored by https://github.com/xeagle2 
+Since version `0.3.0` [jgitver-maven-plugin](#jgitver-maven-plugin) needs to be run as a maven core extension
 
-1. Create ${maven.projectBasedir}/.mvn/extensions.xml under a root directory of project.
-2. Put the following content to ${maven.projectBasedir}/.mvn/extensions.xml (adapt the version).
+1. Create a directory `.mvn` under the root directory of your project.
+1. Create file `.mvn/extensions.xml`
+1. Put the following content to `.mvn/extensions.xml` (adapt the version).
 ```
 <extensions xmlns="http://maven.apache.org/EXTENSIONS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/EXTENSIONS/1.0.0 http://maven.apache.org/xsd/core-extensions-1.0.0.xsd">
   <extension>
     <groupId>fr.brouillard.oss</groupId>
     <artifactId>jgitver-maven-plugin</artifactId>
-    <version>0.2.0-SNAPSHOT</version>
+    <version>0.3.0-SNAPSHOT</version>
   </extension>
 </extensions>
 ```
-3. Adding the plugin to project .pom files is not necessary anymore.
-
-Other parameters could be passed through ${maven.projectBasedir}/.mvn/maven.config as
-
-```
--Dvariable_name1=variable_value1 -Dvariable_name2=variable_value2
-```
+1. Remove the old declarations/usages of [jgitver-maven-plugin](#jgitver-maven-plugin) from the project pom
 
 **Known issues**
-1. Feature is not available if building with Jenkins <a href="https://issues.jenkins-ci.org/browse/JENKINS-30058?jql=project%20%3D%20JENKINS%20AND%20status%20in%20(Open%2C%20%22In%20Progress%22%2C%20Reopened)%20AND%20component%20%3D%20maven-plugin%20AND%20text%20~%20%22extensions%22">JENKINS-30058</a>
-
-**Quick note:** please pay attention that other listed below methods are limited in functionality and impact or even break the build process for complex build configurations (works for simple build configurations).
-
-### pure extension
-
-Using the module as pure maven extension, allows a minimal setup inside your pom.
-
-```
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    ...
-    <version>0</version>    <!-- your project version becomes irrelevant -->
-    ...
-    <build>
-        <extensions>
-            <extension>
-                <groupId>fr.brouillard.oss</groupId>
-                <artifactId>jgitver-maven-plugin</artifactId>
-                <version>X.Y.Z</version>
-            </extension>
-        </extensions>
-    </build>
-</project>
-```
-
-Used like that _i.e._ as a pure extension, [jgitver](https://github.com/jgitver/jgitver) will be used with the following parameters:
-
-- __mavenLike__: `true` 
-- __nonQualifierBranches__: `master` 
-
-### plugin extension with configuration
-
-The plugin can also be defined as a plugin extension so that you have the possibility to define your own configuration, and thus bypass the default one:
-
-```
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    ...
-    <version>0</version>    <!-- your project version becomes irrelevant -->
-    ...
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>fr.brouillard.oss</groupId>
-                <artifactId>jgitver-maven-plugin</artifactId>
-                <version>X.Y.Z</version>
-                <extensions>true</extensions>
-                <configuration>
-                    <mavenLike>true/false</mavenLike>
-                    <autoIncrementPatch>true/false</autoIncrementPatch>
-                    <useCommitDistance>true/false</useCommitDistance>
-                    <useDirty>true/false</useDirty>
-                    <useGitCommitId>true/false</useGitCommitId>
-                    <gitCommitIdLength>integer</gitCommitIdLength>  <!-- between [8,40] -->
-                    <nonQualifierBranches>master</nonQualifierBranches> <!-- comma separated, example "master,integration" -->
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
-</project>
-```
-
-Please consult [jgitver](https://github.com/jgitver/jgitver#configuration-modes--strategies) documentation to fully understand what the parameters do.
+1. Feature is not working correctly if building with Jenkins <a href="https://issues.jenkins-ci.org/browse/JENKINS-30058?jql=project%20%3D%20JENKINS%20AND%20status%20in%20(Open%2C%20%22In%20Progress%22%2C%20Reopened)%20AND%20component%20%3D%20maven-plugin%20AND%20text%20~%20%22extensions%22">JENKINS-30058</a>
 
 ### available properties
 
@@ -192,23 +123,16 @@ rm -rf /d/demo-jgitver-maven-plugin
 mkdir -p /d/demo-jgitver-maven-plugin
 cd /d/demo-jgitver-maven-plugin
 git init
-cat > pom.xml << EOF
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    <groupId>fr.brouillard.oss.demo</groupId>
-    <artifactId>demo-jgitver-maven-plugin</artifactId>
-    <version>0</version>
-    <packaging>pom</packaging>
-    <build>
-        <extensions>
-            <extension>
-                <groupId>fr.brouillard.oss</groupId>
-                <artifactId>jgitver-maven-plugin</artifactId>
-                <version>[0.0.3,)</version>
-            </extension>
-        </extensions>
-    </build>
-</project>
+mkdir .mvn
+cat > .mvn/extensions.xml << EOF
+<extensions xmlns="http://maven.apache.org/EXTENSIONS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/EXTENSIONS/1.0.0 http://maven.apache.org/xsd/core-extensions-1.0.0.xsd">
+  <extension>
+    <groupId>fr.brouillard.oss</groupId>
+    <artifactId>jgitver-maven-plugin</artifactId>
+    <version>[0.3.0-SNAPSHOT,)</version>
+  </extension>
+</extensions>
 EOF
 echo A > content
 git add pom.xml
@@ -263,6 +187,8 @@ Think to modify your IDE settings regarding maven version ; if required do not u
 ## Known issues
 
 ### Maven dependency management is broken under Intellij IDEA
+
+> TODO verify with jgitver-maven-plugin >= 0.3.0
 
 due to [IDEA-155733](https://youtrack.jetbrains.com/issue/IDEA-155733), Intellij IDEA versions lower than `2016.1.3` _(this includes of course all 14.X & 15.X versions)_ do not handle correctly the plugin. This results in having the IDEA-maven integration being broken:
 - no update of dependencies
