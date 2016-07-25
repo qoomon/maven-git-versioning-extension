@@ -70,6 +70,22 @@
                 <role>project creator</role>
             </roles>
         </developer>
+        <developer>
+          <id>xeagle2</id>
+          <name>Yuriy Zaplavnov</name>
+          <url>https://github.com/xeagle2</url>
+          <roles>
+            <role>contributor</role>
+          </roles>
+        </developer>
+        <developer>
+          <id>jschneider</id>
+          <name>Johannes Schneider</name>
+          <url>https://github.com/jschneider</url>
+          <roles>
+            <role>contributor</role>
+          </roles>
+        </developer>
     </developers>
 
     <dependencies>
@@ -314,13 +330,17 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-invoker-plugin</artifactId>
-                        <version>1.7</version>
+                        <version>1.10</version>   <!--  minimal 1.10 because of MINVOKER-186 -->
                         <configuration>
                             <debug>false</debug>
                             <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
                             <pomIncludes>
                                 <pomInclude>*/pom.xml</pomInclude>
                             </pomIncludes>
+                            <pomExcludes>   <!-- temporary for jgitver-maven-plugin#23 -->
+                                <pomExclude>pom-non-qualifier-branches-list-on-feature-it/pom.xml</pomExclude>
+                                <pomExclude>pom-non-qualifier-branches-single-on-feature-it/pom.xml</pomExclude>
+                            </pomExcludes>
                             <mavenOpts>-Dmaven.colors.skip=true</mavenOpts> <!-- avoid strange output in build.log by using https://github.com/rmannibucau/maven-color -->
                             <postBuildHookScript>verify</postBuildHookScript>
                             <localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>

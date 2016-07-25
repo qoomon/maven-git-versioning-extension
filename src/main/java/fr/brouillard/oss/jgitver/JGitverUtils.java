@@ -110,6 +110,12 @@ public final class JGitverUtils {
         basedirField.set(project, initialBaseDir);
     }
 
+    /**
+     * Changes the pom file of the given project.
+     * @param project the project to change the pom
+     * @param newPom the pom file to set on the project
+     * @param logger a logger to use 
+     */
     public static void setProjectPomFile(MavenProject project, File newPom, Logger logger) {
         try {
             project.setPomFile(newPom);
@@ -133,16 +139,15 @@ public final class JGitverUtils {
      * Fill properties from meta data.
      *
      * @param properties     properties.
-     * @param jGitverVersion jGitverVersion.
+     * @param jgitverVersion jGitverVersion.
      * @param logger         logger.
      */
-    public static void fillPropertiesFromMetadatas(Properties properties, JGitverVersion jGitverVersion, Logger
-            logger) {
-        logger.debug(EXTENSION_PREFIX + " calculated version number: " + jGitverVersion.getCalculatedVersion());
-        properties.put(EXTENSION_PREFIX + ".calculated_version", jGitverVersion.getCalculatedVersion());
+    public static void fillPropertiesFromMetadatas(Properties properties, JGitverVersion jgitverVersion, Logger logger) {
+        logger.debug(EXTENSION_PREFIX + " calculated version number: " + jgitverVersion.getCalculatedVersion());
+        properties.put(EXTENSION_PREFIX + ".calculated_version", jgitverVersion.getCalculatedVersion());
 
         Arrays.asList(Metadatas.values()).stream().forEach(metaData -> {
-            Optional<String> metaValue = jGitverVersion.getGitVersionCalculator().meta(metaData);
+            Optional<String> metaValue = jgitverVersion.getGitVersionCalculator().meta(metaData);
             String propertyName = EXTENSION_PREFIX + "." + metaData.name().toLowerCase(Locale.ENGLISH);
             String value = metaValue.orElse("");
             properties.put(propertyName, value);
@@ -150,8 +155,16 @@ public final class JGitverUtils {
         });
     }
 
+    /**
+     * Calculates the version to use of the given project. 
+     * @param rootProject the root project for which a version has to be calculated
+     * @param properties a property object that will be filled with additional information 
+     * @param logger a logger to use
+     * @return a non null container for the version 
+     * @throws IOException if an error ocurred while calculating the version
+     */
     public static JGitverVersion calculateVersionForProject(MavenProject rootProject, Properties properties,
-                                                            Logger logger) throws IOException {
+            Logger logger) throws IOException {
         JGitverVersion jGitverVersion = null;
 
         logger.debug("using " + EXTENSION_PREFIX + " on directory: " + rootProject.getBasedir());
@@ -171,13 +184,12 @@ public final class JGitverUtils {
                     .setUseGitCommitId(pluginConfig.useGitCommitId())
                     .setGitCommitIdLength(pluginConfig.gitCommitIdLength())
                     .setUseDirty(pluginConfig.useDirty())
-                    .setNonQualifierBranches(pluginConfig.nonQualifierBranches().stream().collect(Collectors.joining
-                            (",")));
+                    .setNonQualifierBranches(pluginConfig.nonQualifierBranches().stream().collect(Collectors.joining(",")));
 
             jGitverVersion = new JGitverVersion(gitVersionCalculator);
             fillPropertiesFromMetadatas(properties, jGitverVersion, logger);
-        } catch (Exception e) {
-            throw new IOException(e.getMessage(), e);
+        } catch (Exception ex) {
+            throw new IOException(ex.getMessage(), ex);
         }
 
         return jGitverVersion;
@@ -188,7 +200,7 @@ public final class JGitverUtils {
      *
      * @param projects           projects.
      * @param newProjectVersions newProjectVersions.
-     * @throws MavenExecutionException
+     * @throws MavenExecutionException if an error occurs while attaching the updated poms to the project
      */
     public static void attachModifiedPomFilesToTheProject(List<MavenProject> projects, Map<GAV, String>
             newProjectVersions, MavenSession mavenSession, Logger logger) throws IOException, XmlPullParserException {

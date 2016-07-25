@@ -33,10 +33,6 @@ import org.codehaus.plexus.logging.console.ConsoleLogger;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 
 /**
- * Copyright (C) 2016 Yuriy Zaplavnov [https://github.com/xeagle2]
- * is original author of current class implementation and approach to use maven extension strategy
- * instead of maven lifecycle participants.
- * <p>
  * Works in conjunction with JGitverModelProcessor.
  */
 @Mojo(name = JGitverAttachModifiedPomsMojo.GOAL_ATTACH_MODIFIED_POMS, defaultPhase = LifecyclePhase.VERIFY,
@@ -52,8 +48,8 @@ public class JGitverAttachModifiedPomsMojo extends AbstractMojo {
         String className = JGitverModelProcessorWorkingConfiguration.class.getName();
 
         if (Objects.isNull(mavenSession.getUserProperties().get(className))) {
-            getLog().warn(GOAL_ATTACH_MODIFIED_POMS + "shouldn't be executed alone. The Mojo " +
-                    "is a part of the plugin and executed automatically.");
+            getLog().warn(GOAL_ATTACH_MODIFIED_POMS + "shouldn't be executed alone. The Mojo "
+                    + "is a part of the plugin and executed automatically.");
             return;
         }
 
@@ -72,9 +68,9 @@ public class JGitverAttachModifiedPomsMojo extends AbstractMojo {
                             ConsoleLogger());
 
             mavenSession.getUserProperties().setProperty(className, "-");
-        } catch (XmlPullParserException | IOException | JAXBException e) {
-            throw new MojoExecutionException("Unable to execute goal: " + JGitverAttachModifiedPomsMojo
-                    .GOAL_ATTACH_MODIFIED_POMS, e);
+        } catch (XmlPullParserException | IOException | JAXBException ex) {
+            throw new MojoExecutionException("Unable to execute goal: "
+                    + JGitverAttachModifiedPomsMojo.GOAL_ATTACH_MODIFIED_POMS, ex);
         }
     }
 }

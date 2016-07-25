@@ -48,8 +48,7 @@ import org.codehaus.plexus.logging.Logger;
  * Copyright (C) 2016 Yuriy Zaplavnov [https://github.com/xeagle2]
  * is original author of current class implementation and approach to use maven extension strategy
  * instead of maven lifecycle participants.
- * <p>
- * <p><strong>Configuration:</p></strong>
+ * <p><strong>Configuration:</strong></p>
  * 1. Create ${maven.projectBasedir}/.mvn/extensions.xml under a root directory of project.
  * 2. Put the following content to ${maven.projectBasedir}/.mvn/extensions.xml (adapt the version).
  * <pre>{@code
@@ -65,13 +64,12 @@ import org.codehaus.plexus.logging.Logger;
  * }</pre>
  * 3. Adding the plugin to project .pom files is not necessary anymore.
  * <p>
- * <p>
  * Other parameters could be passed through ${maven.projectBasedir}/.mvn/maven.config as
  * </p>
  * <pre>{@code
  * -Dvariable_name1=variable_value1 -Dvariable_name2=variable_value2
  * }</pre>
- * <p>
+ * </p>
  * <p><strong>Known issues</strong></p>
  * 1. Feature is not available if building with Jenkins <a href="https://issues.jenkins-ci
  * .org/browse/JENKINS-30058?jql=project%20%3D%20JENKINS%20AND%20status%20in%20
@@ -116,7 +114,7 @@ public class JGitverModelProcessor extends DefaultModelProcessor {
         return provisionModel(super.read(input, options), options);
     }
 
-    private void calculateVersionIfNecessary() throws IOException {
+    private void calculateVersionIfNecessary() throws Exception {
         if (workingConfiguration == null) {
             synchronized (this) {
                 if (workingConfiguration == null) {
@@ -124,22 +122,19 @@ public class JGitverModelProcessor extends DefaultModelProcessor {
 
                     MavenSession mavenSession = legacySupport.getSession();
 
-                    logger.debug("using " + JGitverUtils.EXTENSION_PREFIX + " on directory: " + mavenSession.getRequest
-                            ().getMultiModuleProjectDirectory());
+                    logger.debug("using " + JGitverUtils.EXTENSION_PREFIX + " on directory: " 
+                            + mavenSession.getRequest().getMultiModuleProjectDirectory());
 
                     try (GitVersionCalculator gitVersionCalculator = GitVersionCalculator.location(mavenSession
                             .getRequest().getMultiModuleProjectDirectory())) {
                         gitVersionCalculator.setMavenLike(true).setNonQualifierBranches("master");
 
                         JGitverVersion jGitverVersion = new JGitverVersion(gitVersionCalculator);
-                        JGitverUtils.fillPropertiesFromMetadatas(mavenSession.getUserProperties(), jGitverVersion,
-                                logger);
+                        JGitverUtils.fillPropertiesFromMetadatas(mavenSession.getUserProperties(), jGitverVersion, logger);
 
-                        workingConfiguration = new JGitverModelProcessorWorkingConfiguration(jGitverVersion
-                                .getCalculatedVersion(),
+                        workingConfiguration = new JGitverModelProcessorWorkingConfiguration(
+                                jGitverVersion.getCalculatedVersion(),
                                 mavenSession.getRequest().getMultiModuleProjectDirectory());
-                    } catch (Exception e) {
-                        throw new IOException(e.getMessage(), e);
                     }
                 }
             }
@@ -147,7 +142,11 @@ public class JGitverModelProcessor extends DefaultModelProcessor {
     }
 
     private Model provisionModel(Model model, Map<String, ?> options) throws IOException {
-        calculateVersionIfNecessary();
+        try {
+            calculateVersionIfNecessary();
+        } catch (Exception ex) {
+            throw new IOException("cannot build a Model object using jgitver", ex);
+        }
 
         if (Objects.isNull(options.get(ModelProcessor.SOURCE))) {
             return model;
@@ -162,6 +161,7 @@ public class JGitverModelProcessor extends DefaultModelProcessor {
                     .getCalculatedVersion());
 
             if (Objects.nonNull(model.getVersion())) {
+                // TODO evaluate how to set the version only when it was originally set in the pom file 
                 model.setVersion(workingConfiguration.getCalculatedVersion());
             }
 
@@ -189,14 +189,14 @@ public class JGitverModelProcessor extends DefaultModelProcessor {
                 StringBuilder pluginVersion = new StringBuilder();
 
                 try (InputStream inputStream = getClass().getResourceAsStream("/META-INF/maven/"
-                        + JGitverUtils.EXTENSION_GROUP_ID + "/" + JGitverUtils.EXTENSION_ARTIFACT_ID + "/pom" +
-                        ".properties")) {
+                        + JGitverUtils.EXTENSION_GROUP_ID + "/" + JGitverUtils.EXTENSION_ARTIFACT_ID + "/pom"
+                        + ".properties")) {
                     Properties properties = new Properties();
                     properties.load(inputStream);
-
                     pluginVersion.append(properties.getProperty("version"));
-                } catch (IOException e) {
-                    logger.warn(e.getMessage(), e);
+                } catch (IOException ignored) {
+                    // TODO we should not ignore in case we have to reuse it
+                    logger.warn(ignored.getMessage(), ignored);
                 }
 
                 Plugin plugin = pluginOptional.orElseGet(() -> {
@@ -255,8 +255,8 @@ public class JGitverModelProcessor extends DefaultModelProcessor {
             try {
                 legacySupport.getSession().getUserProperties().put(JGitverModelProcessorWorkingConfiguration.class
                         .getName(), JGitverModelProcessorWorkingConfiguration.serializeTo(workingConfiguration));
-            } catch (JAXBException e) {
-                throw new IOException(e.getMessage(), e);
+            } catch (JAXBException ex) {
+                throw new IOException("unexpected Model serialization issue", ex);
             }
         }
 

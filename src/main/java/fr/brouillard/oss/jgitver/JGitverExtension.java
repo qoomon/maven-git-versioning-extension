@@ -63,10 +63,10 @@ public class JGitverExtension extends AbstractMavenLifecycleParticipant {
 
             String newVersion = null;
             try {
-                newVersion = JGitverUtils.calculateVersionForProject(rootProject, mavenSession.getUserProperties()
-                        , logger).getCalculatedVersion();
-            } catch (IOException e) {
-                throw new MavenExecutionException(e.getMessage(), e);
+                newVersion = JGitverUtils.calculateVersionForProject(rootProject, mavenSession.getUserProperties(), logger)
+                        .getCalculatedVersion();
+            } catch (IOException ex) {
+                throw new MavenExecutionException("failure calculating version from git information", ex);
             }
 
             // Let's modify in memory resolved projects model
@@ -87,8 +87,8 @@ public class JGitverExtension extends AbstractMavenLifecycleParticipant {
 
             try {
                 JGitverUtils.attachModifiedPomFilesToTheProject(projects, newProjectVersions, mavenSession, logger);
-            } catch (IOException | XmlPullParserException e) {
-                throw new MavenExecutionException(e.getMessage(), e);
+            } catch (IOException | XmlPullParserException ex) {
+                throw new MavenExecutionException("cannot attach updated POMs during project execution", ex);
             }
         }
 
@@ -107,8 +107,8 @@ public class JGitverExtension extends AbstractMavenLifecycleParticipant {
             }
         } catch (Throwable error) {
             if ((error instanceof NoSuchMethodError) || (error instanceof NoSuchMethodException)) {
-                logger.warn("your maven version is <= 3.2.0 ; you should upgrade to enable jgitver-maven-plugin full " +
-                        "integration");
+                logger.warn("your maven version is <= 3.2.0 ; you should upgrade to enable jgitver-maven-plugin full "
+                        + "integration");
             } else {
                 // rethrow
                 throw error;
@@ -117,8 +117,8 @@ public class JGitverExtension extends AbstractMavenLifecycleParticipant {
 
         if (allProjects == null && multiModule) {
             // warn only in case of multimodules
-            logger.warn("maven object model partially initialized, " + "jgitver-maven-plugin will use filtered list " +
-                    "of maven projects in case reactor was filtered " + "with -pl");
+            logger.warn("maven object model partially initialized, " + "jgitver-maven-plugin will use filtered list "
+                    + "of maven projects in case reactor was filtered " + "with -pl");
         }
 
         return projects;

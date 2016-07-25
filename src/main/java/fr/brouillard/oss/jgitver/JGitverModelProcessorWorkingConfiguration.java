@@ -35,10 +35,6 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
 /**
- * Copyright (C) 2016 Yuriy Zaplavnov [https://github.com/xeagle2]
- * is original author of current class implementation and approach to use maven extension strategy
- * instead of maven lifecycle participants.
- * <p>
  * Works in conjunction with JGitverModelProcessor.
  */
 @XmlRootElement(name = "workingConfiguration")
@@ -85,6 +81,14 @@ public class JGitverModelProcessorWorkingConfiguration {
         this.newProjectVersions = newProjectVersions;
     }
 
+    /**
+     * Serializes as a String the given configuration object. 
+     * @param workingConfiguration the object to serialize
+     * @return a non null String representation of the given object serialized 
+     * @throws JAXBException in case the given object could not be serialized by JAXB
+     * @throws IOException if the serialized form cannot be written
+     * @see JGitverModelProcessorWorkingConfiguration#serializeFrom(String)
+     */
     public static String serializeTo(JGitverModelProcessorWorkingConfiguration workingConfiguration) throws
             JAXBException, IOException {
         JAXBContext jaxbContext = JAXBContext.newInstance(JGitverModelProcessorWorkingConfiguration.class, GAV.class);
@@ -98,6 +102,13 @@ public class JGitverModelProcessorWorkingConfiguration {
         return byteArrayOutputStream.toString();
     }
 
+    /**
+     * De-serializes the given string as a {@link JGitverModelProcessorWorkingConfiguration}.
+     * @param content the string to de-serialize
+     * @return a non null configuration object
+     * @throws JAXBException if the given string could not be interpreted by JAXB 
+     * @throws IOException if the content of the serialized object could not be read in memory
+     */
     public static JGitverModelProcessorWorkingConfiguration serializeFrom(String content) throws JAXBException,
             IOException {
         JAXBContext jaxbContext = JAXBContext.newInstance(JGitverModelProcessorWorkingConfiguration.class, GAV.class);
@@ -107,8 +118,7 @@ public class JGitverModelProcessorWorkingConfiguration {
         ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(content.getBytes());
 
         try (BufferedInputStream bufferedInputStream = new BufferedInputStream(byteArrayInputStream)) {
-            workingConfiguration = (JGitverModelProcessorWorkingConfiguration) unmarshaller.unmarshal
-                    (bufferedInputStream);
+            workingConfiguration = (JGitverModelProcessorWorkingConfiguration) unmarshaller.unmarshal(bufferedInputStream);
         }
 
         return workingConfiguration;

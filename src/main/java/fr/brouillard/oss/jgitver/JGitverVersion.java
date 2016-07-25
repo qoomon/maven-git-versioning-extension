@@ -18,10 +18,7 @@
 package fr.brouillard.oss.jgitver;
 
 /**
- * Copyright (C) 2016 Yuriy Zaplavnov [https://github.com/xeagle2]
- * is original author of current class implementation and approach to use maven extension strategy
- * instead of maven lifecycle participants.
- * <p>Works in conjunction with JGitverModelProcessor.
+ * TODO remove.
  */
 public class JGitverVersion {
     private final GitVersionCalculator gitVersionCalculator;
