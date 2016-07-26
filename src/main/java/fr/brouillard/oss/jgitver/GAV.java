@@ -15,8 +15,6 @@
  */
 package fr.brouillard.oss.jgitver;
 
-import java.util.Optional;
-
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;
 import org.apache.maven.project.MavenProject;
@@ -101,8 +99,12 @@ public class GAV { // SUPPRESS CHECKSTYLE AbbreviationAsWordInName
      * @return a new GAV object
      */
     public static GAV from(Model model) {
-        String groupId = (model.getGroupId() != null)?model.getGroupId():(model.getParent() != null?model.getParent().getGroupId():null);
-        String version = (model.getVersion() != null)?model.getVersion():(model.getParent() != null?model.getParent().getVersion():null);
+        String groupId = (model.getGroupId() != null) 
+                ? model.getGroupId() 
+                : (model.getParent() != null ? model.getParent().getGroupId() : null);
+        String version = (model.getVersion() != null) 
+                ? model.getVersion() 
+                : (model.getParent() != null ? model.getParent().getVersion() : null);
         
         return new GAV(groupId, model.getArtifactId(), version);
     }

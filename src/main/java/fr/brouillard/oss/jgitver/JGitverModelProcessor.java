@@ -131,8 +131,8 @@ public class JGitverModelProcessor extends DefaultModelProcessor {
         Source source = Source.class.cast(options.get(ModelProcessor.SOURCE));
         File relativePath = new File(source.getLocation()).getParentFile().getCanonicalFile();
 
-        if (StringUtils.containsIgnoreCase(relativePath.getCanonicalPath()
-                , workingConfiguration.getMultiModuleProjectDirectory().getCanonicalPath())) {
+        if (StringUtils.containsIgnoreCase(relativePath.getCanonicalPath(),
+                workingConfiguration.getMultiModuleProjectDirectory().getCanonicalPath())) {
             
             workingConfiguration.getNewProjectVersions().put(
                     GAV.from(model.clone()), workingConfiguration.getCalculatedVersion());
