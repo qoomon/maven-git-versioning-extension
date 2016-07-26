@@ -131,10 +131,11 @@ public class JGitverModelProcessor extends DefaultModelProcessor {
         Source source = Source.class.cast(options.get(ModelProcessor.SOURCE));
         File relativePath = new File(source.getLocation()).getParentFile().getCanonicalFile();
 
-        if (StringUtils.containsIgnoreCase(relativePath.getCanonicalPath(),
-                workingConfiguration.getMultiModuleProjectDirectory().getCanonicalPath())) {
-            workingConfiguration.getNewProjectVersions().put(GAV.from(model.clone()),
-                    workingConfiguration.getCalculatedVersion());
+        if (StringUtils.containsIgnoreCase(relativePath.getCanonicalPath()
+                , workingConfiguration.getMultiModuleProjectDirectory().getCanonicalPath())) {
+            
+            workingConfiguration.getNewProjectVersions().put(
+                    GAV.from(model.clone()), workingConfiguration.getCalculatedVersion());
 
             if (Objects.nonNull(model.getVersion())) {
                 // TODO evaluate how to set the version only when it was originally set in the pom file
