@@ -1,6 +1,8 @@
 # jgitver-maven-plugin 
 
 [![Build Status](https://travis-ci.org/jgitver/jgitver-maven-plugin.svg?branch=master)](https://travis-ci.org/jgitver/jgitver-maven-plugin)
+[![CircleCI Build Status](https://circleci.com/gh/jgitver/jgitver-maven-plugin.svg?style=shield&circle-token=9c75a2389afd0bd18f508ce30bceb3e5728b4ce8)](https://circleci.com/gh/jgitver/jgitver-maven-plugin)
+
 
 > *__IntelliJ IDEA users__*: due to [IDEA-155733](https://youtrack.jetbrains.com/issue/IDEA-155733) update your IDE to version >= `2016.1.3` and use jgtiver-maven-plugin >= `0.1.1`  
 >  
