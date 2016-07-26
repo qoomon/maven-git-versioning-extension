@@ -30,7 +30,6 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
-import org.apache.maven.MavenExecutionException;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Plugin;
@@ -200,7 +199,10 @@ public final class JGitverUtils {
      *
      * @param projects           projects.
      * @param newProjectVersions newProjectVersions.
-     * @throws MavenExecutionException if an error occurs while attaching the updated poms to the project
+     * @param mavenSession the current maven build session
+     * @param logger the logger to report to 
+     * @throws IOException if project model cannot be read correctly
+     * @throws XmlPullParserException if project model cannot be interpreted correctly
      */
     public static void attachModifiedPomFilesToTheProject(List<MavenProject> projects, Map<GAV, String>
             newProjectVersions, MavenSession mavenSession, Logger logger) throws IOException, XmlPullParserException {
