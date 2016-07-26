@@ -15,15 +15,18 @@
 #
 
 machine:
+  services:
+    - docker
   java:
     version: oraclejdk8
 
 dependencies:
   pre:
-    - wget http://repo1.maven.org/maven2/org/jdom/jdom/1.1/jdom-1.1.jar
-    - mvn install:install-file -DgroupId=jdom -DartifactId=jdom -Dversion=1.1 -Dpackaging=jar -Dfile=jdom-1.1.jar
-    
+    - echo dependencies pre
+
+  override:
+    - echo dependencies override
+
 test:
   override:
-    - mvn --version
-    - mvn -Prun-its verify
+    - docker run -v $(pwd):/root/sources -w /root/sources maven:3.3.9-jdk-8 mvn -Prun-its clean verify 
