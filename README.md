@@ -30,13 +30,14 @@ Since version `0.3.0` [jgitver-maven-plugin](#jgitver-maven-plugin) needs to be 
 1. Create a directory `.mvn` under the root directory of your project.
 1. Create file `.mvn/extensions.xml`
 1. Put the following content to `.mvn/extensions.xml` (adapt the version).
+
     ```
     <extensions xmlns="http://maven.apache.org/EXTENSIONS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:schemaLocation="http://maven.apache.org/EXTENSIONS/1.0.0 http://maven.apache.org/xsd/core-extensions-1.0.0.xsd">
       <extension>
         <groupId>fr.brouillard.oss</groupId>
         <artifactId>jgitver-maven-plugin</artifactId>
-        <version>0.3.0-SNAPSHOT</version>
+        <version>0.3.0-alpha2</version>
       </extension>
     </extensions>
     ```
