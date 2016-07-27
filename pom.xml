@@ -329,6 +329,7 @@
                             <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
                             <pomIncludes>
                                 <pomInclude>*/pom.xml</pomInclude>
+                                <pomInclude>issues/*/pom.xml</pomInclude>
                             </pomIncludes>
                             <pomExcludes>   <!-- temporary for jgitver-maven-plugin#23 -->
                                 <pomExclude>pom-non-qualifier-branches-list-on-feature-it/pom.xml</pomExclude>

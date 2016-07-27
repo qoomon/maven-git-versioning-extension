@@ -143,6 +143,7 @@ public class JGitverModelProcessor extends DefaultModelProcessor {
             }
 
             if (Objects.nonNull(model.getParent())) {
+                // if the parent is part of the multi module project, let's update the parent version 
                 File relativePathParent = new File(
                         relativePath.getCanonicalPath() + File.separator + model.getParent().getRelativePath())
                                 .getParentFile().getCanonicalFile();
@@ -150,7 +151,10 @@ public class JGitverModelProcessor extends DefaultModelProcessor {
                         workingConfiguration.getMultiModuleProjectDirectory().getCanonicalPath())) {
                     model.getParent().setVersion(workingConfiguration.getCalculatedVersion());
                 }
-            } else {
+            } 
+            
+            // we should only register the plugin once, on the main project
+            if (relativePath.getCanonicalPath().equals(workingConfiguration.getMultiModuleProjectDirectory().getCanonicalPath())) { 
                 if (Objects.isNull(model.getBuild())) {
                     model.setBuild(new Build());
                 }

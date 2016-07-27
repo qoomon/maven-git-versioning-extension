@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
 
     Copyright (C) 2016 Matthieu Brouillard [http://oss.brouillard.fr/jgitver-maven-plugin] (matthieu@brouillard.fr)
@@ -15,11 +16,17 @@
     limitations under the License.
 
 -->
-<extensions xmlns="http://maven.apache.org/EXTENSIONS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/EXTENSIONS/1.0.0 http://maven.apache.org/xsd/core-extensions-1.0.0.xsd">
-  <extension>
-    <groupId>fr.brouillard.oss</groupId>
-    <artifactId>jgitver-maven-plugin</artifactId>
-    <version>0.3.0-alpha2</version>
-  </extension>
-</extensions>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>child</artifactId>
+    <packaging>pom</packaging>
+
+    <parent>
+        <groupId>fr.brouillard.oss.it.multi.with.parents</groupId>
+        <artifactId>main</artifactId>
+        <version>0</version>
+    </parent>
+
+    <description>child::A simple IT verifying the basic use case.</description>
+</project>
