@@ -192,6 +192,11 @@ Think to modify your IDE settings regarding maven version ; if required do not u
 
 - `mvn -Prun-its clean install`
 
+or using docker
+
+- `docker run -v $(pwd):/root/sources -w /root/sources maven:3.3.9-jdk-8 mvn -Prun-its clean verify` 
+
+
 ### Release
 
 - `mvn -Poss clean install`: this will simulate a full build for oss delivery (javadoc, source attachement, GPG signature, ...)
