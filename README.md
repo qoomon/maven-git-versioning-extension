@@ -46,7 +46,7 @@ Since version `0.3.0` [jgitver-maven-plugin](#jgitver-maven-plugin) needs to be 
 ### Configuration
 
 In order to control [jgitver-maven-plugin](#jgitver-maven-plugin) behavior, you can provide a configuration 
-file under `$rootProjectDir/.mvn/jgtiver.config.xml` having the following format:
+file under `$rootProjectDir/.mvn/jgitver.config.xml` having the following format:
 
 ```
 <configuration>

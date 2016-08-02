@@ -31,7 +31,7 @@ public class ConfigurationLoader {
      * Loads a Configuration object from the root directory.
      * @param rootDirectory the root directory of the maven project
      * @param logger the logger to report activity
-     * @return a non null Configuration object from the file $rootDirectory/.mvn/jgtiver.config.xml 
+     * @return a non null Configuration object from the file $rootDirectory/.mvn/jgitver.config.xml
      *     or a default one with default values if the configuration file does not exist
      * @throws MavenExecutionException if the file exists but cannot be read correctly
      */
@@ -39,13 +39,16 @@ public class ConfigurationLoader {
         JAXBContext jaxbContext;
         Unmarshaller unmarshaller;
         File extensionMavenCoreDirectory = new File(rootDirectory, ".mvn");
-        File configurationXml = new File(extensionMavenCoreDirectory, "jgtiver.config.xml");
-        try {
-            if (!configurationXml.exists() || !configurationXml.canRead()) {
+        File configurationXml = new File(extensionMavenCoreDirectory, "jgitver.config.xml");
+        if (!configurationXml.canRead()) {
+            logger.debug("no configuration file found under " + configurationXml + ", looking under backwards-compatible file name");
+            configurationXml = new File(extensionMavenCoreDirectory, "jgtiver.config.xml");
+            if (!configurationXml.canRead()) {
                 logger.debug("no configuration file found under " + configurationXml + ", using defaults");
                 return new Configuration();
             }
-            
+        }
+        try {
             logger.info("using jgitver configuration file: " + configurationXml);
             jaxbContext = JAXBContext.newInstance(Configuration.class);
             unmarshaller = jaxbContext.createUnmarshaller();
