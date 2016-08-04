@@ -1,0 +1,1 @@
+This file and the .mvn directory is required so that jgitver-maven-plugin does retrieve the jgitver-maven-plugin root directory as MultiDirectory.
