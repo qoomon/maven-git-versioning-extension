@@ -124,12 +124,22 @@ public class JGitverModelProcessor extends DefaultModelProcessor {
             throw new IOException("cannot build a Model object using jgitver", ex);
         }
 
-        if (Objects.isNull(options.get(ModelProcessor.SOURCE))) {
+        Source source = (Source) options.get(ModelProcessor.SOURCE);
+        //logger.debug( "JGitverModelProcessor.provisionModel source="+source );
+        if (source == null) {
             return model;
         }
 
-        Source source = Source.class.cast(options.get(ModelProcessor.SOURCE));
-        File relativePath = new File(source.getLocation()).getParentFile().getCanonicalFile();
+        File location = new File(source.getLocation());
+        //logger.debug( "JGitverModelProcessor.provisionModel location="+location );
+        if (!location.isFile()) {
+            // their JavaDoc says Source.getLocation "could be a local file path, a URI or just an empty string."
+            // if it doesn't resolve to a file then calling .getParentFile will throw an exception,
+            // but if it doesn't resolve to a file then it isn't under getMultiModuleProjectDirectory,
+            return model; // therefore the model shouldn't be modified.
+        }
+
+        File relativePath = location.getParentFile().getCanonicalFile();
 
         if (StringUtils.containsIgnoreCase(relativePath.getCanonicalPath(),
                 workingConfiguration.getMultiModuleProjectDirectory().getCanonicalPath())) {

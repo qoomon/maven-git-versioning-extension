@@ -86,6 +86,14 @@
                 <role>contributor</role>
             </roles>
         </developer>
+        <developer>
+            <id>JHeiner</id>
+            <name>Jeremy Heiner</name>
+            <url>https://github.com/JHeiner</url>
+            <roles>
+                <role>contributor</role>
+            </roles>
+        </developer>
     </developers>
 
     <dependencies>
@@ -203,6 +211,7 @@
                         <exclude>**/README</exclude>
                         <exclude>**/LICENSE</exclude>
                         <exclude>.*</exclude>
+                        <exclude>**/.keepgit</exclude>
                         <exclude>src/quality/**</exclude>
                         <exclude>src/it/resources/**</exclude>
                         <exclude>src/it/**/invoker.properties</exclude>
@@ -332,6 +341,10 @@
                         <configuration>
                             <debug>false</debug>
                             <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
+                            <setupIncludes>
+                              <setupInclude>issues/*-pre/pom.xml</setupInclude>
+                              <setupInclude>*-pre/pom.xml</setupInclude>
+                            </setupIncludes>
                             <pomIncludes>
                                 <pomInclude>*/pom.xml</pomInclude>
                                 <pomInclude>issues/*/pom.xml</pomInclude>
