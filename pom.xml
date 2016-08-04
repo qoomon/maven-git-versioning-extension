@@ -128,12 +128,18 @@
         <dependency>
             <groupId>fr.brouillard.oss</groupId>
             <artifactId>jgitver</artifactId>
-            <version>0.2.0-alpha1</version>
+            <version>0.2.0-bp-alpha1</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
             <version>3.4</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>19.0</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -342,8 +348,8 @@
                             <debug>false</debug>
                             <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
                             <setupIncludes>
-                              <setupInclude>issues/*-pre/pom.xml</setupInclude>
-                              <setupInclude>*-pre/pom.xml</setupInclude>
+                                <setupInclude>issues/*-pre/pom.xml</setupInclude>
+                                <setupInclude>*-pre/pom.xml</setupInclude>
                             </setupIncludes>
                             <pomIncludes>
                                 <pomInclude>*/pom.xml</pomInclude>

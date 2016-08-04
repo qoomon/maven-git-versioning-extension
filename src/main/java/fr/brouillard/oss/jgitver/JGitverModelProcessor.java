@@ -22,10 +22,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 import javax.xml.bind.JAXBException;
 
@@ -106,7 +108,16 @@ public class JGitverModelProcessor extends DefaultModelProcessor {
                             .setUseDistance(cfg.useCommitDistance)
                             .setUseGitCommitId(cfg.useGitCommitId)
                             .setGitCommitIdLength(cfg.gitCommitIdLength)
+                            .setUseDefaultBranchingPolicy(cfg.useDefaultBranchingPolicy)
                             .setNonQualifierBranches(cfg.nonQualifierBranches);
+                        
+                        if (cfg.branchPolicies != null) {
+                            List<BranchingPolicy> policies = cfg.branchPolicies.stream()
+                                    .map(bp -> new BranchingPolicy(bp.pattern, bp.transformations))
+                                    .collect(Collectors.toList());
+                            
+                            gitVersionCalculator.setQualifierBranchingPolicies(policies);
+                        }
 
                         JGitverVersion jGitverVersion = new JGitverVersion(gitVersionCalculator);
                         JGitverUtils.fillPropertiesFromMetadatas(mavenSession.getUserProperties(), jGitverVersion, logger);
@@ -128,13 +139,11 @@ public class JGitverModelProcessor extends DefaultModelProcessor {
         }
 
         Source source = (Source) options.get(ModelProcessor.SOURCE);
-        //logger.debug( "JGitverModelProcessor.provisionModel source="+source );
         if (source == null) {
             return model;
         }
 
         File location = new File(source.getLocation());
-        //logger.debug( "JGitverModelProcessor.provisionModel location="+location );
         if (!location.isFile()) {
             // their JavaDoc says Source.getLocation "could be a local file path, a URI or just an empty string."
             // if it doesn't resolve to a file then calling .getParentFile will throw an exception,

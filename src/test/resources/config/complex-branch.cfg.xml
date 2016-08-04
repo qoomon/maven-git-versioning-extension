@@ -1,0 +1,18 @@
+<configuration>
+    <mavenLike>false</mavenLike>
+    <branchPolicies>
+        <branchPolicy>
+            <pattern>(master)</pattern>
+            <transformations>
+                <transformation>IGNORE</transformation>
+            </transformations>
+        </branchPolicy>
+        <branchPolicy>
+            <pattern>(.*)</pattern>
+            <transformations>
+                <transformation>REMOVE_UNEXPECTED_CHARS</transformation>
+                <transformation>UPPERCASE_EN</transformation>
+            </transformations>
+        </branchPolicy>
+    </branchPolicies>
+</configuration>

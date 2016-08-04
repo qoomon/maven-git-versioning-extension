@@ -18,6 +18,7 @@ package fr.brouillard.oss.jgitver.cfg;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -52,8 +53,17 @@ public class ConfigurationLoader {
             logger.info("using jgitver configuration file: " + configurationXml);
             jaxbContext = JAXBContext.newInstance(Configuration.class);
             unmarshaller = jaxbContext.createUnmarshaller();
-            Configuration c = (Configuration) unmarshaller.unmarshal(new FileInputStream(configurationXml));
-            return c;
+            final FileInputStream is = new FileInputStream(configurationXml);
+            try {
+                Configuration c = (Configuration) unmarshaller.unmarshal(is);
+                return c;
+            } finally {
+                try {
+                    is.close();
+                } catch (IOException ignore) {
+                    // ignore
+                }
+            }
         } catch (JAXBException | FileNotFoundException ex) {
             throw new MavenExecutionException("cannot read configuration file " + configurationXml, ex);
         }

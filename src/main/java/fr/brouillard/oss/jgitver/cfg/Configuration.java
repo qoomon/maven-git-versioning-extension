@@ -27,7 +27,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
 public class Configuration {
-    @XmlElement
+    @XmlElement(name = "mavenLike")
     public boolean mavenLike = true;
     @XmlElement
     public boolean autoIncrementPatch = true;
@@ -35,6 +35,8 @@ public class Configuration {
     public boolean useCommitDistance = false;
     @XmlElement
     public boolean useDirty = false;
+    @XmlElement
+    public boolean useDefaultBranchingPolicy = true;
     @XmlElement
     public boolean useGitCommitId = false;
     @XmlElement
@@ -44,4 +46,7 @@ public class Configuration {
     @XmlElementWrapper(name = "exclusions")
     @XmlElement(name = "exclusion")
     public List<String> exclusions = new LinkedList<>();
+    @XmlElementWrapper(name = "branchPolicies")
+    @XmlElement(name = "branchPolicy")
+    public List<BranchPolicy> branchPolicies;
 }
