@@ -57,6 +57,9 @@ file under `$rootProjectDir/.mvn/jgitver.config.xml` having the following format
     <useGitCommitId>true/false</useGitCommitId>
     <gitCommitIdLength>integer</gitCommitIdLength>  <!-- between [8,40] -->
     <nonQualifierBranches>master</nonQualifierBranches> <!-- comma separated, example "master,integration" -->
+    <exclusions>    <!-- Optional list of directory path -->
+      <exclusion>relative directory path</exclusion>    <!-- relative path from project root directory -->
+    </exclusions>
 </configuration>
 ```
 

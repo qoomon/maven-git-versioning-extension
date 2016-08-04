@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
+
 import javax.xml.bind.JAXBException;
 
 import org.apache.commons.lang3.StringUtils;
@@ -44,7 +45,6 @@ import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.logging.Logger;
 
 import fr.brouillard.oss.jgitver.cfg.Configuration;
-import fr.brouillard.oss.jgitver.cfg.ConfigurationLoader;
 
 /**
  * Replacement ModelProcessor using jgitver while loading POMs in order to adapt versions.
@@ -56,6 +56,9 @@ public class JGitverModelProcessor extends DefaultModelProcessor {
 
     @Requirement
     private LegacySupport legacySupport = null;
+    
+    @Requirement
+    private JGitverConfiguration configurationProvider;
 
     private volatile JGitverModelProcessorWorkingConfiguration workingConfiguration;
 
@@ -93,7 +96,7 @@ public class JGitverModelProcessor extends DefaultModelProcessor {
 
                     logger.debug("using " + JGitverUtils.EXTENSION_PREFIX + " on directory: " + rootDirectory);
                     
-                    Configuration cfg = ConfigurationLoader.loadFromRoot(rootDirectory, logger);
+                    Configuration cfg = configurationProvider.getConfiguration();
 
                     try (GitVersionCalculator gitVersionCalculator = GitVersionCalculator.location(rootDirectory)) {
                         gitVersionCalculator
@@ -137,6 +140,11 @@ public class JGitverModelProcessor extends DefaultModelProcessor {
             // if it doesn't resolve to a file then calling .getParentFile will throw an exception,
             // but if it doesn't resolve to a file then it isn't under getMultiModuleProjectDirectory,
             return model; // therefore the model shouldn't be modified.
+        }
+        
+        if (configurationProvider.ignore(location)) {
+            logger.debug("file " + location + " ignored by configuration");
+            return model;
         }
 
         File relativePath = location.getParentFile().getCanonicalFile();
