@@ -128,7 +128,7 @@
         <dependency>
             <groupId>fr.brouillard.oss</groupId>
             <artifactId>jgitver</artifactId>
-            <version>0.2.0-bp-alpha1</version>
+            <version>0.2.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
