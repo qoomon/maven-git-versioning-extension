@@ -60,6 +60,18 @@ file under `$rootProjectDir/.mvn/jgitver.config.xml` having the following format
     <exclusions>    <!-- Optional list of directory path -->
       <exclusion>relative directory path</exclusion>    <!-- relative path from project root directory -->
     </exclusions>
+    <useDefaultBranchingPolicy>true/false</useDefaultBranchingPolicy>   <!-- uses jgitver#BranchingPolicy#DEFAULT_FALLBACK as fallback branch policy-->
+    <branchPolicies>
+        <branchPolicy>
+            <pattern>pattern</pattern>                  <!-- regex pattern -->
+            <!-- list of transformations to apply, if empty, defaults to REPLACE_UNEXPECTED_CHARS_UNDERSCORE, LOWERCASE_EN -->
+            <transformations>                           
+                <transformation>NAME</transformation> <!-- transformation name, one of jgitver#fr.brouillard.oss.jgitver.metadata.Metadatas -->
+                ...
+            </transformations>
+        </branchPolicy>
+        ...
+    </branchPolicies>
 </configuration>
 ```
 
@@ -86,6 +98,8 @@ You can then use them as standard maven properties in your build:
             </goals>
             <configuration>
                 <tasks>
+                          
+                    <echo>version calculated: ${jgitver.calculated_version}</echo>
                     <echo>dirty: ${jgitver.dirty}</echo>
                     <echo>head_committer_name: ${jgitver.head_committer_name}</echo>
                     <echo>head_commiter_email: ${jgitver.head_commiter_email}</echo>
@@ -114,6 +128,7 @@ resulted in my case
 
 ```
 [INFO] Executing tasks
+     [echo] version calculated: 0.2.0-SNAPSHOT
      [echo] dirty: true
      [echo] head_committer_name: Matthieu Brouillard
      [echo] head_commiter_email: matthieu@brouillard.fr
