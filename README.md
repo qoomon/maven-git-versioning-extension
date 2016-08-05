@@ -19,7 +19,7 @@ It calculates the version, a little bit like `git describe` would do but in a mo
 
 Here is an illustration of the capabilities of the plugin
 
-![Example](src/doc/images/jgitver-maven-like.gif?raw=true "Example")
+![Example](src/doc/images/jgitver-maven-plugin-homepage.png?raw=true "Example")
 
 ## Usage
 
