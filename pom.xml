@@ -219,6 +219,7 @@
                         <exclude>.*</exclude>
                         <exclude>**/.keepgit</exclude>
                         <exclude>src/quality/**</exclude>
+                        <exclude>src/doc/images/**</exclude>
                         <exclude>src/it/resources/**</exclude>
                         <exclude>src/it/**/invoker.properties</exclude>
                         <exclude>src/test/resources/**</exclude>
