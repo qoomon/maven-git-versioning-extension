@@ -63,7 +63,10 @@ public class JGitverConfigurationComponent implements JGitverConfiguration {
     }
     
     private void initFromRootDirectory(File rootDirectory, List<String> exclusions) {
-        exclusions.stream().map(dirName -> new File(rootDirectory, dirName)).forEach(excludedDirectories::add);
+        exclusions.stream().map(dirName -> new File(rootDirectory, dirName)).forEach(dir -> {
+            excludedDirectories.add(dir);
+            logger.debug("ignoring directory (& sub dirs): " + dir);
+        });
     }
     
     @Override

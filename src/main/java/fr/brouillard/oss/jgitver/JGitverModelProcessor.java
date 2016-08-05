@@ -158,8 +158,10 @@ public class JGitverModelProcessor extends DefaultModelProcessor {
 
         File relativePath = location.getParentFile().getCanonicalFile();
 
+
         if (StringUtils.containsIgnoreCase(relativePath.getCanonicalPath(),
                 workingConfiguration.getMultiModuleProjectDirectory().getCanonicalPath())) {
+            logger.debug("handling version of project Model from " + location);
             
             workingConfiguration.getNewProjectVersions().put(
                     GAV.from(model.clone()), workingConfiguration.getCalculatedVersion());
@@ -268,6 +270,8 @@ public class JGitverModelProcessor extends DefaultModelProcessor {
             } catch (JAXBException ex) {
                 throw new IOException("unexpected Model serialization issue", ex);
             }
+        } else {
+            logger.debug("skipping Model from " + location);
         }
 
         return model;
