@@ -157,34 +157,22 @@ resulted in my case
 
 ## Example
 
-If you want to give it a try you can use the following script that will setup a demo project.
-
-Then play around with it doing:
-
-- `mvn validate`
-- `mvn install`
-- `git checkout XXXX`
+If you want to give it a try you can use the following script that will setup a demo project under `/tmp/jgitver-tester`
 
 ```
-cd /d
-rm -rf /d/demo-jgitver-maven-plugin
-mkdir -p /d/demo-jgitver-maven-plugin
-cd /d/demo-jgitver-maven-plugin
-git init
-mkdir .mvn
-cat > .mvn/extensions.xml << EOF
-<extensions xmlns="http://maven.apache.org/EXTENSIONS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/EXTENSIONS/1.0.0 http://maven.apache.org/xsd/core-extensions-1.0.0.xsd">
-  <extension>
-    <groupId>fr.brouillard.oss</groupId>
-    <artifactId>jgitver-maven-plugin</artifactId>
-    <version>0.3.0-SNAPSHOT,)</version>
-  </extension>
-</extensions>
-EOF
+# let's create a fake maven project under /tmp
+cd /tmp
+mvn archetype:generate -B -DarchetypeGroupId=org.apache.maven.archetypes -DarchetypeArtifactId=maven-archetype-quickstart \
+  -DarchetypeVersion=1.1 -DgroupId=com.company -DartifactId=jgitver-tester -Dversion=0 -Dpackage=com.company.project
+cd jgitver-tester
+
+# init the created project with jgitver-maven-plugin
+sh -c "$(wget https://raw.githubusercontent.com/jgitver/jgitver-maven-plugin/master/src/doc/scripts/install.sh -O -)"
+
+# let's do some modifications/commits/tags
 echo A > content
-git add pom.xml
-git add content
+git init
+git add .
 git commit -m "initial commit"
 echo B > content && git add -u && git commit -m "added B data"
 git tag 1.0 -m "release 1.0"
@@ -195,6 +183,15 @@ git checkout master
 echo E > content && git add -u && git commit -m "added E data"
 mvn validate
 ```
+
+Then play around with it doing:
+
+- `mvn validate`
+- `mvn install`
+- `git checkout 1.0`
+- `mvn validate`
+- `git checkout cool-feature`
+- `mvn validate`
 
 ## Requirements
 
@@ -211,6 +208,11 @@ Think to modify your IDE settings regarding maven version ; if required do not u
 - Intellij IDEA: tested with 2016.1.3
 
 ## Build & release
+
+### Github Markdown rendering
+
+Before pushing try to always verify that the modifications pushed in MD files will be correctly rendered by Github.  
+For that purpose you can use [grip](https://github.com/joeyespo/grip).
 
 ### Normal build
 
@@ -232,17 +234,18 @@ or using docker
 
 ## Known issues
 
-### maven report my project version to be 0 (or the one set in the pom.xml)
+### maven reports my project version to be 0 (or the one set in the pom.xml)
 
-If your version is not calculated correctly by maven, there are good chances that the plugin is not active.
+If your version is not calculated correctly by maven/jgitver, there are good chances that the plugin is not active.  
 Please verify that you are using maven >= 3.3.2.
 
 ### the invoker tests of my maven plugin project do not work anymore
 
-If you develop a maven plugin project, you normally run maven-invoker-plugin to test your plugin.
+If you develop a maven plugin project, you normally run maven-invoker-plugin to test your plugin.  
 Using default configuration, maven-invoker-plugin will use a temporary local repository under `target/local-repo` and the IT tests will be executed from `target/it/XYZ`.
 In this context, when executing tests, maven will try to activate extensions starting from the `target/it/XYZ` directory ; and it will find your extensions definition in the root directory of the project. This will lead in the activation of `jgitver-maven-plugin` for all your IT projects AND for the poms inside the temporary local repository under `target/local-repository`.
-To avoid such behavior, you need to tell `jgitver-maven-plugin` to ignore some directories. If you do not have already a jgitver configuration file, create one under `.mvn/jgitver.config.xml` and place some exclusions in there:
+
+To avoid such behavior, you need to tell `jgitver-maven-plugin` to ignore some directories. If you do not have already a jgitver configuration file, create one under `.mvn/jgitver.config.xml` and declare some exclusions (see [configuration](#configuration)):
 
 ```
 <configuration>
@@ -254,3 +257,7 @@ To avoid such behavior, you need to tell `jgitver-maven-plugin` to ignore some d
 ```
 
 You can have a look at the configuration of [jgitver-maven-plugin](.mvn/jgitver.config.xml) itself.
+
+License
+
+jgitver-maven-plugin is delivered under the [Apache Licence, Version 2](https://opensource.org/licenses/Apache-2.0)
