@@ -1,18 +1,14 @@
-# jgitver-maven-plugin 
+# jgitver-maven-plugin
 
 [![Build Status](https://travis-ci.org/jgitver/jgitver-maven-plugin.svg?branch=master)](https://travis-ci.org/jgitver/jgitver-maven-plugin)
 [![CircleCI Build Status](https://circleci.com/gh/jgitver/jgitver-maven-plugin.svg?style=shield&circle-token=9c75a2389afd0bd18f508ce30bceb3e5728b4ce8)](https://circleci.com/gh/jgitver/jgitver-maven-plugin)
 [![Open Hub project report for jgitver-maven-plugin](https://www.openhub.net/p/jgitver-maven-plugin/widgets/project_thin_badge.gif)](https://www.openhub.net/p/jgitver-maven-plugin?ref=sample)
 
-> *__IntelliJ IDEA users__*: due to [IDEA-155733](https://youtrack.jetbrains.com/issue/IDEA-155733) update your IDE to version >= `2016.1.3` and use jgtiver-maven-plugin >= `0.1.1`  
->  
-> If you cannot update due to old perpetual licenses in use for example, as a workaround, you can move the plugin into a profile as described [here](#maven-dependency-management-is-broken-under-intellij-idea).
-
-This plugin allows to define the pom version of your project using the information from your git history. 
+This plugin allows to define the pom version of your project using the information from your git history.
 It calculates the version, a little bit like `git describe` would do but in a more efficient way for maven projects:
 
 - new commits have upper version than previous commit (in the way maven/semver interpret versions)
-- version calculation is based on git tags
+- version calculation is based on git tags & branches
 - git lightweight tags allow for intermediate version controlling between releases
     - allow to define what is the _next_ version pattern to use
 - minimal setup via maven extension
@@ -27,9 +23,23 @@ Here is an illustration of the capabilities of the plugin
 
 Since version `0.3.0` [jgitver-maven-plugin](#jgitver-maven-plugin) needs to be run as a maven core extension
 
+__via curl__
+
+from the root directory of your project, run:
+
+`sh -c "$(curl -fsSL https://raw.githubusercontent.com/jgitver/jgitver-maven-plugin/master/src/doc/scripts/install.sh)"`
+
+__via wget__
+
+from the root directory of your project, run:
+
+`sh -c "$(wget https://raw.githubusercontent.com/jgitver/jgitver-maven-plugin/master/src/doc/scripts/install.sh -O -)"`
+
+__manually__
+
 1. Create a directory `.mvn` under the root directory of your project.
 1. Create file `.mvn/extensions.xml`
-1. Put the following content to `.mvn/extensions.xml` (adapt the version).
+1. Put the following content to `.mvn/extensions.xml` (adapt to [latest version](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22fr.brouillard.oss%22%20a%3A%22jgitver-maven-plugin%22)).
 
     ```
     <extensions xmlns="http://maven.apache.org/EXTENSIONS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -37,15 +47,14 @@ Since version `0.3.0` [jgitver-maven-plugin](#jgitver-maven-plugin) needs to be 
       <extension>
         <groupId>fr.brouillard.oss</groupId>
         <artifactId>jgitver-maven-plugin</artifactId>
-        <version>0.3.0-alpha2</version>
+        <version>0.3.0</version>
       </extension>
     </extensions>
     ```
-1. Remove the old declarations/usages of [jgitver-maven-plugin](#jgitver-maven-plugin) from the project pom
 
 ### Configuration
 
-In order to control [jgitver-maven-plugin](#jgitver-maven-plugin) behavior, you can provide a configuration 
+In order to control [jgitver-maven-plugin](#jgitver-maven-plugin) behavior, you can provide a configuration
 file under `$rootProjectDir/.mvn/jgitver.config.xml` having the following format:
 
 ```
@@ -77,9 +86,6 @@ file under `$rootProjectDir/.mvn/jgitver.config.xml` having the following format
 
 Please consult [jgitver](https://github.com/jgitver/jgitver#configuration-modes--strategies) documentation to fully understand what the parameters do.
 
-**Known issues**
-1. Due to a Jenkins/Maven incompatibility feature might not work correctly due to Jenkins issue <a href="https://issues.jenkins-ci.org/browse/JENKINS-30058?jql=project%20%3D%20JENKINS%20AND%20status%20in%20(Open%2C%20%22In%20Progress%22%2C%20Reopened)%20AND%20component%20%3D%20maven-plugin%20AND%20text%20~%20%22extensions%22">JENKINS-30058</a>
-
 ### Available properties
 
 Since `0.2.0`, the plugin exposes git calculated properties available during the maven build.
@@ -98,7 +104,7 @@ You can then use them as standard maven properties in your build:
             </goals>
             <configuration>
                 <tasks>
-                          
+
                     <echo>version calculated: ${jgitver.calculated_version}</echo>
                     <echo>dirty: ${jgitver.dirty}</echo>
                     <echo>head_committer_name: ${jgitver.head_committer_name}</echo>
@@ -124,7 +130,7 @@ You can then use them as standard maven properties in your build:
 </plugin>
 ```
 
-resulted in my case 
+resulted in my case
 
 ```
 [INFO] Executing tasks
@@ -151,7 +157,7 @@ resulted in my case
 
 ## Example
 
-If you want to give it a try you can use the following script that will setup a demo project. 
+If you want to give it a try you can use the following script that will setup a demo project.
 
 Then play around with it doing:
 
@@ -172,7 +178,7 @@ cat > .mvn/extensions.xml << EOF
   <extension>
     <groupId>fr.brouillard.oss</groupId>
     <artifactId>jgitver-maven-plugin</artifactId>
-    <version>[0.3.0-SNAPSHOT,)</version>
+    <version>0.3.0-SNAPSHOT,)</version>
   </extension>
 </extensions>
 EOF
@@ -194,15 +200,15 @@ mvn validate
 
 ### Maven requirements
 
-[jgitver-maven-plugin](#jgitver-maven-plugin) requires at least maven-3.3.x to work correctly.
+[jgitver-maven-plugin](#jgitver-maven-plugin) requires at least maven-3.3.2 to work correctly.
 
-Think to modify your IDE settings regarding maven version ; if required do not use  the embedded maven version of your IDE but an external one that fulfill the maven minimal requirements.  
+Think to modify your IDE settings regarding maven version ; if required do not use the embedded maven version of your IDE but an external one that fulfill the maven minimal requirements.  
 
 ### Supported IDEs
 
 - Eclipse: tested with Eclipse Mars.2 Release 4.5.2
 - Netbeans: tested with NetBeans IDE 8.1 Build 201510222201
-- Intellij IDEA: tested with 2016.1.3, see [known issues](#known-issues) for lower versions
+- Intellij IDEA: tested with 2016.1.3
 
 ## Build & release
 
@@ -212,7 +218,7 @@ Think to modify your IDE settings regarding maven version ; if required do not u
 
 or using docker
 
-- `docker run -v $(pwd):/root/sources -w /root/sources maven:3.3.9-jdk-8 mvn -Prun-its clean verify` 
+- `docker run -v $(pwd):/root/sources -w /root/sources maven:3.3.9-jdk-8 mvn -Prun-its clean verify`
 
 
 ### Release
@@ -224,51 +230,27 @@ or using docker
 - `mvn -Poss,release -DskipTests deploy`
 - `git push --follow-tags origin master`
 
-> DISCLAIMER  
-> This plugin has been highly inspired by the work of [Brian Demers](https://github.com/bdemers) in his [maven-external-version](https://github.com/bdemers/maven-external-version/) plugin.  
-> I rewrote such a plugin mainly to simplify usage compared to a [maven-external-version](https://github.com/bdemers/maven-external-version/) extension (which I wrote also as [maven-external-version-jgitver](https://github.com/jgitver/maven-external-version-jgitver)).  
-> Such a simplification leads to:
-> - usage as pure extension without configuration 
-> - benefit from a direct configuration on the plugin allowing for example IDE completion & -D property usage 
-
 ## Known issues
 
-### Maven dependency management is broken under Intellij IDEA
+### maven report my project version to be 0 (or the one set in the pom.xml)
 
-> TODO verify with jgitver-maven-plugin >= 0.3.0
+If your version is not calculated correctly by maven, there are good chances that the plugin is not active.
+Please verify that you are using maven >= 3.3.2.
 
-due to [IDEA-155733](https://youtrack.jetbrains.com/issue/IDEA-155733), Intellij IDEA versions lower than `2016.1.3` _(this includes of course all 14.X & 15.X versions)_ do not handle correctly the plugin. This results in having the IDEA-maven integration being broken:
-- no update of dependencies
-- other issues, ...
- 
-If you can, upgrade to Intellij IDEA >= `2016.1.3`, [IDEA-155733](https://youtrack.jetbrains.com/issue/IDEA-155733) has been resolved in this version.
+### the invoker tests of my maven plugin project do not work anymore
 
-If you cannot upgrade, the solution is to disable the plugin usage in Intellij by moving it inside a maven profile. Then you have the choice to either deactivate the profile in Intellij or have the profile deactivated by default (thus not working in Intellij) and manually activating it on your CI/build system.
+If you develop a maven plugin project, you normally run maven-invoker-plugin to test your plugin.
+Using default configuration, maven-invoker-plugin will use a temporary local repository under `target/local-repo` and the IT tests will be executed from `target/it/XYZ`.
+In this context, when executing tests, maven will try to activate extensions starting from the `target/it/XYZ` directory ; and it will find your extensions definition in the root directory of the project. This will lead in the activation of `jgitver-maven-plugin` for all your IT projects AND for the poms inside the temporary local repository under `target/local-repository`.
+To avoid such behavior, you need to tell `jgitver-maven-plugin` to ignore some directories. If you do not have already a jgitver configuration file, create one under `.mvn/jgitver.config.xml` and place some exclusions in there:
 
-Here is an example configuration that deactivates the plugin:
 ```
-...
-<profiles>
-    ...
-    <profile>
-        <id>jgitver</id>
-        <activation>
-            <activeByDefault>false</activeByDefault>
-        </activation>
-        <build>
-            <plugins>
-                <plugin>
-                    <groupId>fr.brouillard.oss</groupId>
-                    <artifactId>jgitver-maven-plugin</artifactId>
-                    <version>0.1.1</version>
-                    <extensions>true</extensions>
-                </plugin>
-            </plugins>
-        </build>
-    </profile>
-    ...
-</profiles>
+<configuration>
+    <exclusions>
+        <exclusion>target/local-repo</exclusion>
+        <exclusion>target/it/**</exclusion>
+    </exclusions>
+</configuration>
 ```
 
-Then on your build system, you would just have to activate the profile to have the magic happen again:  
-`mvn install -Pjgitver`
+You can have a look at the configuration of [jgitver-maven-plugin](.mvn/jgitver.config.xml) itself.
