@@ -1,13 +1,13 @@
 // @formatter:off
 /**
  * Copyright (C) 2016 Matthieu Brouillard [http://oss.brouillard.fr/jgitver-maven-plugin] (matthieu@brouillard.fr)
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,12 +22,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.stream.Collectors;
 
 import javax.xml.bind.JAXBException;
 
@@ -42,34 +40,26 @@ import org.apache.maven.model.PluginExecution;
 import org.apache.maven.model.building.DefaultModelProcessor;
 import org.apache.maven.model.building.ModelProcessor;
 import org.apache.maven.plugin.LegacySupport;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.logging.Logger;
-
-import fr.brouillard.oss.jgitver.cfg.Configuration;
 
 /**
  * Replacement ModelProcessor using jgitver while loading POMs in order to adapt versions.
  */
 @Component(role = ModelProcessor.class)
 public class JGitverModelProcessor extends DefaultModelProcessor {
+
     @Requirement
     private Logger logger = null;
 
     @Requirement
     private LegacySupport legacySupport = null;
-    
-    @Requirement
-    private JGitverConfiguration configurationProvider;
 
-    private volatile JGitverModelProcessorWorkingConfiguration workingConfiguration;
 
     public JGitverModelProcessor() {
         super();
-    }
-
-    public JGitverModelProcessorWorkingConfiguration getWorkingConfiguration() {
-        return workingConfiguration;
     }
 
     @Override
@@ -87,56 +77,7 @@ public class JGitverModelProcessor extends DefaultModelProcessor {
         return provisionModel(super.read(input, options), options);
     }
 
-    private void calculateVersionIfNecessary() throws Exception {
-        if (workingConfiguration == null) {
-            synchronized (this) {
-                if (workingConfiguration == null) {
-                    logger.info("jgitver-maven-plugin is about to change project(s) version(s)");
-
-                    MavenSession mavenSession = legacySupport.getSession();
-                    final File rootDirectory = mavenSession.getRequest().getMultiModuleProjectDirectory();
-
-                    logger.debug("using " + JGitverUtils.EXTENSION_PREFIX + " on directory: " + rootDirectory);
-                    
-                    Configuration cfg = configurationProvider.getConfiguration();
-
-                    try (GitVersionCalculator gitVersionCalculator = GitVersionCalculator.location(rootDirectory)) {
-                        gitVersionCalculator
-                            .setMavenLike(cfg.mavenLike)
-                            .setAutoIncrementPatch(cfg.autoIncrementPatch)
-                            .setUseDirty(cfg.useDirty)
-                            .setUseDistance(cfg.useCommitDistance)
-                            .setUseGitCommitId(cfg.useGitCommitId)
-                            .setGitCommitIdLength(cfg.gitCommitIdLength)
-                            .setUseDefaultBranchingPolicy(cfg.useDefaultBranchingPolicy)
-                            .setNonQualifierBranches(cfg.nonQualifierBranches);
-                        
-                        if (cfg.branchPolicies != null) {
-                            List<BranchingPolicy> policies = cfg.branchPolicies.stream()
-                                    .map(bp -> new BranchingPolicy(bp.pattern, bp.transformations))
-                                    .collect(Collectors.toList());
-                            
-                            gitVersionCalculator.setQualifierBranchingPolicies(policies);
-                        }
-
-                        JGitverVersion jGitverVersion = new JGitverVersion(gitVersionCalculator);
-                        JGitverUtils.fillPropertiesFromMetadatas(mavenSession.getUserProperties(), jGitverVersion, logger);
-
-                        workingConfiguration = new JGitverModelProcessorWorkingConfiguration(
-                                jGitverVersion.getCalculatedVersion(),
-                                rootDirectory);
-                    }
-                }
-            }
-        }
-    }
-
     private Model provisionModel(Model model, Map<String, ?> options) throws IOException {
-        try {
-            calculateVersionIfNecessary();
-        } catch (Exception ex) {
-            throw new IOException("cannot build a Model object using jgitver", ex);
-        }
 
         Source source = (Source) options.get(ModelProcessor.SOURCE);
         if (source == null) {
@@ -150,40 +91,38 @@ public class JGitverModelProcessor extends DefaultModelProcessor {
             // but if it doesn't resolve to a file then it isn't under getMultiModuleProjectDirectory,
             return model; // therefore the model shouldn't be modified.
         }
-        
-        if (configurationProvider.ignore(location)) {
-            logger.debug("file " + location + " ignored by configuration");
-            return model;
-        }
 
         File relativePath = location.getParentFile().getCanonicalFile();
 
+        final File rootProjectDirectory = legacySupport.getSession().getRequest().getMultiModuleProjectDirectory();
+        if (StringUtils.containsIgnoreCase(
+                relativePath.getCanonicalPath(),
+                rootProjectDirectory.getCanonicalPath()
+        )) {
+            logger.error("handling version of project Model from " + location);
 
-        if (StringUtils.containsIgnoreCase(relativePath.getCanonicalPath(),
-                workingConfiguration.getMultiModuleProjectDirectory().getCanonicalPath())) {
-            logger.debug("handling version of project Model from " + location);
-            
-            workingConfiguration.getNewProjectVersions().put(
-                    GAV.from(model.clone()), workingConfiguration.getCalculatedVersion());
+            logger.error("rootProjectDirectory: " + rootProjectDirectory);
+            String branchVersion = "sickOfItAll"; // TODO read from git
 
             if (Objects.nonNull(model.getVersion())) {
                 // TODO evaluate how to set the version only when it was originally set in the pom file
-                model.setVersion(workingConfiguration.getCalculatedVersion());
+                model.setVersion(branchVersion);
             }
 
             if (Objects.nonNull(model.getParent())) {
                 // if the parent is part of the multi module project, let's update the parent version 
                 File relativePathParent = new File(
                         relativePath.getCanonicalPath() + File.separator + model.getParent().getRelativePath())
-                                .getParentFile().getCanonicalFile();
-                if (StringUtils.containsIgnoreCase(relativePathParent.getCanonicalPath(),
-                        workingConfiguration.getMultiModuleProjectDirectory().getCanonicalPath())) {
-                    model.getParent().setVersion(workingConfiguration.getCalculatedVersion());
+                        .getParentFile().getCanonicalFile();
+                if (StringUtils.containsIgnoreCase(
+                        relativePathParent.getCanonicalPath(),
+                        rootProjectDirectory.getCanonicalPath())) {
+                    model.getParent().setVersion(branchVersion);
                 }
-            } 
-            
+            }
+
             // we should only register the plugin once, on the main project
-            if (relativePath.getCanonicalPath().equals(workingConfiguration.getMultiModuleProjectDirectory().getCanonicalPath())) { 
+            if (relativePath.getCanonicalPath().equals(rootProjectDirectory.getCanonicalPath())) {
                 if (Objects.isNull(model.getBuild())) {
                     model.setBuild(new Build());
                 }
@@ -263,13 +202,6 @@ public class JGitverModelProcessor extends DefaultModelProcessor {
                 });
             }
 
-            try {
-                legacySupport.getSession().getUserProperties().put(
-                        JGitverModelProcessorWorkingConfiguration.class.getName(),
-                        JGitverModelProcessorWorkingConfiguration.serializeTo(workingConfiguration));
-            } catch (JAXBException ex) {
-                throw new IOException("unexpected Model serialization issue", ex);
-            }
         } else {
             logger.debug("skipping Model from " + location);
         }

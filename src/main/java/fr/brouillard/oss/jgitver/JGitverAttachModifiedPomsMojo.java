@@ -1,13 +1,13 @@
 // @formatter:off
 /**
  * Copyright (C) 2016 Matthieu Brouillard [http://oss.brouillard.fr/jgitver-maven-plugin] (matthieu@brouillard.fr)
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,7 +17,10 @@
 // @formatter:on
 package fr.brouillard.oss.jgitver;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import javax.xml.bind.JAXBException;
 
@@ -25,10 +28,10 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugins.annotations.InstantiationStrategy;
-import org.apache.maven.plugins.annotations.LifecyclePhase;
-import org.apache.maven.plugins.annotations.Mojo;
-import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.plugins.annotations.*;
+import org.apache.maven.project.MavenProject;
+import org.codehaus.plexus.component.annotations.Requirement;
+import org.codehaus.plexus.logging.Logger;
 import org.codehaus.plexus.logging.console.ConsoleLogger;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 
@@ -43,34 +46,36 @@ public class JGitverAttachModifiedPomsMojo extends AbstractMojo {
     @Parameter(defaultValue = "${session}", readonly = true)
     private MavenSession mavenSession;
 
+    @Component
+    private Logger logger;
+
+    private boolean executed = false;
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-        String className = JGitverModelProcessorWorkingConfiguration.class.getName();
-
-        if (Objects.isNull(mavenSession.getUserProperties().get(className))) {
-            getLog().warn(GOAL_ATTACH_MODIFIED_POMS + "shouldn't be executed alone. The Mojo "
-                    + "is a part of the plugin and executed automatically.");
-            return;
-        }
-
-        String content = mavenSession.getUserProperties().getProperty((className));
-        if ("-".equalsIgnoreCase(content)) {
+        if (executed) {
             // We don't need to attach modified poms anymore.
+            // We need to attach modified poms only once
             return;
         }
+        executed = true;
 
         try {
-            JGitverModelProcessorWorkingConfiguration jGitverModelProcessorWorkingConfiguration =
-                    JGitverModelProcessorWorkingConfiguration.serializeFrom(content);
+            File projectBasedir = mavenSession.getRequest().getMultiModuleProjectDirectory();
+            logger.error("projectBasedir: " + projectBasedir);
+            String branchVersion = "sickOfItAll"; // TODO read from git
 
-            JGitverUtils.attachModifiedPomFilesToTheProject(mavenSession.getAllProjects(),
-                    jGitverModelProcessorWorkingConfiguration.getNewProjectVersions(), mavenSession, new
-                            ConsoleLogger());
+            Map<GAV, String> newProjectVersions = new HashMap<>();
+            for (MavenProject project : mavenSession.getAllProjects()) {
+                newProjectVersions.put(GAV.from(project), branchVersion);
+            }
+            JGitverUtils.attachModifiedPomFilesToTheProject(
+                    mavenSession.getAllProjects(),
+                    newProjectVersions, mavenSession,
+                    logger);
 
-            mavenSession.getUserProperties().setProperty(className, "-");
-        } catch (XmlPullParserException | IOException | JAXBException ex) {
-            throw new MojoExecutionException("Unable to execute goal: "
-                    + JGitverAttachModifiedPomsMojo.GOAL_ATTACH_MODIFIED_POMS, ex);
+        } catch (XmlPullParserException | IOException ex) {
+            throw new MojoExecutionException("Unable to execute goal: " + JGitverAttachModifiedPomsMojo.GOAL_ATTACH_MODIFIED_POMS, ex);
         }
     }
 }

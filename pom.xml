@@ -20,7 +20,7 @@
 
     <groupId>fr.brouillard.oss</groupId>
     <artifactId>jgitver-maven-plugin</artifactId>
-    <version>0</version>
+    <version>0-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
 
     <name>jgitver Maven Plugin</name>
@@ -60,41 +60,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
-    <developers>
-        <developer>
-            <id>McFoggy</id>
-            <name>Matthieu Brouillard</name>
-            <timezone>Europe/Paris</timezone>
-            <url>http://blog.matthieu.brouillard.fr</url>
-            <roles>
-                <role>project creator</role>
-            </roles>
-        </developer>
-        <developer>
-            <id>xeagle2</id>
-            <name>Yuriy Zaplavnov</name>
-            <url>https://github.com/xeagle2</url>
-            <roles>
-                <role>contributor</role>
-            </roles>
-        </developer>
-        <developer>
-            <id>jschneider</id>
-            <name>Johannes Schneider</name>
-            <url>https://github.com/jschneider</url>
-            <roles>
-                <role>contributor</role>
-            </roles>
-        </developer>
-        <developer>
-            <id>JHeiner</id>
-            <name>Jeremy Heiner</name>
-            <url>https://github.com/JHeiner</url>
-            <roles>
-                <role>contributor</role>
-            </roles>
-        </developer>
-    </developers>
+
 
     <dependencies>
         <dependency>
@@ -139,7 +105,6 @@
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
             <version>19.0</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -204,38 +169,6 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>com.mycila</groupId>
-                <artifactId>license-maven-plugin</artifactId>
-                <version>2.11</version>
-                <configuration>
-                    <header>com/mycila/maven/plugin/license/templates/APACHE-2.txt</header>
-                    <properties>
-                        <owner>Matthieu Brouillard [http://oss.brouillard.fr/jgitver-maven-plugin]</owner>
-                        <email>matthieu@brouillard.fr</email>
-                    </properties>
-                    <excludes>
-                        <exclude>**/README</exclude>
-                        <exclude>**/LICENSE</exclude>
-                        <exclude>.*</exclude>
-                        <exclude>**/.keepgit</exclude>
-                        <exclude>src/quality/**</exclude>
-                        <exclude>src/doc/images/**</exclude>
-                        <exclude>src/it/resources/**</exclude>
-                        <exclude>src/it/**/invoker.properties</exclude>
-                        <exclude>src/test/resources/**</exclude>
-                        <exclude>src/main/resources/**</exclude>
-                    </excludes>
-                </configuration>
-                <executions>
-                    <execution>
-                        <phase>validate</phase>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <groupId>ru.concerteza.buildnumber</groupId>
                 <artifactId>maven-jgit-buildnumber-plugin</artifactId>
                 <version>1.2.9</version>
@@ -246,36 +179,6 @@
                             <goal>extract-buildnumber</goal>
                         </goals>
                         <phase>prepare-package</phase>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>2.17</version>
-                <dependencies>
-                    <dependency>
-                        <groupId>com.puppycrawl.tools</groupId>
-                        <artifactId>checkstyle</artifactId>
-                        <version>6.17</version>
-                    </dependency>
-                </dependencies>
-                <executions>
-                    <execution>
-                        <id>validate</id>
-                        <phase>validate</phase>
-                        <configuration>
-                            <configLocation>${project.baseUri}/src/quality/checkstyle/checks.xml</configLocation>
-                            <propertyExpansion>checkstyle.suppression.file=${project.baseUri}/src/quality/checkstyle/suppressions.xml</propertyExpansion>
-                            <encoding>UTF-8</encoding>
-                            <consoleOutput>true</consoleOutput>
-                            <failsOnError>true</failsOnError>
-                            <linkXRef>false</linkXRef>
-                            <includeTestSourceDirectory>true</includeTestSourceDirectory>
-                        </configuration>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
                     </execution>
                 </executions>
             </plugin>

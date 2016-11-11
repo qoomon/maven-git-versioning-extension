@@ -134,65 +134,9 @@ public final class JGitverUtils {
         }
     }
 
-    /**
-     * Fill properties from meta data.
-     *
-     * @param properties     properties.
-     * @param jgitverVersion jGitverVersion.
-     * @param logger         logger.
-     */
-    public static void fillPropertiesFromMetadatas(Properties properties, JGitverVersion jgitverVersion, Logger logger) {
-        logger.debug(EXTENSION_PREFIX + " calculated version number: " + jgitverVersion.getCalculatedVersion());
-        properties.put(EXTENSION_PREFIX + ".calculated_version", jgitverVersion.getCalculatedVersion());
 
-        Arrays.asList(Metadatas.values()).stream().forEach(metaData -> {
-            Optional<String> metaValue = jgitverVersion.getGitVersionCalculator().meta(metaData);
-            String propertyName = EXTENSION_PREFIX + "." + metaData.name().toLowerCase(Locale.ENGLISH);
-            String value = metaValue.orElse("");
-            properties.put(propertyName, value);
-            logger.debug("setting property " + propertyName + " with \"" + value + "\"");
-        });
-    }
 
-    /**
-     * Calculates the version to use of the given project. 
-     * @param rootProject the root project for which a version has to be calculated
-     * @param properties a property object that will be filled with additional information 
-     * @param logger a logger to use
-     * @return a non null container for the version 
-     * @throws IOException if an error ocurred while calculating the version
-     */
-    public static JGitverVersion calculateVersionForProject(MavenProject rootProject, Properties properties,
-            Logger logger) throws IOException {
-        JGitverVersion jGitverVersion = null;
 
-        logger.debug("using " + EXTENSION_PREFIX + " on directory: " + rootProject.getBasedir());
-        try (GitVersionCalculator gitVersionCalculator = GitVersionCalculator.location(rootProject.getBasedir())) {
-            Plugin plugin = rootProject.getPlugin("fr.brouillard.oss:jgitver-maven-plugin");
-
-            JGitverPluginConfiguration pluginConfig =
-                    new JGitverPluginConfiguration(
-                            Optional.ofNullable(plugin)
-                                    .map(Plugin::getConfiguration)
-                                    .map(Xpp3Dom.class::cast)
-                    );
-
-            gitVersionCalculator.setMavenLike(pluginConfig.mavenLike())
-                    .setAutoIncrementPatch(pluginConfig.autoIncrementPatch())
-                    .setUseDistance(pluginConfig.useCommitDistance())
-                    .setUseGitCommitId(pluginConfig.useGitCommitId())
-                    .setGitCommitIdLength(pluginConfig.gitCommitIdLength())
-                    .setUseDirty(pluginConfig.useDirty())
-                    .setNonQualifierBranches(pluginConfig.nonQualifierBranches().stream().collect(Collectors.joining(",")));
-
-            jGitverVersion = new JGitverVersion(gitVersionCalculator);
-            fillPropertiesFromMetadatas(properties, jGitverVersion, logger);
-        } catch (Exception ex) {
-            throw new IOException(ex.getMessage(), ex);
-        }
-
-        return jGitverVersion;
-    }
 
     /**
      * Attach modified POM files to the projects so install/deployed files contains new version.
@@ -207,8 +151,8 @@ public final class JGitverUtils {
     public static void attachModifiedPomFilesToTheProject(List<MavenProject> projects, Map<GAV, String>
             newProjectVersions, MavenSession mavenSession, Logger logger) throws IOException, XmlPullParserException {
         for (MavenProject project : projects) {
-            Model model = loadInitialModel(project.getFile());
-            GAV initalProjectGAV = GAV.from(model);     // SUPPRESS CHECKSTYLE AbbreviationAsWordInName
+            Model model = project.getOriginalModel();
+            GAV initalProjectGAV = GAV.from(model);
 
             logger.debug("about to change file pom for: " + initalProjectGAV);
 
@@ -217,7 +161,7 @@ public final class JGitverUtils {
             }
 
             if (model.getParent() != null) {
-                GAV parentGAV = GAV.from(model.getParent());    // SUPPRESS CHECKSTYLE AbbreviationAsWordInName
+                GAV parentGAV = GAV.from(model.getParent());
 
                 if (newProjectVersions.keySet().contains(parentGAV)) {
                     // parent has been modified

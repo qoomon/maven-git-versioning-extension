@@ -1,4 +1,0 @@
-<configuration>
-    <mavenLike>false</mavenLike>
-    <useCommitDistance>true</useCommitDistance>
-</configuration>
