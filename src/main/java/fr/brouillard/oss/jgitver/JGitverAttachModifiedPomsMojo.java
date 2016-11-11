@@ -17,29 +17,28 @@
 // @formatter:on
 package fr.brouillard.oss.jgitver;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import javax.xml.bind.JAXBException;
-
+import org.apache.maven.artifact.Artifact;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.*;
 import org.apache.maven.project.MavenProject;
-import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.logging.Logger;
-import org.codehaus.plexus.logging.console.ConsoleLogger;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Works in conjunction with JGitverModelProcessor.
  */
-@Mojo(name = JGitverAttachModifiedPomsMojo.GOAL_ATTACH_MODIFIED_POMS, defaultPhase = LifecyclePhase.VERIFY,
-        instantiationStrategy = InstantiationStrategy.SINGLETON, threadSafe = true)
+@Mojo(name = JGitverAttachModifiedPomsMojo.GOAL_ATTACH_MODIFIED_POMS,
+        defaultPhase = LifecyclePhase.VERIFY,
+        instantiationStrategy = InstantiationStrategy.SINGLETON,
+        threadSafe = true)
 public class JGitverAttachModifiedPomsMojo extends AbstractMojo {
     public static final String GOAL_ATTACH_MODIFIED_POMS = "attach-modified-poms";
 
@@ -65,9 +64,9 @@ public class JGitverAttachModifiedPomsMojo extends AbstractMojo {
             logger.error("projectBasedir: " + projectBasedir);
             String branchVersion = "sickOfItAll"; // TODO read from git
 
-            Map<GAV, String> newProjectVersions = new HashMap<>();
+            Map<Artifact, String> newProjectVersions = new HashMap<>();
             for (MavenProject project : mavenSession.getAllProjects()) {
-                newProjectVersions.put(GAV.from(project), branchVersion);
+                newProjectVersions.put(project.getArtifact(), branchVersion);
             }
             JGitverUtils.attachModifiedPomFilesToTheProject(
                     mavenSession.getAllProjects(),

@@ -17,33 +17,24 @@
 // @formatter:on
 package fr.brouillard.oss.jgitver;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.maven.building.Source;
+import org.apache.maven.model.*;
+import org.apache.maven.model.building.DefaultModelProcessor;
+import org.apache.maven.model.building.ModelProcessor;
+import org.apache.maven.plugin.LegacySupport;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
+import org.codehaus.plexus.logging.Logger;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
-
-import javax.xml.bind.JAXBException;
-
-import org.apache.commons.lang3.StringUtils;
-import org.apache.maven.building.Source;
-import org.apache.maven.execution.MavenSession;
-import org.apache.maven.model.Build;
-import org.apache.maven.model.Dependency;
-import org.apache.maven.model.Model;
-import org.apache.maven.model.Plugin;
-import org.apache.maven.model.PluginExecution;
-import org.apache.maven.model.building.DefaultModelProcessor;
-import org.apache.maven.model.building.ModelProcessor;
-import org.apache.maven.plugin.LegacySupport;
-import org.apache.maven.plugins.annotations.Parameter;
-import org.codehaus.plexus.component.annotations.Component;
-import org.codehaus.plexus.component.annotations.Requirement;
-import org.codehaus.plexus.logging.Logger;
 
 /**
  * Replacement ModelProcessor using jgitver while loading POMs in order to adapt versions.
@@ -102,14 +93,14 @@ public class JGitverModelProcessor extends DefaultModelProcessor {
             logger.error("handling version of project Model from " + location);
 
             logger.error("rootProjectDirectory: " + rootProjectDirectory);
-            String branchVersion = "sickOfItAll"; // TODO read from git
+            String branchVersion = "sickOfItAll"; // TODO read from git and model
 
-            if (Objects.nonNull(model.getVersion())) {
+            if (model.getVersion() != null) {
                 // TODO evaluate how to set the version only when it was originally set in the pom file
                 model.setVersion(branchVersion);
             }
 
-            if (Objects.nonNull(model.getParent())) {
+            if (model.getParent() != null) {
                 // if the parent is part of the multi module project, let's update the parent version 
                 File relativePathParent = new File(
                         relativePath.getCanonicalPath() + File.separator + model.getParent().getRelativePath())
@@ -123,11 +114,11 @@ public class JGitverModelProcessor extends DefaultModelProcessor {
 
             // we should only register the plugin once, on the main project
             if (relativePath.getCanonicalPath().equals(rootProjectDirectory.getCanonicalPath())) {
-                if (Objects.isNull(model.getBuild())) {
+                if (model.getBuild() == null) {
                     model.setBuild(new Build());
                 }
 
-                if (Objects.isNull(model.getBuild().getPlugins())) {
+                if (model.getBuild().getPlugins() == null) {
                     model.getBuild().setPlugins(new ArrayList<>());
                 }
 
@@ -159,7 +150,7 @@ public class JGitverModelProcessor extends DefaultModelProcessor {
                     return plugin2;
                 });
 
-                if (Objects.isNull(plugin.getExecutions())) {
+                if (plugin.getExecutions() == null) {
                     plugin.setExecutions(new ArrayList<>());
                 }
 
@@ -174,7 +165,7 @@ public class JGitverModelProcessor extends DefaultModelProcessor {
                     return pluginExecution2;
                 });
 
-                if (Objects.isNull(pluginExecution.getGoals())) {
+                if (pluginExecution.getGoals() == null) {
                     pluginExecution.setGoals(new ArrayList<>());
                 }
 
@@ -182,7 +173,7 @@ public class JGitverModelProcessor extends DefaultModelProcessor {
                     pluginExecution.getGoals().add(JGitverAttachModifiedPomsMojo.GOAL_ATTACH_MODIFIED_POMS);
                 }
 
-                if (Objects.isNull(plugin.getDependencies())) {
+                if (plugin.getDependencies() == null) {
                     plugin.setDependencies(new ArrayList<>());
                 }
 

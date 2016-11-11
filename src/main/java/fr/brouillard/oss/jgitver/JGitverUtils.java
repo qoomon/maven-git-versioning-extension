@@ -17,36 +17,27 @@
 // @formatter:on
 package fr.brouillard.oss.jgitver;
 
+import org.apache.maven.artifact.Artifact;
+import org.apache.maven.execution.MavenSession;
+import org.apache.maven.model.Model;
+import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
+import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
+import org.apache.maven.project.MavenProject;
+import org.codehaus.plexus.logging.Logger;
+import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
+
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.stream.Collectors;
-
-import org.apache.maven.execution.MavenSession;
-import org.apache.maven.model.Model;
-import org.apache.maven.model.Plugin;
-import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
-import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
-import org.apache.maven.project.MavenProject;
-import org.codehaus.plexus.logging.Logger;
-import org.codehaus.plexus.util.xml.Xpp3Dom;
-import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
-
-import fr.brouillard.oss.jgitver.metadata.Metadatas;
 
 /**
  * Misc utils used by the plugin.
  */
 public final class JGitverUtils {
-    public static final String EXTENSION_PREFIX = "jgitver";
     public static final String EXTENSION_GROUP_ID = "fr.brouillard.oss";
     public static final String EXTENSION_ARTIFACT_ID = "jgitver-maven-plugin";
 
@@ -128,8 +119,7 @@ public final class JGitverUtils {
                     changeBaseDir(project, initialBaseDir);
                 }
             } catch (Exception ex) {
-                GAV gav = GAV.from(project);
-                logger.warn("cannot reset basedir of project " + gav.toString(), ex);
+                logger.warn("cannot reset basedir of project " + project.getArtifact(), ex);
             }
         }
     }
@@ -148,12 +138,12 @@ public final class JGitverUtils {
      * @throws IOException if project model cannot be read correctly
      * @throws XmlPullParserException if project model cannot be interpreted correctly
      */
-    public static void attachModifiedPomFilesToTheProject(List<MavenProject> projects, Map<GAV, String>
+    public static void attachModifiedPomFilesToTheProject(List<MavenProject> projects, Map<Artifact, String>
             newProjectVersions, MavenSession mavenSession, Logger logger) throws IOException, XmlPullParserException {
         for (MavenProject project : projects) {
             Model model = project.getOriginalModel();
-            GAV initalProjectGAV = GAV.from(model);
 
+            Artifact initalProjectGAV = project.getArtifact();
             logger.debug("about to change file pom for: " + initalProjectGAV);
 
             if (newProjectVersions.containsKey(initalProjectGAV)) {
@@ -161,8 +151,8 @@ public final class JGitverUtils {
             }
 
             if (model.getParent() != null) {
-                GAV parentGAV = GAV.from(model.getParent());
 
+                Artifact parentGAV = project.getParent().getArtifact();
                 if (newProjectVersions.keySet().contains(parentGAV)) {
                     // parent has been modified
                     model.getParent().setVersion(newProjectVersions.get(parentGAV));
