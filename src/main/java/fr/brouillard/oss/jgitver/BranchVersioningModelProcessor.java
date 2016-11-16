@@ -104,18 +104,17 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
         if (pomFile.getParentFile().getCanonicalPath()
                 .startsWith(requestPomFile.getParentFile().getCanonicalPath())) {
             String branchVersion = getBranchVersion(model);
-
             if (model.getParent() != null) {
                 GAV parentProjectGav = gavOf(model.getParent());
                 if (hasBranchVersion(parentProjectGav)) {
                     String parentBranchVersion = this.getBranchVersion(parentProjectGav);
-                    logger.info("override project parent version with branch version " + parentBranchVersion + " @ " + projectGav);
+                    logger.debug(projectGav + " adjust parent version to " + parentBranchVersion);
                     model.getParent().setVersion(parentBranchVersion);
                 }
             }
 
             if (model.getVersion() != null) {
-                logger.info("override project version with branch version " + branchVersion + " @ " + projectGav);
+                logger.info(projectGav + " override version with branch version " + branchVersion);
                 model.setVersion(branchVersion);
             }
 
