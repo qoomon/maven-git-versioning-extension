@@ -17,16 +17,16 @@
 // @formatter:on
 package fr.brouillard.oss.jgitver;
 
+import com.google.inject.Key;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.building.Source;
-import org.apache.maven.execution.MavenExecutionRequest;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Build;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.model.building.DefaultModelProcessor;
 import org.apache.maven.model.building.ModelProcessor;
-import org.apache.maven.plugin.LegacySupport;
+import org.apache.maven.session.scope.internal.SessionScope;
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.logging.Logger;
@@ -48,7 +48,7 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
     private Logger logger = null;
 
     @Requirement
-    private LegacySupport legacySupport = null;
+    private SessionScope sessionScope;
 
 
     public BranchVersioningModelProcessor() {
@@ -71,10 +71,8 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
     }
 
     private Model provisionModel(Model model, Map<String, ?> options) throws IOException {
-
-
-        MavenSession mavenSession = legacySupport.getSession(); // TODO replace with a regular access way
-        MavenExecutionRequest mavenExecutionRequest = mavenSession.getRequest();
+        // get current session from scope
+        MavenSession mavenSession = sessionScope.scope(Key.get(MavenSession.class), null).get();
 
         Source source = (Source) options.get(ModelProcessor.SOURCE);
         if (source == null) {
@@ -90,13 +88,12 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
         }
 
         File relativePath = location.getParentFile().getCanonicalFile();
-        final File rootProjectDirectory = mavenExecutionRequest.getMultiModuleProjectDirectory();
+        final File rootProjectDirectory = mavenSession.getRequest().getMultiModuleProjectDirectory();
 
         // we should only register the plugin once, on the main project
         if (relativePath.getCanonicalPath().equals(rootProjectDirectory.getCanonicalPath())) {
             addBranchVersioningPlugin(model);
         }
-
 
         if (StringUtils.containsIgnoreCase(
                 relativePath.getCanonicalPath(),

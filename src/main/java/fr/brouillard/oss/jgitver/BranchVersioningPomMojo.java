@@ -36,12 +36,13 @@ import java.util.Map;
 /**
  * Works in conjunction with BranchVersioningModelProcessor.
  */
-@Mojo(name = BranchVersioningPomMojo.GOAL_ATTACH_MODIFIED_POMS,
+@Mojo(name = BranchVersioningPomMojo.GOAL_ATTACH_TEMP_POMS,
         defaultPhase = LifecyclePhase.VERIFY,
         instantiationStrategy = InstantiationStrategy.SINGLETON,
         threadSafe = true)
 public class BranchVersioningPomMojo extends AbstractMojo {
-    public static final String GOAL_ATTACH_MODIFIED_POMS = "attach-modified-poms";
+    
+    public static final String GOAL_ATTACH_TEMP_POMS = "attach-temp-poms";
 
     @Parameter(defaultValue = "${session}", readonly = true)
     private MavenSession mavenSession;
@@ -52,7 +53,7 @@ public class BranchVersioningPomMojo extends AbstractMojo {
     @Override
     public synchronized void execute() throws MojoExecutionException, MojoFailureException {
         if (!mavenSession.getCurrentProject().isExecutionRoot()) {
-            return ; // We need to attach modified poms only once
+            return; // We need to attach modified poms only once
         }
 
         try {
