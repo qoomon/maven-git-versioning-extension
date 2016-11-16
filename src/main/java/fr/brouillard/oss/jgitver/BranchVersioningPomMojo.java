@@ -17,7 +17,6 @@
 // @formatter:on
 package fr.brouillard.oss.jgitver;
 
-import com.google.common.collect.Maps;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
@@ -31,7 +30,6 @@ import org.codehaus.plexus.logging.Logger;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 
 import java.io.*;
-import java.util.Map;
 
 /**
  * Works in conjunction with BranchVersioningModelProcessor.
@@ -41,7 +39,7 @@ import java.util.Map;
         instantiationStrategy = InstantiationStrategy.SINGLETON,
         threadSafe = true)
 public class BranchVersioningPomMojo extends AbstractMojo {
-    
+
     public static final String GOAL_ATTACH_TEMP_POMS = "attach-temp-poms";
 
     @Parameter(defaultValue = "${session}", readonly = true)
@@ -50,51 +48,44 @@ public class BranchVersioningPomMojo extends AbstractMojo {
     @Component
     private Logger logger;
 
+//    @Component
+//    private BranchVersioningModelProcessor foo;
+
     @Override
     public synchronized void execute() throws MojoExecutionException, MojoFailureException {
+        logger.error("--- BranchVersioningPomMojo ---");
         if (!mavenSession.getCurrentProject().isExecutionRoot()) {
             return; // We need to attach modified poms only once
         }
 
         try {
-            String branchVersion = BranchVersioningVersionProvider.getVersion();
-
-            Map<GAV, String> newProjectVersions = Maps.newHashMap();
             for (MavenProject project : mavenSession.getAllProjects()) {
-                newProjectVersions.put(GAV.of(project.getArtifact()), branchVersion);
+                attachTempBranchPomFileToProject(project);
             }
-
-            for (MavenProject project : mavenSession.getAllProjects()) {
-                attachModifiedPomFileToProject(newProjectVersions, project);
-            }
-        } catch (IOException ex) {
-            throw new MojoExecutionException("Error", ex);
+        } catch (IOException e) {
+            throw new MojoExecutionException("Pom versioning failed!", e);
         }
     }
 
     /**
-     * Attach modified POM files to the projects so install/deployed files contains new version.
+     * Attach temporary POM files to the projects so install and deployed files contains new version.
      *
-     * @param project          maven project
-     * @param branchVersionMap branch versions.
+     * @param project maven project
      * @throws IOException if project model cannot be read correctly
      */
-    public void attachModifiedPomFileToProject(Map<GAV, String> branchVersionMap, MavenProject project) throws IOException {
-
-        GAV projectGavOriginal = GAV.of(project.getArtifact());
-        logger.info("generate tmp pom file @ " + projectGavOriginal);
-
+    public void attachTempBranchPomFileToProject(MavenProject project) throws IOException {
         Model projectModelTmp = readModel(project.getFile());
+        GAV projectGav = GAV.of(projectModelTmp);
 
-        if (branchVersionMap.containsKey(projectGavOriginal)) {
-            projectModelTmp.setVersion(branchVersionMap.get(projectGavOriginal));
-        }
+        logger.info("generate tmp pom file @ " + projectGav);
+
+        projectModelTmp.setVersion(BranchVersioningModelProcessor.getVersion(projectGav));
 
         // check for parent modification
         if (projectModelTmp.getParent() != null) {
-            GAV parentGAV = GAV.of(project.getParent().getArtifact());
-            if (branchVersionMap.containsKey(parentGAV)) {
-                projectModelTmp.getParent().setVersion(branchVersionMap.get(parentGAV));
+            GAV parentGAV = GAV.of(project.getParent());
+            if (BranchVersioningModelProcessor.hasVersion(parentGAV)) {
+                projectModelTmp.getParent().setVersion(BranchVersioningModelProcessor.getVersion(projectGav));
             }
         }
 

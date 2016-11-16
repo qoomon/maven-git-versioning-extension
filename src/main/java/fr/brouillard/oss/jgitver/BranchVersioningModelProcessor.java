@@ -17,13 +17,13 @@
 // @formatter:on
 package fr.brouillard.oss.jgitver;
 
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Maps;
 import com.google.inject.Key;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.building.Source;
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.model.Build;
-import org.apache.maven.model.Model;
-import org.apache.maven.model.Plugin;
+import org.apache.maven.model.*;
 import org.apache.maven.model.building.DefaultModelProcessor;
 import org.apache.maven.model.building.ModelProcessor;
 import org.apache.maven.session.scope.internal.SessionScope;
@@ -49,6 +49,8 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
 
     @Requirement
     private SessionScope sessionScope;
+
+    private static Map<GAV, String> branchVersionMap = Maps.newHashMap();
 
 
     public BranchVersioningModelProcessor() {
@@ -79,15 +81,15 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
             return model;
         }
 
-        File location = new File(source.getLocation());
-        if (!location.isFile()) {
+        File pomFile = new File(source.getLocation());
+        if (!pomFile.isFile()) {
             // their JavaDoc says Source.getLocation "could be a local file path, a URI or just an empty string."
             // if it doesn't resolve to a file then calling .getParentFile will throw an exception,
             // but if it doesn't resolve to a file then it isn't under getMultiModuleProjectDirectory,
             return model; // therefore the model shouldn't be modified.
         }
 
-        File relativePath = location.getParentFile().getCanonicalFile();
+        File relativePath = pomFile.getParentFile().getCanonicalFile();
         final File rootProjectDirectory = mavenSession.getRequest().getMultiModuleProjectDirectory();
 
         // we should only register the plugin once, on the main project
@@ -95,32 +97,28 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
             addBranchVersioningPlugin(model);
         }
 
-        if (StringUtils.containsIgnoreCase(
-                relativePath.getCanonicalPath(),
-                rootProjectDirectory.getCanonicalPath()
-        )) {
-            logger.info("handling version of project Model source " + location);
 
-            String branchVersion = BranchVersioningVersionProvider.getVersion();
+        if (StringUtils.containsIgnoreCase(relativePath.getCanonicalPath(), rootProjectDirectory.getCanonicalPath())) {
+
+            GAV projectGav = GAV.of(model);
+            String branchVersion = getVersion(projectGav, pomFile.getParentFile());
 
             if (model.getVersion() != null) {
+                logger.info("update project version with branch version " + branchVersion + " @ " + projectGav);
                 model.setVersion(branchVersion);
             }
 
             if (model.getParent() != null) {
-                // if the parent is part of the multi module project, let's update the parent version
-                File relativePathParent = new File(
-                        relativePath.getCanonicalPath() + File.separator + model.getParent().getRelativePath())
-                        .getParentFile().getCanonicalFile();
-                if (StringUtils.containsIgnoreCase(
-                        relativePathParent.getCanonicalPath(),
-                        rootProjectDirectory.getCanonicalPath())) {
-                    model.getParent().setVersion(branchVersion);
+                GAV parentProjectGav = GAV.of(model.getParent());
+                if (hasVersion(parentProjectGav)) {
+                    String parentBranchVersion = getVersion(parentProjectGav);
+                    logger.info("update project parent version with branch version " + parentBranchVersion + " @ " + projectGav);
+                    model.getParent().setVersion(parentBranchVersion);
                 }
             }
         } else {
             // skip unrelated models
-            logger.debug("skipping unrelated model " + location);
+            logger.debug("skipping unrelated model " + pomFile);
         }
 
         return model;
@@ -143,10 +141,47 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
             properties.load(inputStream);
             plugin.setGroupId(properties.getProperty("project.groupId"));
             plugin.setArtifactId(properties.getProperty("project.artifactId"));
-            plugin.setVersion("project.version");
+            plugin.setVersion(properties.getProperty("project.version"));
         }
 
-        logger.debug("add plugin: " + plugin);
+        logger.info("add plugin: " + plugin.getGroupId() + ":" + plugin.getArtifactId() + ":" + plugin.getVersion());
         model.getBuild().getPlugins().add(plugin);
+
+        PluginExecution pluginExecution = new PluginExecution();
+        pluginExecution.setPhase("verify");
+        plugin.getExecutions().add(pluginExecution);
+
+        pluginExecution.getGoals().add(BranchVersioningPomMojo.GOAL_ATTACH_TEMP_POMS);
+
+        Dependency dependency = new Dependency();
+        dependency.setGroupId(plugin.getGroupId());
+        dependency.setArtifactId(plugin.getArtifactId());
+        dependency.setVersion(plugin.getVersion());
+
+        plugin.getDependencies().add(dependency);
+
+    }
+
+
+    public static String getVersion(GAV gav, File gitDirectory) {
+        Preconditions.checkArgument(gitDirectory.isDirectory(), "git directory must be a directory, but was " + gitDirectory);
+
+        if (!branchVersionMap.containsKey(gav)) {
+            String version = "bondage-fairies";
+            branchVersionMap.put(gav, version);
+        }
+
+        return getVersion(gav);
+    }
+
+    public static String getVersion(GAV gav) {
+        if (!hasVersion(gav)) {
+            throw new IllegalStateException("Unexpected version request for " + gav);
+        }
+        return branchVersionMap.get(gav);
+    }
+
+    public static boolean hasVersion(GAV gav) {
+        return branchVersionMap.containsKey(gav);
     }
 }

@@ -1,6 +1,9 @@
 package fr.brouillard.oss.jgitver;
 
-import org.apache.maven.artifact.Artifact;
+import com.google.common.base.Preconditions;
+import org.apache.maven.model.Model;
+import org.apache.maven.model.Parent;
+import org.apache.maven.project.MavenProject;
 
 /**
  * Wrapper for a maven project/dependency identified by a groupId/artifactId/version.
@@ -17,20 +20,48 @@ public class GAV {
      * @param artifactId the artifactId of the maven object
      * @param version    the version of the maven object
      */
-    public GAV(String groupId, String artifactId, String version) {
+    protected GAV(String groupId, String artifactId, String version) {
+        Preconditions.checkNotNull(groupId);
+        Preconditions.checkNotNull(artifactId);
+        Preconditions.checkNotNull(version);
         this.groupId = groupId;
         this.artifactId = artifactId;
         this.version = version;
     }
 
-    public static GAV of(Artifact artifact) {
+    public static GAV of(MavenProject project) {
         return new GAV(
-                artifact.getGroupId(),
-                artifact.getArtifactId(),
-                artifact.getVersion()
+                project.getGroupId(),
+                project.getArtifactId(),
+                project.getVersion()
         );
     }
 
+    public static GAV of(Model model) {
+
+        String groupId = model.getGroupId();
+        String artifactId = model.getArtifactId();
+        String version = model.getVersion();
+
+        if (model.getParent() != null) {
+            if (groupId == null) {
+                groupId = model.getParent().getGroupId();
+            }
+            if (version == null) {
+                version = model.getParent().getVersion();
+            }
+        }
+
+        return new GAV(groupId, artifactId, version);
+    }
+
+    public static GAV of(Parent parent) {
+        return new GAV(
+                parent.getGroupId(),
+                parent.getArtifactId(),
+                parent.getVersion()
+        );
+    }
 
     public String getGroupId() {
         return groupId;
@@ -73,5 +104,6 @@ public class GAV {
     public String toString() {
         return String.format("%s::%s::%s", groupId, artifactId, version);
     }
+
 
 }
