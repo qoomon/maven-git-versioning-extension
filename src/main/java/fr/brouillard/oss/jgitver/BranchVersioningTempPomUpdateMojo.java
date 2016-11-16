@@ -44,7 +44,7 @@ import java.util.Properties;
         threadSafe = true)
 public class BranchVersioningTempPomUpdateMojo extends AbstractMojo {
 
-    public static final String GOAL_ATTACH_TEMP_POMS = "attach-temp-poms";
+    public static final String GOAL_ATTACH_TEMP_POMS = "override-pom-files";
 
     @Parameter(defaultValue = "${session}", readonly = true)
     private MavenSession mavenSession;
@@ -58,11 +58,13 @@ public class BranchVersioningTempPomUpdateMojo extends AbstractMojo {
             return; // We need to attach modified poms only once
         }
 
-        mavenSession.getCurrentProject().getOriginalModel().getBuild().removePlugin(asPlugin());
+        // remove plugin from top level original project model
+        logger.debug("remove plugin");
+        mavenSession.getCurrentProject().getOriginalModel().getBuild().removePlugin(BranchVersioningTempPomUpdateMojo.asPlugin());
 
         try {
             for (MavenProject project : mavenSession.getAllProjects()) {
-                attachTempBranchPomFileToProject(project);
+                temporaryOverridePomFileFromModel(project);
             }
         } catch (IOException e) {
             throw new MojoExecutionException("Pom versioning failed!", e);
@@ -73,34 +75,18 @@ public class BranchVersioningTempPomUpdateMojo extends AbstractMojo {
      * Attach temporary POM files to the projects so install and deployed files contains new version.
      *
      * @param project maven project
-     * @throws IOException if project model cannot be read correctly
+     * @throws IOException if project model cannot be write correctly
      */
-    public void attachTempBranchPomFileToProject(MavenProject project) throws IOException {
+    public void temporaryOverridePomFileFromModel(MavenProject project) throws IOException {
 
         File tmpPomFile = File.createTempFile("pom", ".xml");
         tmpPomFile.deleteOnExit();
 
         writeModel(project.getOriginalModel(), tmpPomFile);
 
-        logger.info("    temp pom file " + tmpPomFile);
+        logger.info("temp pom file " + tmpPomFile);
 
         project.setPomFile(tmpPomFile);
-    }
-
-
-    /**
-     * Read model from pom file
-     *
-     * @param pomFile pomFile
-     * @return Model
-     * @throws IOException IOException
-     */
-    public Model readModel(File pomFile) throws IOException {
-        try (InputStream inputStream = new FileInputStream(pomFile)) {
-            return new MavenXpp3Reader().read(inputStream);
-        } catch (XmlPullParserException e) {
-            throw new RuntimeException(e);
-        }
     }
 
 
@@ -126,37 +112,16 @@ public class BranchVersioningTempPomUpdateMojo extends AbstractMojo {
             plugin.setGroupId(properties.getProperty("project.groupId"));
             plugin.setArtifactId(properties.getProperty("project.artifactId"));
             plugin.setVersion(properties.getProperty("project.version"));
+
+            PluginExecution pluginExecution = new PluginExecution();
+            pluginExecution.setPhase("verify");
+            pluginExecution.getGoals().add(BranchVersioningTempPomUpdateMojo.GOAL_ATTACH_TEMP_POMS);
+            plugin.getExecutions().add(pluginExecution);
         } catch (IOException e) {
-           throw new RuntimeException(e);
+            throw new RuntimeException(e);
         }
         return plugin;
     }
 
-    /**
-     * @param model
-     * @throws IOException
-     * @see BranchVersioningTempPomUpdateMojo
-     */
-    public static void add(Model model) throws IOException {
-
-        if (model.getBuild() == null) {
-            model.setBuild(new Build());
-        }
-
-        Plugin plugin = BranchVersioningTempPomUpdateMojo.asPlugin();
-        PluginExecution pluginExecution = new PluginExecution();
-        pluginExecution.setPhase("verify");
-        pluginExecution.getGoals().add(BranchVersioningTempPomUpdateMojo.GOAL_ATTACH_TEMP_POMS);
-        plugin.getExecutions().add(pluginExecution);
-
-        model.getBuild().getPlugins().add(plugin);
-
-//        Dependency dependency = new Dependency();
-//        dependency.setGroupId(plugin.getGroupId());
-//        dependency.setArtifactId(plugin.getArtifactId());
-//        dependency.setVersion(plugin.getVersion());
-//        plugin.getDependencies().add(dependency);
-
-    }
 
 }

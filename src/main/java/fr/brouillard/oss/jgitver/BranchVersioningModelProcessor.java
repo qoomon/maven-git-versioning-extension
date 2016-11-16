@@ -17,13 +17,13 @@
 // @formatter:on
 package fr.brouillard.oss.jgitver;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import com.google.inject.Key;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.building.Source;
 import org.apache.maven.execution.MavenSession;
+import org.apache.maven.model.Build;
 import org.apache.maven.model.Model;
+import org.apache.maven.model.Parent;
 import org.apache.maven.model.building.DefaultModelProcessor;
 import org.apache.maven.model.building.ModelProcessor;
 import org.apache.maven.session.scope.internal.SessionScope;
@@ -71,13 +71,15 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
     }
 
     private Model provisionModel(Model model, Map<String, ?> options) throws IOException {
-        // get current session from scope
-        MavenSession mavenSession = sessionScope.scope(Key.get(MavenSession.class), null).get();
 
         Source source = (Source) options.get(ModelProcessor.SOURCE);
         if (source == null) {
             return model;
         }
+
+        // get current session from scope
+        MavenSession mavenSession = sessionScope.scope(Key.get(MavenSession.class), null).get();
+        File requestPomFile = mavenSession.getRequest().getPom();
 
         File pomFile = new File(source.getLocation());
         if (!pomFile.isFile()) {
@@ -87,34 +89,36 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
             return model; // therefore the model shouldn't be modified.
         }
 
-        File relativePath = pomFile.getParentFile().getCanonicalFile();
-        final File rootProjectDirectory = mavenSession.getRequest().getMultiModuleProjectDirectory();
+        GAV projectGav = gavOf(model);
 
-        // we should only register the plugin once, on the main project
-        if (relativePath.getCanonicalPath().equals(rootProjectDirectory.getCanonicalPath())) {
-            logger.info("add plugin: " + BranchVersioningTempPomUpdateMojo.class);
-            BranchVersioningTempPomUpdateMojo.add(model);
+        // add build plugin to top level project model
+        // will be removed from model by plugin
+        if (pomFile.equals(requestPomFile)) {
+            logger.debug("add build plugin @ " + projectGav);
+            if (model.getBuild() == null) {
+                model.setBuild(new Build());
+            }
+            model.getBuild().getPlugins().add(BranchVersioningTempPomUpdateMojo.asPlugin());
         }
 
-
-        if (StringUtils.containsIgnoreCase(relativePath.getCanonicalPath(), rootProjectDirectory.getCanonicalPath())) {
-
-            GAV projectGav = GAV.of(model);
-            String branchVersion = getVersion(projectGav, pomFile.getParentFile());
-
-            if (model.getVersion() != null) {
-                logger.info("update project version with branch version " + branchVersion + " @ " + projectGav);
-                model.setVersion(branchVersion);
-            }
+        if (pomFile.getParentFile().getCanonicalPath()
+                .startsWith(requestPomFile.getParentFile().getCanonicalPath())) {
+            String branchVersion = getBranchVersion(model);
 
             if (model.getParent() != null) {
-                GAV parentProjectGav = GAV.of(model.getParent());
-                if (hasVersion(parentProjectGav)) {
-                    String parentBranchVersion = getVersion(parentProjectGav);
-                    logger.info("update project parent version with branch version " + parentBranchVersion + " @ " + projectGav);
+                GAV parentProjectGav = gavOf(model.getParent());
+                if (hasBranchVersion(parentProjectGav)) {
+                    String parentBranchVersion = this.getBranchVersion(parentProjectGav);
+                    logger.info("override project parent version with branch version " + parentBranchVersion + " @ " + projectGav);
                     model.getParent().setVersion(parentBranchVersion);
                 }
             }
+
+            if (model.getVersion() != null) {
+                logger.info("override project version with branch version " + branchVersion + " @ " + projectGav);
+                model.setVersion(branchVersion);
+            }
+
         } else {
             // skip unrelated models
             logger.debug("skipping unrelated model " + pomFile);
@@ -124,26 +128,53 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
     }
 
 
-
-    public String getVersion(GAV gav, File gitDirectory) {
-        Preconditions.checkArgument(gitDirectory.isDirectory(), "git directory must be a directory, but was " + gitDirectory);
-
+    public String getBranchVersion(Model model) {
+        GAV gav = gavOf(model);
         if (!branchVersionMap.containsKey(gav)) {
-            String version = "bondage-fairies";
+            String version = generateBranchVersion(model);
             branchVersionMap.put(gav, version);
         }
-
-        return getVersion(gav);
+        return getBranchVersion(gav);
     }
 
-    public String getVersion(GAV gav) {
-        if (!hasVersion(gav)) {
-            throw new IllegalStateException("Unexpected version request for " + gav);
+    public String getBranchVersion(GAV gav) {
+        if (!hasBranchVersion(gav)) {
+            throw new IllegalStateException("Unknown branch version for " + gav);
         }
         return branchVersionMap.get(gav);
     }
 
-    public boolean hasVersion(GAV gav) {
+    public String generateBranchVersion(Model model) {
+        return "SpongeBob";
+    }
+
+    public boolean hasBranchVersion(GAV gav) {
         return branchVersionMap.containsKey(gav);
+    }
+
+    public GAV gavOf(Model model) {
+
+        String groupId = model.getGroupId();
+        String artifactId = model.getArtifactId();
+        String version = model.getVersion();
+
+        if (model.getParent() != null) {
+            if (groupId == null) {
+                groupId = model.getParent().getGroupId();
+            }
+            if (version == null) {
+                version = model.getParent().getVersion();
+            }
+        }
+
+        return new GAV(groupId, artifactId, version);
+    }
+
+    public GAV gavOf(Parent parent) {
+        return new GAV(
+                parent.getGroupId(),
+                parent.getArtifactId(),
+                parent.getVersion()
+        );
     }
 }

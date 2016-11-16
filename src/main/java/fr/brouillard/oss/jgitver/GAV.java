@@ -20,7 +20,7 @@ public class GAV {
      * @param artifactId the artifactId of the maven object
      * @param version    the version of the maven object
      */
-    protected GAV(String groupId, String artifactId, String version) {
+    public GAV(String groupId, String artifactId, String version) {
         Preconditions.checkNotNull(groupId);
         Preconditions.checkNotNull(artifactId);
         Preconditions.checkNotNull(version);
@@ -29,39 +29,7 @@ public class GAV {
         this.version = version;
     }
 
-    public static GAV of(MavenProject project) {
-        return new GAV(
-                project.getGroupId(),
-                project.getArtifactId(),
-                project.getVersion()
-        );
-    }
 
-    public static GAV of(Model model) {
-
-        String groupId = model.getGroupId();
-        String artifactId = model.getArtifactId();
-        String version = model.getVersion();
-
-        if (model.getParent() != null) {
-            if (groupId == null) {
-                groupId = model.getParent().getGroupId();
-            }
-            if (version == null) {
-                version = model.getParent().getVersion();
-            }
-        }
-
-        return new GAV(groupId, artifactId, version);
-    }
-
-    public static GAV of(Parent parent) {
-        return new GAV(
-                parent.getGroupId(),
-                parent.getArtifactId(),
-                parent.getVersion()
-        );
-    }
 
     public String getGroupId() {
         return groupId;
