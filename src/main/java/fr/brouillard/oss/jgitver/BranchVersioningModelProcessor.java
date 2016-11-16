@@ -23,7 +23,7 @@ import com.google.inject.Key;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.building.Source;
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.model.*;
+import org.apache.maven.model.Model;
 import org.apache.maven.model.building.DefaultModelProcessor;
 import org.apache.maven.model.building.ModelProcessor;
 import org.apache.maven.session.scope.internal.SessionScope;
@@ -36,7 +36,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.util.Map;
-import java.util.Properties;
 
 /**
  * Replacement ModelProcessor using jgitver while loading POMs in order to adapt versions.
@@ -50,8 +49,7 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
     @Requirement
     private SessionScope sessionScope;
 
-    private static Map<GAV, String> branchVersionMap = Maps.newHashMap();
-
+    private Map<GAV, String> branchVersionMap = Maps.newHashMap();
 
     public BranchVersioningModelProcessor() {
         super();
@@ -94,7 +92,8 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
 
         // we should only register the plugin once, on the main project
         if (relativePath.getCanonicalPath().equals(rootProjectDirectory.getCanonicalPath())) {
-            addBranchVersioningPlugin(model);
+            logger.info("add plugin: " + BranchVersioningTempPomUpdateMojo.class);
+            BranchVersioningTempPomUpdateMojo.add(model);
         }
 
 
@@ -124,46 +123,9 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
         return model;
     }
 
-    /**
-     * @param model
-     * @throws IOException
-     * @see BranchVersioningPomMojo
-     */
-    private void addBranchVersioningPlugin(Model model) throws IOException {
-
-        if (model.getBuild() == null) {
-            model.setBuild(new Build());
-        }
-
-        Plugin plugin = new Plugin();
-        try (InputStream inputStream = getClass().getResourceAsStream("/mavenMeta.properties")) {
-            Properties properties = new Properties();
-            properties.load(inputStream);
-            plugin.setGroupId(properties.getProperty("project.groupId"));
-            plugin.setArtifactId(properties.getProperty("project.artifactId"));
-            plugin.setVersion(properties.getProperty("project.version"));
-        }
-
-        logger.info("add plugin: " + plugin.getGroupId() + ":" + plugin.getArtifactId() + ":" + plugin.getVersion());
-        model.getBuild().getPlugins().add(plugin);
-
-        PluginExecution pluginExecution = new PluginExecution();
-        pluginExecution.setPhase("verify");
-        plugin.getExecutions().add(pluginExecution);
-
-        pluginExecution.getGoals().add(BranchVersioningPomMojo.GOAL_ATTACH_TEMP_POMS);
-
-        Dependency dependency = new Dependency();
-        dependency.setGroupId(plugin.getGroupId());
-        dependency.setArtifactId(plugin.getArtifactId());
-        dependency.setVersion(plugin.getVersion());
-
-        plugin.getDependencies().add(dependency);
-
-    }
 
 
-    public static String getVersion(GAV gav, File gitDirectory) {
+    public String getVersion(GAV gav, File gitDirectory) {
         Preconditions.checkArgument(gitDirectory.isDirectory(), "git directory must be a directory, but was " + gitDirectory);
 
         if (!branchVersionMap.containsKey(gav)) {
@@ -174,14 +136,14 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
         return getVersion(gav);
     }
 
-    public static String getVersion(GAV gav) {
+    public String getVersion(GAV gav) {
         if (!hasVersion(gav)) {
             throw new IllegalStateException("Unexpected version request for " + gav);
         }
         return branchVersionMap.get(gav);
     }
 
-    public static boolean hasVersion(GAV gav) {
+    public boolean hasVersion(GAV gav) {
         return branchVersionMap.containsKey(gav);
     }
 }
