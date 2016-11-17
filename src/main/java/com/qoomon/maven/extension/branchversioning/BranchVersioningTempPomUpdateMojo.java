@@ -81,7 +81,7 @@ public class BranchVersioningTempPomUpdateMojo extends AbstractMojo {
 
         writeModel(project.getOriginalModel(), tmpPomFile);
 
-        logger.info("temp pom file " + tmpPomFile);
+        logger.info(project.getArtifact() + " temporary override pom file with" + tmpPomFile);
 
         project.setPomFile(tmpPomFile);
     }
