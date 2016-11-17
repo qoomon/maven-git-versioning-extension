@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 // @formatter:on
-package fr.brouillard.oss.jgitver;
+package com.qoomon.maven.extension.branchversioning;
 
 import com.google.common.collect.Maps;
 import com.google.inject.Key;

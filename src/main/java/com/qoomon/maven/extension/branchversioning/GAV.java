@@ -1,9 +1,6 @@
-package fr.brouillard.oss.jgitver;
+package com.qoomon.maven.extension.branchversioning;
 
 import com.google.common.base.Preconditions;
-import org.apache.maven.model.Model;
-import org.apache.maven.model.Parent;
-import org.apache.maven.project.MavenProject;
 
 /**
  * Wrapper for a maven project/dependency identified by a groupId/artifactId/version.
