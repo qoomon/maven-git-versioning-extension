@@ -18,8 +18,6 @@
 package com.qoomon.maven.extension.branchversioning;
 
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.model.Model;
-import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -30,19 +28,15 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.logging.Logger;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-
 /**
  * Works in conjunction with BranchVersioningModelProcessor.
  */
-@Mojo(name = BranchVersioningTempPomUpdateMojo.GOAL,
+@Mojo(name = BranchVersioningFormatCheckMojo.GOAL,
         instantiationStrategy = InstantiationStrategy.SINGLETON,
         threadSafe = true)
-public class BranchVersioningTempPomUpdateMojo extends AbstractMojo {
+public class BranchVersioningFormatCheckMojo extends AbstractMojo {
 
-    public static final String GOAL = "temp-pom-update";
+    public static final String GOAL = "check-version";
 
     @Parameter(defaultValue = "${session}", readonly = true)
     private MavenSession mavenSession;
@@ -61,45 +55,24 @@ public class BranchVersioningTempPomUpdateMojo extends AbstractMojo {
         mavenSession.getCurrentProject().getOriginalModel()
                 .getBuild().removePlugin(ExtensionUtil.projectPlugin());
 
-        try {
-            for (MavenProject project : mavenSession.getAllProjects()) {
-                temporaryOverridePomFileFromModel(project);
-            }
-        } catch (IOException e) {
-            throw new MojoExecutionException("Pom versioning failed!", e);
+        for (MavenProject project : mavenSession.getAllProjects()) {
+            GAV gav = GAV.of(project);
+            ensureSemanticVersionFormat(gav); // TODO extract to extra extension
+            ensureSnapshotVersion(gav); // TODO extract to extra extension
         }
     }
 
-    /**
-     * Attach temporary POM files to the projects so install and deployed files contains new version.
-     *
-     * @param project maven project
-     * @throws IOException if project model cannot be write correctly
-     */
-    public void temporaryOverridePomFileFromModel(MavenProject project) throws IOException {
-
-        File tmpPomFile = File.createTempFile("pom", ".xml");
-        tmpPomFile.deleteOnExit();
-
-        writeModel(project.getOriginalModel(), tmpPomFile);
-
-        logger.info(project.getArtifact() + " temporary override pom file with" + tmpPomFile);
-
-        project.setPomFile(tmpPomFile);
-    }
-
-
-    /**
-     * Writes model to pom file
-     *
-     * @param model   model
-     * @param pomFile pomFile
-     * @throws IOException IOException
-     */
-    public void writeModel(Model model, File pomFile) throws IOException {
-        try (FileWriter fileWriter = new FileWriter(pomFile)) {
-            new MavenXpp3Writer().write(fileWriter, model);
+    private void ensureSnapshotVersion(GAV gav) {
+        logger.info(gav + " Ensure snapshot version");
+        if (!gav.getVersion().endsWith("-SNAPSHOT")) {
+            throw new IllegalArgumentException(gav + " version is not a snapshot version");
         }
     }
 
+    private void ensureSemanticVersionFormat(GAV gav) {
+        logger.info(gav + " Ensure semantic version format");
+        if (!Semver.PATTERN.matcher(gav.getVersion()).matches()) {
+            throw new IllegalArgumentException(gav + " Version does not match semantic versioning pattern " + Semver.PATTERN);
+        }
+    }
 }

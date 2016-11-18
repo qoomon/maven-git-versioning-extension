@@ -24,15 +24,16 @@ import org.apache.maven.building.Source;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Build;
 import org.apache.maven.model.Model;
-import org.apache.maven.model.Parent;
+import org.apache.maven.model.Plugin;
+import org.apache.maven.model.PluginExecution;
 import org.apache.maven.model.building.DefaultModelProcessor;
 import org.apache.maven.model.building.ModelProcessor;
 import org.apache.maven.session.scope.internal.SessionScope;
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.logging.Logger;
+import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.ObjectId;
-import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
@@ -41,7 +42,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -116,7 +116,7 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
 
         File requestPomFile = mavenSession.getRequest().getPom();
 
-        GAV projectGav = gavOf(model);
+        GAV projectGav = GAV.of(model);
 
         // check for top level project
         if (pomFile.equals(requestPomFile)) {
@@ -134,7 +134,7 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
                 .startsWith(requestPomFile.getParentFile().getCanonicalPath())) {
             String branchVersion = getBranchVersion(projectGav, pomFile.getParentFile());
             if (model.getParent() != null) {
-                GAV parentProjectGav = gavOf(model.getParent());
+                GAV parentProjectGav = GAV.of(model.getParent());
                 if (hasBranchVersion(parentProjectGav)) {
                     String parentBranchVersion = this.getBranchVersion(parentProjectGav);
                     logger.debug(projectGav + " adjust parent version to " + parentBranchVersion);
@@ -165,19 +165,33 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
     }
 
     private void addBranchVersioningBuildPlugin(Model model) {
-        GAV projectGav = gavOf(model);
+        GAV projectGav = GAV.of(model);
         logger.debug(projectGav + " temporary add build plugin");
         if (model.getBuild() == null) {
             model.setBuild(new Build());
         }
-        model.getBuild().getPlugins().add(BranchVersioningTempPomUpdateMojo.asPlugin());
+
+        Plugin projectPlugin = ExtensionUtil.projectPlugin();
+        {   // FormatCheck
+            PluginExecution execution = new PluginExecution();
+            execution.setId(BranchVersioningFormatCheckMojo.GOAL);
+            execution.getGoals().add(BranchVersioningFormatCheckMojo.GOAL);
+            execution.setPhase("verify");
+            projectPlugin.getExecutions().add(execution);
+        }
+        {   // TempPomUpdate
+            PluginExecution execution = new PluginExecution();
+            execution.setId(BranchVersioningTempPomUpdateMojo.GOAL);
+            execution.getGoals().add(BranchVersioningTempPomUpdateMojo.GOAL);
+            execution.setPhase("verify");
+            projectPlugin.getExecutions().add(execution);
+        }
+        model.getBuild().getPlugins().add(projectPlugin);
     }
 
 
     public String getBranchVersion(GAV gav, File projectDirectory) {
         if (!branchVersionMap.containsKey(gav)) {
-            ensureSemanticVersionFormat(gav); // TODO extract to extra extension
-            ensureSnapshotVersion(gav); // TODO extract to extra extension
             String version = generateBranchVersion(gav, projectDirectory);
             branchVersionMap.put(gav, version);
         }
@@ -198,17 +212,13 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
         // update project version to branch version for current maven session
         try (Repository repository = repositoryBuilder.build()) {
 
-            ObjectId head = repository.resolve("HEAD");
+            ObjectId head = repository.resolve(Constants.HEAD);
             String commitHash = head.getName();
             String branchName = repository.getBranch();
             boolean detachedHead = branchName.equals(commitHash);
             if (detachedHead) {
                 branchName = "(HEAD detached at " + commitHash + ")";
             }
-//            Optional<String> tag = getTag(repository, VERSION_TAG_PREFIX);
-//            logger.debug(gav + " commit: " + commitHash);
-//            logger.debug(gav + " branch: " + branchName);
-//            logger.debug(gav + " tag:    " + tag);
 
             String branchVersion;
             // Detached HEAD
@@ -232,84 +242,43 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
 
             return branchVersion;
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    private Optional<String> getTag(Repository repository, String prefix) throws IOException {
-        Optional<String> tag = Optional.empty();
-
-        ObjectId head = repository.resolve("HEAD");
-        for (Map.Entry<String, Ref> refEntry : repository.getTags().entrySet()) {
-            boolean isAnnotatedTag = false;
-
-            String tagName = refEntry.getKey();
-            Ref tagRef = refEntry.getValue();
-            ObjectId targetCommit = repository.peel(tagRef).getPeeledObjectId();
-
-            if (targetCommit != null) {  // annotated Tag
-                isAnnotatedTag = true;
-            } else { // lightweight Tag
-                targetCommit = tagRef.getObjectId();
-            }
-
-            logger.debug("tag type: " + (isAnnotatedTag ? "annotated" : "lightweight")
-                    + " name: " + tagName
-                    + " ref:" + tagRef.getObjectId()
-                    + " target commit: " + targetCommit);
-
-            if (tagName.startsWith(prefix) && targetCommit.equals(head)) {
-                tag = Optional.of(tagName);
-                if (isAnnotatedTag) {
-                    break;
-                }
-            }
-        }
-        return tag;
-    }
-
-    private void ensureSnapshotVersion(GAV gav) {
-        logger.info(gav + " Ensure snapshot version");
-        if (!gav.getVersion().endsWith("-SNAPSHOT")) {
-            throw new IllegalArgumentException(gav + " version is not a snapshot version");
-        }
-    }
-
-    private void ensureSemanticVersionFormat(GAV gav) {
-        logger.info(gav + " Ensure semantic version format");
-        if (!Semver.PATTERN.matcher(gav.getVersion()).matches()) {
-            throw new IllegalArgumentException(gav + " Version does not match semantic versioning pattern " + Semver.PATTERN);
-        }
-    }
+//    private Optional<String> getVersionTag(Repository repository, String prefix) throws IOException {
+//
+//        Optional<String> tag = Optional.empty();
+//
+//        ObjectId head = repository.resolve(Constants.HEAD);
+//        for (Map.Entry<String, Ref> refEntry : repository.getTags().entrySet()) {
+//            boolean isAnnotatedTag = false;
+//
+//            String tagName = refEntry.getKey();
+//            Ref tagRef = refEntry.getValue();
+//            ObjectId targetCommit = repository.peel(tagRef).getPeeledObjectId();
+//
+//            if (targetCommit != null) {  // annotated Tag
+//                isAnnotatedTag = true;
+//            } else { // lightweight Tag
+//                targetCommit = tagRef.getObjectId();
+//            }
+//
+//            logger.debug("tag type: " + (isAnnotatedTag ? "annotated" : "lightweight")
+//                    + " name: " + tagName
+//                    + " ref:" + tagRef.getObjectId()
+//                    + " target commit: " + targetCommit);
+//
+//            if (isAnnotatedTag && tagName.startsWith(prefix) && targetCommit.equals(head)) {
+//                tag = Optional.of(tagName);
+//            }
+//        }
+//        return tag;
+//    }
 
     public boolean hasBranchVersion(GAV gav) {
         return branchVersionMap.containsKey(gav);
     }
 
-    public GAV gavOf(Model model) {
-
-        String groupId = model.getGroupId();
-        String artifactId = model.getArtifactId();
-        String version = model.getVersion();
-
-        if (model.getParent() != null) {
-            if (groupId == null) {
-                groupId = model.getParent().getGroupId();
-            }
-            if (version == null) {
-                version = model.getParent().getVersion();
-            }
-        }
-
-        return new GAV(groupId, artifactId, version);
-    }
-
-    public GAV gavOf(Parent parent) {
-        return new GAV(
-                parent.getGroupId(),
-                parent.getArtifactId(),
-                parent.getVersion()
-        );
-    }
 }

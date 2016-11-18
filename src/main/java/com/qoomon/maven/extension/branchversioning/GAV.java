@@ -1,6 +1,9 @@
 package com.qoomon.maven.extension.branchversioning;
 
 import com.google.common.base.Preconditions;
+import org.apache.maven.model.Model;
+import org.apache.maven.model.Parent;
+import org.apache.maven.project.MavenProject;
 
 /**
  * Wrapper for a maven project/dependency identified by a groupId/artifactId/version.
@@ -27,11 +30,9 @@ public class GAV {
     }
 
 
-
     public String getGroupId() {
         return groupId;
     }
-
 
     public String getArtifactId() {
         return artifactId;
@@ -39,6 +40,49 @@ public class GAV {
 
     public String getVersion() {
         return version;
+    }
+
+    public static GAV of(Model model) {
+
+        String groupId = model.getGroupId();
+        String artifactId = model.getArtifactId();
+        String version = model.getVersion();
+
+        if (model.getParent() != null) {
+            if (groupId == null) {
+                groupId = model.getParent().getGroupId();
+            }
+            if (version == null) {
+                version = model.getParent().getVersion();
+            }
+        }
+
+        return new GAV(groupId, artifactId, version);
+    }
+
+    public static GAV of(Parent parent) {
+        return new GAV(
+                parent.getGroupId(),
+                parent.getArtifactId(),
+                parent.getVersion()
+        );
+    }
+
+    public static GAV of(MavenProject project) {
+
+        String groupId = project.getGroupId();
+        String artifactId = project.getArtifactId();
+        String version = project.getVersion();
+
+        if (project.getParent() != null) {
+            if (groupId == null) {
+                groupId = project.getParent().getGroupId();
+            }
+            if (version == null) {
+                version = project.getParent().getVersion();
+            }
+        }
+        return new GAV(groupId, artifactId, version);
     }
 
     @Override
