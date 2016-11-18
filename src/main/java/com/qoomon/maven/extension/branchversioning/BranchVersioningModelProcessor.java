@@ -59,7 +59,7 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
 
     private Set<String> releaseBranchPrefixSet = Sets.newHashSet("support-", "support/");
 
-    public static final String RELEASE_PROFILE_NAME = "release";
+    public static final String RELEASE_BRANCH_PROFILE_NAME = "release-branch";
 
     /**
      * Options
@@ -156,11 +156,11 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
     }
 
     private void activateReleaseProfile(MavenSession mavenSession) {
-        if (mavenSession.getSettings().getProfiles().contains(RELEASE_PROFILE_NAME)) {
-            logger.info("Activate " + RELEASE_PROFILE_NAME + "profile.");
-            mavenSession.getSettings().addActiveProfile(RELEASE_PROFILE_NAME);
+        if (mavenSession.getSettings().getProfiles().contains(RELEASE_BRANCH_PROFILE_NAME)) {
+            logger.info("Activate " + RELEASE_BRANCH_PROFILE_NAME + "profile.");
+            mavenSession.getSettings().addActiveProfile(RELEASE_BRANCH_PROFILE_NAME);
         } else {
-            logger.info("No " + RELEASE_PROFILE_NAME + "profile available.");
+            logger.info("No " + RELEASE_BRANCH_PROFILE_NAME + "profile available.");
         }
     }
 
