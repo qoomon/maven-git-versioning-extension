@@ -81,25 +81,11 @@ public class BranchVersioningTempPomUpdateMojo extends AbstractMojo {
         File tmpPomFile = File.createTempFile("pom", ".xml");
         tmpPomFile.deleteOnExit();
 
-        writeModel(project.getOriginalModel(), tmpPomFile);
+        ExtensionUtil.writeModel(project.getOriginalModel(), tmpPomFile);
 
         logger.info(project.getArtifact() + " temporary override pom file with" + tmpPomFile);
 
         project.setPomFile(tmpPomFile);
-    }
-
-
-    /**
-     * Writes model to pom file
-     *
-     * @param model   model
-     * @param pomFile pomFile
-     * @throws IOException IOException
-     */
-    public void writeModel(Model model, File pomFile) throws IOException {
-        try (FileWriter fileWriter = new FileWriter(pomFile)) {
-            new MavenXpp3Writer().write(fileWriter, model);
-        }
     }
 
 }

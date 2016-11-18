@@ -172,13 +172,6 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
         }
 
         Plugin projectPlugin = ExtensionUtil.projectPlugin();
-        {   // FormatCheck
-            PluginExecution execution = new PluginExecution();
-            execution.setId(BranchVersioningFormatCheckMojo.GOAL);
-            execution.getGoals().add(BranchVersioningFormatCheckMojo.GOAL);
-            execution.setPhase("verify");
-            projectPlugin.getExecutions().add(execution);
-        }
         {   // TempPomUpdate
             PluginExecution execution = new PluginExecution();
             execution.setId(BranchVersioningTempPomUpdateMojo.GOAL);
