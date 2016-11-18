@@ -16,7 +16,7 @@ public class ExtensionUtil {
 
     public static Plugin projectPlugin() {
         Plugin plugin = new Plugin();
-        try (InputStream inputStream = BranchVersioningFormatCheckMojo.class.getResourceAsStream("/mavenMeta.properties")) {
+        try (InputStream inputStream = ExtensionUtil.class.getResourceAsStream("/mavenMeta.properties")) {
             Properties properties = new Properties();
             properties.load(inputStream);
             plugin.setGroupId(properties.getProperty("project.groupId"));
