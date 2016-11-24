@@ -17,6 +17,7 @@
 // @formatter:on
 package com.qoomon.maven.extension.branchversioning;
 
+import com.google.common.io.Files;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
@@ -52,21 +53,18 @@ public class BranchVersioningTempPomUpdateMojo extends AbstractMojo {
 
     @Override
     public synchronized void execute() throws MojoExecutionException, MojoFailureException {
-        if (!mavenSession.getCurrentProject().isExecutionRoot()) {
-            return; // We need to attach modified poms only once
+
+        if (mavenSession.getCurrentProject().isExecutionRoot()) {
+            // remove plugin from top level original project model
+            logger.debug("remove plugin");
+            mavenSession.getCurrentProject().getOriginalModel().getBuild()
+                    .removePlugin(ExtensionUtil.projectPlugin());
         }
 
-        // remove plugin from top level original project model
-        logger.debug("remove plugin");
-        mavenSession.getCurrentProject().getOriginalModel()
-                .getBuild().removePlugin(ExtensionUtil.projectPlugin());
-
         try {
-            for (MavenProject project : mavenSession.getAllProjects()) {
-                temporaryOverridePomFileFromModel(project);
-            }
+            temporaryOverridePomFileFromModel(mavenSession.getCurrentProject());
         } catch (IOException e) {
-            throw new MojoExecutionException("Pom versioning failed!", e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -78,12 +76,16 @@ public class BranchVersioningTempPomUpdateMojo extends AbstractMojo {
      */
     public void temporaryOverridePomFileFromModel(MavenProject project) throws IOException {
 
-        File tmpPomFile = File.createTempFile("pom", ".xml");
+        File tmpPomFile = File.createTempFile("pom_"
+                        + project.getGroupId() + "_"
+                        + project.getArtifactId() + "_"
+                        + project.getVersion() + "_",
+                ".xml");
         tmpPomFile.deleteOnExit();
 
         ExtensionUtil.writeModel(project.getOriginalModel(), tmpPomFile);
 
-        logger.info(project.getArtifact() + " temporary override pom file with" + tmpPomFile);
+        logger.info(project.getArtifact() + " temporary override pom file with " + tmpPomFile);
 
         project.setPomFile(tmpPomFile);
     }

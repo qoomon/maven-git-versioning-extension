@@ -50,7 +50,6 @@ import java.util.Set;
 @Component(role = ModelProcessor.class)
 public class BranchVersioningModelProcessor extends DefaultModelProcessor {
 
-    public static final String VERSION_TAG_PREFIX = "v";
     /**
      * Settings
      */
@@ -239,36 +238,6 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
             throw new RuntimeException(e);
         }
     }
-
-//    private Optional<String> getVersionTag(Repository repository, String prefix) throws IOException {
-//
-//        Optional<String> tag = Optional.empty();
-//
-//        ObjectId head = repository.resolve(Constants.HEAD);
-//        for (Map.Entry<String, Ref> refEntry : repository.getTags().entrySet()) {
-//            boolean isAnnotatedTag = false;
-//
-//            String tagName = refEntry.getKey();
-//            Ref tagRef = refEntry.getValue();
-//            ObjectId targetCommit = repository.peel(tagRef).getPeeledObjectId();
-//
-//            if (targetCommit != null) {  // annotated Tag
-//                isAnnotatedTag = true;
-//            } else { // lightweight Tag
-//                targetCommit = tagRef.getObjectId();
-//            }
-//
-//            logger.debug("tag type: " + (isAnnotatedTag ? "annotated" : "lightweight")
-//                    + " name: " + tagName
-//                    + " ref:" + tagRef.getObjectId()
-//                    + " target commit: " + targetCommit);
-//
-//            if (isAnnotatedTag && tagName.startsWith(prefix) && targetCommit.equals(head)) {
-//                tag = Optional.of(tagName);
-//            }
-//        }
-//        return tag;
-//    }
 
     public boolean hasBranchVersion(GAV gav) {
         return branchVersionMap.containsKey(gav);

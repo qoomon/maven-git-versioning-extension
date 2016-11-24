@@ -19,12 +19,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.github.qoomon</groupId>
+    <groupId>com.qoomon</groupId>
     <artifactId>maven-branch-versioning-extension</artifactId>
-    <version>v2.2.4</version>
-    <!--<groupId>com.qoomon</groupId>-->
-    <!--<artifactId>maven-branch-versioning-extension</artifactId>-->
-    <!--<version>2.2.0</version>-->
+    <version>2.3.0</version>
     <packaging>maven-plugin</packaging>
 
     <name>Maven Branch Versioning Extension</name>
