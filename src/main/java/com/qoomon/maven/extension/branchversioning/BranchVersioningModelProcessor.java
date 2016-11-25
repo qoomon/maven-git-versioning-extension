@@ -1,20 +1,3 @@
-// @formatter:off
-/**
- * Copyright (C) 2016 Matthieu Brouillard [http://oss.brouillard.fr/jgitver-maven-plugin] (matthieu@brouillard.fr)
- * <p>
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-// @formatter:on
 package com.qoomon.maven.extension.branchversioning;
 
 import com.google.common.collect.Maps;
@@ -44,6 +27,7 @@ import java.io.Reader;
 import java.util.Map;
 import java.util.Set;
 
+
 /**
  * Replacement ModelProcessor using jgitver while loading POMs in order to adapt versions.
  */
@@ -67,7 +51,7 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
     public static final String DISABLE_BRANCH_VERSIONING_PROPERTY_KEY = "disableBranchVersioning";
 
     @Requirement
-    private Logger logger = null;
+    private Logger logger;
 
     @Requirement
     private SessionScope sessionScope;
@@ -94,10 +78,8 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
     }
 
     private Model provisionModel(Model model, Map<String, ?> options) throws IOException {
-        // get current session from scope
-        MavenSession mavenSession = sessionScope.scope(Key.get(MavenSession.class), null).get();
 
-        Boolean disableExtension = Boolean.valueOf(mavenSession.getUserProperties().getProperty(DISABLE_BRANCH_VERSIONING_PROPERTY_KEY, "false"));
+        Boolean disableExtension = Boolean.valueOf(getMavenSession().getUserProperties().getProperty(DISABLE_BRANCH_VERSIONING_PROPERTY_KEY, "false"));
         if (disableExtension) {
             logger.info("Disabled.");
             return model;
@@ -113,25 +95,21 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
             return model;
         }
 
-        File requestPomFile = mavenSession.getRequest().getPom();
-
-        GAV projectGav = GAV.of(model);
+        File requestPomFile = getMavenSession().getRequest().getPom();
 
         // check for top level project
         if (pomFile.equals(requestPomFile)) {
-
-            // enable release profile on release branches
-            String branchVersion = getBranchVersion(projectGav, pomFile);
-            if (!branchVersion.endsWith("-SNAPSHOT")) {
-                activateReleaseProfile(mavenSession);
-            }
-
-            addBranchVersioningBuildPlugin(model); // will be removed from model by plugin itself
+            addBranchVersioningBuildPlugin(model); // has to be removed from model by plugin itself
         }
+
+        GAV projectGav = GAV.of(model);
 
         if (pomFile.getParentFile().getCanonicalPath()
                 .startsWith(requestPomFile.getParentFile().getCanonicalPath())) {
-            String branchVersion = getBranchVersion(projectGav, pomFile.getParentFile());
+
+            String branchVersion = getBranchVersion(projectGav, requestPomFile.getParentFile());
+
+            // update project version to branch version for current maven session
             if (model.getParent() != null) {
                 GAV parentProjectGav = GAV.of(model.getParent());
                 if (hasBranchVersion(parentProjectGav)) {
@@ -154,13 +132,8 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
         return model;
     }
 
-    private void activateReleaseProfile(MavenSession mavenSession) {
-        if (mavenSession.getSettings().getProfiles().contains(RELEASE_BRANCH_PROFILE_NAME)) {
-            logger.info("Activate " + RELEASE_BRANCH_PROFILE_NAME + "profile.");
-            mavenSession.getSettings().addActiveProfile(RELEASE_BRANCH_PROFILE_NAME);
-        } else {
-            logger.info("No " + RELEASE_BRANCH_PROFILE_NAME + "profile available.");
-        }
+    private MavenSession getMavenSession() {
+        return sessionScope.scope(Key.get(MavenSession.class), null).get();
     }
 
     private void addBranchVersioningBuildPlugin(Model model) {
@@ -171,20 +144,20 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
         }
 
         Plugin projectPlugin = ExtensionUtil.projectPlugin();
-        {   // TempPomUpdate
-            PluginExecution execution = new PluginExecution();
-            execution.setId(BranchVersioningTempPomUpdateMojo.GOAL);
-            execution.getGoals().add(BranchVersioningTempPomUpdateMojo.GOAL);
-            execution.setPhase("verify");
-            projectPlugin.getExecutions().add(execution);
-        }
+
+        PluginExecution execution = new PluginExecution();
+        execution.setId(BranchVersioningTempPomUpdateMojo.GOAL);
+        execution.getGoals().add(BranchVersioningTempPomUpdateMojo.GOAL);
+        execution.setPhase("verify");
+        projectPlugin.getExecutions().add(execution);
+
         model.getBuild().getPlugins().add(projectPlugin);
     }
 
 
-    public String getBranchVersion(GAV gav, File projectDirectory) {
+    public String getBranchVersion(GAV gav, File gitDir) {
         if (!branchVersionMap.containsKey(gav)) {
-            String version = generateBranchVersion(gav, projectDirectory);
+            String version = deduceBranchVersion(gav, gitDir);
             branchVersionMap.put(gav, version);
         }
         return getBranchVersion(gav);
@@ -197,13 +170,12 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
         return branchVersionMap.get(gav);
     }
 
-    public String generateBranchVersion(GAV gav, File projectDirectory) {
-        logger.debug(gav + " git directory " + projectDirectory);
-        FileRepositoryBuilder repositoryBuilder = new FileRepositoryBuilder().findGitDir(projectDirectory);
+    public String deduceBranchVersion(GAV gav, File gitDir) {
 
-        // update project version to branch version for current maven session
-        try (Repository repository = repositoryBuilder.build()) {
+        FileRepositoryBuilder repositoryBuilder = new FileRepositoryBuilder().findGitDir(gitDir);
+        logger.debug("git directory " + repositoryBuilder.getGitDir());
 
+         try (Repository repository = repositoryBuilder.build()) {
             ObjectId head = repository.resolve(Constants.HEAD);
             String commitHash = head.getName();
             String branchName = repository.getBranch();
