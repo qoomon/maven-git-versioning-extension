@@ -1,0 +1,8 @@
+<configuration>
+    <versionFormats>
+        <format>
+            <branchPattern>^feature-</branchPattern>
+            <versionFormat>xxx-${branchName}-${pomReleaseVersion}</versionFormat>
+        </format>
+    </versionFormats>
+</configuration>

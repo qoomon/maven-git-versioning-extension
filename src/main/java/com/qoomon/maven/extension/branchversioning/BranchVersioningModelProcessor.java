@@ -3,6 +3,9 @@ package com.qoomon.maven.extension.branchversioning;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.Key;
+import com.qoomon.maven.extension.branchversioning.config.Configuration;
+import com.qoomon.maven.extension.branchversioning.config.VersionFormat;
+import org.apache.commons.lang3.text.StrSubstitutor;
 import org.apache.maven.building.Source;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Build;
@@ -20,12 +23,14 @@ import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.Unmarshaller;
+import java.io.*;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 
 /**
@@ -34,21 +39,22 @@ import java.util.Set;
 @Component(role = ModelProcessor.class)
 public class BranchVersioningModelProcessor extends DefaultModelProcessor {
 
+    private static final String DISABLE_BRANCH_VERSIONING_PROPERTY_KEY = "disableBranchVersioning";
+
+    private static final String DEFAULT_BRANCH_VERSION_FORMAT = "${branchName}-SNAPSHOT";
+
     /**
      * Settings
      */
+    private Boolean disableExtension = false;
 
-    private String mainReleaseBranch = "master";
+    private LinkedHashMap<Pattern, String> branchVersionFormatMap = Maps.newLinkedHashMap();
 
-    private Set<String> releaseBranchPrefixSet = Sets.newHashSet("support-", "support/");
-
-    public static final String RELEASE_BRANCH_PROFILE_NAME = "release-branch";
-
-    /**
-     * Options
-     */
-
-    public static final String DISABLE_BRANCH_VERSIONING_PROPERTY_KEY = "disableBranchVersioning";
+    { // default
+        branchVersionFormatMap.put(Pattern.compile("^master$"), "${pomReleaseVersion}");
+        branchVersionFormatMap.put(Pattern.compile("^support/"), "${branchName}-${pomReleaseVersion}");
+        branchVersionFormatMap.put(Pattern.compile("^support-"), "${branchName}-${pomReleaseVersion}");
+    }
 
     @Requirement
     private Logger logger;
@@ -56,7 +62,10 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
     @Requirement
     private SessionScope sessionScope;
 
+    private boolean init = false;
+
     private Map<GAV, String> branchVersionMap = Maps.newHashMap();
+
 
     public BranchVersioningModelProcessor() {
         super();
@@ -79,41 +88,53 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
 
     private Model provisionModel(Model model, Map<String, ?> options) throws IOException {
 
-        Boolean disableExtension = Boolean.valueOf(getMavenSession().getUserProperties().getProperty(DISABLE_BRANCH_VERSIONING_PROPERTY_KEY, "false"));
-        if (disableExtension) {
-            logger.info("Disabled.");
-            return model;
-        }
-
         Source source = (Source) options.get(ModelProcessor.SOURCE);
         if (source == null) {
             return model;
         }
 
+        File rootProjectDirectory = getMavenSession().getRequest().getMultiModuleProjectDirectory();
         File pomFile = new File(source.getLocation());
         if (!pomFile.isFile()) {
             return model;
         }
-
-        File requestPomFile = getMavenSession().getRequest().getPom();
-
-        // check for top level project
-        if (pomFile.equals(requestPomFile)) {
-            addBranchVersioningBuildPlugin(model); // has to be removed from model by plugin itself
-        }
-
         GAV projectGav = GAV.of(model);
 
-        if (pomFile.getParentFile().getCanonicalPath()
-                .startsWith(requestPomFile.getParentFile().getCanonicalPath())) {
+        // init processor
+        if (!init) {
+            File configFile = new File(rootProjectDirectory, ".mvn/maven-branch-versioning-extension.configuration.xml");
+            if (configFile.exists()) {
+                branchVersionFormatMap = loadBranchVersionFormatMap(configFile);
+            }
+            disableExtension = Boolean.valueOf(getMavenSession().getUserProperties().getProperty(DISABLE_BRANCH_VERSIONING_PROPERTY_KEY, "false"));
+        }
+        init = true;
 
-            String branchVersion = getBranchVersion(projectGav, requestPomFile.getParentFile());
+        if (disableExtension) {
+            logger.info("Disabled.");
+            return model;
+        }
+
+        // check if belongs to project
+        if (pomFile.getParentFile().getCanonicalPath().startsWith(rootProjectDirectory.getCanonicalPath())) {
+            logger.error("ExecutionRootDirectory: " + getMavenSession().getExecutionRootDirectory());
+            logger.error("MultiModuleProjectDirectory: " + getMavenSession().getRequest().getMultiModuleProjectDirectory());
+            logger.error("getBaseDirectory: " + getMavenSession().getRequest().getBaseDirectory());
+            logger.error("pom: " + getMavenSession().getRequest().getPom());
+            logger.error("pomFile: " + pomFile);
+
+            // check for top level project
+            if (pomFile.getParentFile().getCanonicalPath().equals(rootProjectDirectory.getCanonicalPath())) {
+                addBranchVersioningBuildPlugin(model); // has to be removed from model by plugin itself
+            }
+
+            String branchVersion = getBranchVersion(projectGav, pomFile.getParentFile());
 
             // update project version to branch version for current maven session
             if (model.getParent() != null) {
                 GAV parentProjectGav = GAV.of(model.getParent());
                 if (hasBranchVersion(parentProjectGav)) {
-                    String parentBranchVersion = this.getBranchVersion(parentProjectGav);
+                    String parentBranchVersion = getBranchVersion(parentProjectGav);
                     logger.debug(projectGav + " adjust parent version to " + parentBranchVersion);
                     model.getParent().setVersion(parentBranchVersion);
                 }
@@ -175,37 +196,33 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
         FileRepositoryBuilder repositoryBuilder = new FileRepositoryBuilder().findGitDir(gitDir);
         logger.debug("git directory " + repositoryBuilder.getGitDir());
 
-         try (Repository repository = repositoryBuilder.build()) {
-            ObjectId head = repository.resolve(Constants.HEAD);
-            String commitHash = head.getName();
-            String branchName = repository.getBranch();
-            boolean detachedHead = branchName.equals(commitHash);
-            if (detachedHead) {
-                branchName = "(HEAD detached at " + commitHash + ")";
-            }
+        try (Repository repository = repositoryBuilder.build()) {
+            final ObjectId head = repository.resolve(Constants.HEAD);
+            final String commitHash = head.getName();
+            final String branchName = repository.getBranch();
+            final boolean detachedHead = branchName.equals(commitHash);
 
             String branchVersion;
             // Detached HEAD
             if (detachedHead) {
                 branchVersion = commitHash;
-            }
-            // Main Branch
-            else if (mainReleaseBranch.equalsIgnoreCase(branchName)) {
-                branchVersion = gav.getVersion().replaceFirst("-SNAPSHOT$", "");
-            }
-            // Release Branches
-            else if (releaseBranchPrefixSet.stream().anyMatch(branchName::startsWith)) {
-                branchVersion = branchName + "-" + gav.getVersion().replaceFirst("-SNAPSHOT$", "");
-            }
-            // Snapshot Branches
-            else {
-                branchVersion = branchName + "-SNAPSHOT";
-            }
+            } else {
+                Map<String, String> brnachVersioningDataMap = new HashMap<>();
+                brnachVersioningDataMap.put("commitHash", commitHash);
+                brnachVersioningDataMap.put("branchName", branchName);
+                brnachVersioningDataMap.put("pomVersion", gav.getVersion());
+                brnachVersioningDataMap.put("pomReleaseVersion", gav.getVersion().replaceFirst("-SNAPSHOT$", ""));
 
+                // find version format for branch
+                String versionFormat = branchVersionFormatMap.entrySet().stream()
+                        .filter(entry -> entry.getKey().matcher(branchName).find())
+                        .findFirst()
+                        .map(Map.Entry::getValue)
+                        .orElse(DEFAULT_BRANCH_VERSION_FORMAT);
+                branchVersion = StrSubstitutor.replace(versionFormat, brnachVersioningDataMap);
+            }
             logger.info(gav + " Branch: '" + branchName + "' -> Branch Version: '" + branchVersion + "'");
-
             return branchVersion;
-
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -215,4 +232,24 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
         return branchVersionMap.containsKey(gav);
     }
 
+
+    public LinkedHashMap<Pattern, String> loadBranchVersionFormatMap(File configFile) {
+        LinkedHashMap<Pattern, String> branchVersionFormatMap = Maps.newLinkedHashMap();
+
+        try (FileInputStream configFileInputStream = new FileInputStream(configFile)) {
+            Unmarshaller unmarshaller = JAXBContext.newInstance(Configuration.class).createUnmarshaller();
+            Configuration configuration = (Configuration) unmarshaller.unmarshal(configFileInputStream);
+            for (VersionFormat versionFormat : configuration.versionFormats) {
+                logger.debug("branchVersionFormat: " + versionFormat.branchPattern + " -> " + versionFormat.versionFormat);
+                branchVersionFormatMap.put(
+                        Pattern.compile(versionFormat.branchPattern),
+                        versionFormat.versionFormat
+                );
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        return branchVersionFormatMap;
+    }
 }
