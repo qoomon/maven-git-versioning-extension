@@ -1,0 +1,8 @@
+.settings/
+target/
+.classpath
+.project
+.checkstyle
+.idea/
+*.iml
+*.xml.versionsBackup
