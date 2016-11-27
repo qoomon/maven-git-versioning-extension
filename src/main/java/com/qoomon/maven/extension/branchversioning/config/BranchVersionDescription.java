@@ -10,11 +10,19 @@ import javax.xml.bind.annotation.XmlRootElement;
  */
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
-public class VersionFormat {
+public class BranchVersionDescription {
 
-    @XmlElement
+    @XmlElement(name = "pattern")
     public String branchPattern;
 
     @XmlElement
     public String versionFormat;
+
+    public BranchVersionDescription(String branchPattern, String versionFormat) {
+        this.branchPattern = branchPattern;
+        this.versionFormat = versionFormat;
+    }
+
+    private BranchVersionDescription() {
+    }
 }

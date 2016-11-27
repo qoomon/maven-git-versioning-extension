@@ -1,4 +1,4 @@
-package com.qoomon.maven.extension.branchversioning;
+package com.qoomon.maven;
 
 import com.google.common.base.Preconditions;
 import org.apache.maven.model.Model;
@@ -6,7 +6,7 @@ import org.apache.maven.model.Parent;
 import org.apache.maven.project.MavenProject;
 
 /**
- * Wrapper for a maven project/dependency identified by a groupId/artifactId/version.
+ * Maven artifact identifier consisting of groupId / artifactId / version.
  */
 public class GAV {
     private String groupId;
@@ -111,7 +111,7 @@ public class GAV {
 
     @Override
     public String toString() {
-        return String.format("%s::%s::%s", groupId, artifactId, version);
+        return String.format("%s:%s:%s", groupId, artifactId, version);
     }
 
 

@@ -1,33 +1,16 @@
-package com.qoomon.maven.extension.branchversioning;
+package com.qoomon.maven;
 
 import org.apache.maven.model.Model;
-import org.apache.maven.model.Plugin;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 
 import java.io.*;
-import java.util.Properties;
 
 /**
  * Created by qoomon on 18/11/2016.
  */
-public class ExtensionUtil {
-
-    public static Plugin projectPlugin() {
-        Plugin plugin = new Plugin();
-        try (InputStream inputStream = ExtensionUtil.class.getResourceAsStream("/mavenMeta.properties")) {
-            Properties properties = new Properties();
-            properties.load(inputStream);
-            plugin.setGroupId(properties.getProperty("project.groupId"));
-            plugin.setArtifactId(properties.getProperty("project.artifactId"));
-            plugin.setVersion(properties.getProperty("project.version"));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return plugin;
-    }
-
+public class ModelUtil {
 
     /**
      * Read model from pom file
