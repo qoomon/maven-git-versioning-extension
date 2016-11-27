@@ -213,11 +213,11 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
                     if (detachedHead) {
                         branchVersion = commitHash;
                     } else {
-                        Map<String, String> brnachVersioningDataMap = new HashMap<>();
-                        brnachVersioningDataMap.put("commitHash", commitHash);
-                        brnachVersioningDataMap.put("branchName", branchName);
-                        brnachVersioningDataMap.put("pomVersion", gav.getVersion());
-                        brnachVersioningDataMap.put("pomReleaseVersion", gav.getVersion().replaceFirst("-SNAPSHOT$", ""));
+                        Map<String, String> branchVersioningDataMap = new HashMap<>();
+                        branchVersioningDataMap.put("commitHash", commitHash);
+                        branchVersioningDataMap.put("branchName", branchName);
+                        branchVersioningDataMap.put("pomVersion", gav.getVersion());
+                        branchVersioningDataMap.put("pomReleaseVersion", gav.getVersion().replaceFirst("-SNAPSHOT$", ""));
 
                         // find version format for branch
                         String versionFormat = branchVersionFormatMap.entrySet().stream()
@@ -225,7 +225,7 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
                                 .findFirst()
                                 .map(Map.Entry::getValue)
                                 .orElse(DEFAULT_BRANCH_VERSION_FORMAT);
-                        branchVersion = StrSubstitutor.replace(versionFormat, brnachVersioningDataMap);
+                        branchVersion = StrSubstitutor.replace(versionFormat, branchVersioningDataMap);
                     }
 
                     logger.info(gav.getArtifactId()
