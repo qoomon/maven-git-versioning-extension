@@ -19,7 +19,7 @@ create or update ${basedir}/.mvn/extensions.xml
 </extensions>
 ```
 
-### configure
+### Configure
 create ${basedir}/.mvn/maven-branch-versioning-extension.xml
 ``` xml
 <configuration>
@@ -32,13 +32,13 @@ create ${basedir}/.mvn/maven-branch-versioning-extension.xml
     </branches>
 </configuration>
 ```
-#### branch pattern
+#### Branch Pattern
 The branch pattern is an arbitrary regex.
 
-#### version format
+#### Version Format
 The version format is an arbitrary string.
 
-**Available Placeholders**
+##### Available Placeholders
 - ${commitHash}
  - e.g. '0fc20459a8eceb2c4abb9bf0af45a6e8af17b94b'
 - ${branchName}
