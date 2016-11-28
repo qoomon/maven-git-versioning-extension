@@ -1,4 +1,4 @@
-# Branch Versioning Extension [![Maven Central](https://img.shields.io/maven-central/v/com.qoomon/maven-branch-versioning-extension.svg)]()
+# Branch Versioning Extension [![Maven Central](https://img.shields.io/maven-central/v/com.qoomon/maven-branch-versioning-extension.svg)](http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22maven-branch-versioning-extension%22)
 This extension will simulate project versions, based on current git branch.
 The pom files will not be modified, versions are modified in memory only.
 
