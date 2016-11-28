@@ -23,7 +23,7 @@ import java.io.IOException;
  * utilized by {@link BranchVersioningModelProcessor}
  */
 @Mojo(name = BranchVersioningPomReplacementMojo.GOAL,
-        defaultPhase = LifecyclePhase.VERIFY,
+        defaultPhase = LifecyclePhase.PREPARE_PACKAGE,
         instantiationStrategy = InstantiationStrategy.SINGLETON,
         threadSafe = true)
 public class BranchVersioningPomReplacementMojo extends AbstractMojo {
