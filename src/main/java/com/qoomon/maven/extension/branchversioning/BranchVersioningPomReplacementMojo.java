@@ -8,12 +8,14 @@ import org.apache.maven.model.Plugin;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+
 import org.apache.maven.plugins.annotations.*;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.logging.Logger;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 
 /**
  * Temporarily replace original pom files with pom files generated from in memory project models.
@@ -68,13 +70,9 @@ public class BranchVersioningPomReplacementMojo extends AbstractMojo {
      */
     public void temporaryOverridePomFileFromModel(MavenProject project) {
         try {
-            File tmpPomFile = File.createTempFile(
-                    "pom_"
-                            + project.getGroupId() + "_"
-                            + project.getArtifactId() + "_"
-                            + project.getVersion() + "_",
-                    ".xml");
-            tmpPomFile.deleteOnExit();
+
+            File tmpPomFile = new File(project.getBuild().getDirectory(), "branch_pom.xml");
+            tmpPomFile.getParentFile().mkdirs();
 
             ModelUtil.writeModel(project.getOriginalModel(), tmpPomFile);
 
