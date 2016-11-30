@@ -15,7 +15,7 @@ create or update ${basedir}/.mvn/extensions.xml
     <extension>
         <groupId>com.qoomon</groupId>
         <artifactId>maven-branch-versioning-extension</artifactId>
-        <version>2.3.0</version>
+        <version>LATEST</version>
     </extension>
     ...
 </extensions>
