@@ -8,21 +8,9 @@ public final class BuildProperties {
 
     private static final String FILE_PATH = "mavenBuild.properties";
 
-    private static final String PROJECT_GROUP_ID;
+    private static final Properties PROPERTIES = loadProperties();
 
-    private static final String PROJECT_ARTIFACT_ID;
-
-    private static final String PROJECT_VERSION;
-
-    static {
-        Properties properties = getBuildProperties();
-
-        PROJECT_GROUP_ID = properties.getProperty("project.groupId");
-        PROJECT_ARTIFACT_ID = properties.getProperty("project.artifactId");
-        PROJECT_VERSION = properties.getProperty("project.version");
-    }
-
-    private static Properties getBuildProperties() {
+    private static Properties loadProperties() {
         Properties properties = new Properties();
         try (InputStream inputStream = BuildProperties.class.getClassLoader().getResource(FILE_PATH).openStream()) {
             properties.load(inputStream);
@@ -31,20 +19,19 @@ public final class BuildProperties {
         }
         return properties;
     }
+    public static String value(String key){
+        return PROPERTIES.getProperty(key);
+    }
 
     public static String projectGroupId() {
-        return PROJECT_GROUP_ID;
+        return PROPERTIES.getProperty("project.groupId");
     }
 
     public static String projectArtifactId() {
-        return PROJECT_ARTIFACT_ID;
+        return PROPERTIES.getProperty("project.artifactId");
     }
 
     public static String projectVersion() {
-        return PROJECT_VERSION;
-    }
-
-    public static void main(String[] args) {
-        getBuildProperties().list(System.out);
+       return PROPERTIES.getProperty("project.version");
     }
 }

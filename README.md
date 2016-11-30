@@ -1,4 +1,4 @@
-# Branch Versioning Extension [![Maven Central](https://img.shields.io/maven-central/v/com.qoomon/maven-branch-versioning-extension.svg)](http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22maven-branch-versioning-extension%22)
+# Branch Versioning Extension [![Maven Central](https://img.shields.io/maven-central/v/com.qoomon/maven-branch-versioning-extension.svg)](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.qoomon%22%20AND%20a%3A%22maven-branch-versioning-extension%22)
 [![Dependency Status](https://dependencyci.com/github/qoomon/maven-branch-versioning-extension/badge)](https://dependencyci.com/github/qoomon/maven-branch-versioning-extension)
  
 This extension will simulate project versions, based on current git branch.

@@ -2,13 +2,13 @@ package com.qoomon.maven.extension.branchversioning;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
 import com.google.common.collect.Maps;
 import com.google.inject.Key;
 import com.qoomon.maven.GAV;
 import com.qoomon.maven.ModelUtil;
-import com.qoomon.maven.extension.branchversioning.config.Configuration;
-import com.qoomon.maven.extension.branchversioning.config.BranchVersionDescription;
+import com.qoomon.maven.extension.branchversioning.config.BranchVersioningConfiguration;
+import com.qoomon.maven.extension.branchversioning.config.model.Configuration;
+import com.qoomon.maven.extension.branchversioning.config.model.BranchVersionDescription;
 import com.qoomon.maven.BuildProperties;
 import org.apache.commons.lang3.text.StrSubstitutor;
 import org.apache.maven.building.Source;
@@ -44,23 +44,13 @@ import java.util.regex.Pattern;
 @Component(role = ModelProcessor.class)
 public class BranchVersioningModelProcessor extends DefaultModelProcessor {
 
-    private static final String DISABLE_BRANCH_VERSIONING_PROPERTY_KEY = "disableBranchVersioning";
-
     private static final String DEFAULT_BRANCH_VERSION_FORMAT = "${branchName}-SNAPSHOT";
-
-    /**
-     * Settings
-     */
-    private Boolean disableExtension = false;
-
-    private LinkedHashMap<Pattern, String> branchVersionFormatMap = Maps.newLinkedHashMap();
-
-    { // default
-        branchVersionFormatMap.put(Pattern.compile("^master$"), "${pomReleaseVersion}");
-    }
 
     @Requirement
     private Logger logger;
+
+    @Requirement
+    private BranchVersioningConfiguration configuration;
 
     @Requirement
     private SessionScope sessionScope;
@@ -88,6 +78,16 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
     }
 
     private Model provisionModel(Model model, Map<String, ?> options) throws IOException {
+        if (configuration.isDisabled()) {
+            logger.info("Disabled.");
+            return model;
+        }
+
+        // initial tasks
+        if (!init) {
+            logger.info("--- " + BuildProperties.projectArtifactId() + ":" + BuildProperties.projectVersion() + " ---");
+            init = true;
+        }
 
         Source source = (Source) options.get(ModelProcessor.SOURCE);
         if (source == null) {
@@ -101,26 +101,7 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
 
         GAV projectGav = GAV.of(model);
 
-        MavenSession session = getMavenSession();
-
-        // init processor
-        if (!init) {
-            logger.info("--- " + BuildProperties.projectArtifactId() + ":" + BuildProperties.projectVersion() + " ---");
-
-            File rootProjectDirectory = session.getRequest().getMultiModuleProjectDirectory();
-            File configFile = new File(rootProjectDirectory, ".mvn/" + BuildProperties.projectArtifactId() + ".xml");
-            logger.debug("load config from " + configFile);
-            if (configFile.exists()) {
-                branchVersionFormatMap = loadBranchVersionFormatMap(configFile);
-            }
-            disableExtension = Boolean.valueOf(session.getUserProperties().getProperty(DISABLE_BRANCH_VERSIONING_PROPERTY_KEY, "false"));
-        }
-        init = true;
-
-        if (disableExtension) {
-            logger.info("Disabled.");
-            return model;
-        }
+        MavenSession session = SessionUtil.getMavenSession(sessionScope);
 
         // check if belongs to project
         if (isProjectModule(session, pomFile)) {
@@ -174,9 +155,6 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
                 .equals(session.getRequest().getPom().getCanonicalPath());
     }
 
-    private MavenSession getMavenSession() {
-        return sessionScope.scope(Key.get(MavenSession.class), null).get();
-    }
 
     private void addBranchVersioningBuildPlugin(Model model) {
         GAV projectGav = GAV.of(model);
@@ -220,7 +198,7 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
                         branchVersioningDataMap.put("pomReleaseVersion", gav.getVersion().replaceFirst("-SNAPSHOT$", ""));
 
                         // find version format for branch
-                        String versionFormat = branchVersionFormatMap.entrySet().stream()
+                        String versionFormat = configuration.getBranchVersionFormatMap().entrySet().stream()
                                 .filter(entry -> entry.getKey().matcher(branchName).find())
                                 .findFirst()
                                 .map(Map.Entry::getValue)
@@ -241,23 +219,5 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
         }
     }
 
-    public LinkedHashMap<Pattern, String> loadBranchVersionFormatMap(File configFile) {
-        LinkedHashMap<Pattern, String> branchVersionFormatMap = Maps.newLinkedHashMap();
 
-        try (FileInputStream configFileInputStream = new FileInputStream(configFile)) {
-            Unmarshaller unmarshaller = JAXBContext.newInstance(Configuration.class).createUnmarshaller();
-            Configuration configuration = (Configuration) unmarshaller.unmarshal(configFileInputStream);
-            for (BranchVersionDescription branchVersionDescription : configuration.branches) {
-                logger.debug("branchVersionFormat: " + branchVersionDescription.branchPattern + " -> " + branchVersionDescription.versionFormat);
-                branchVersionFormatMap.put(
-                        Pattern.compile(branchVersionDescription.branchPattern),
-                        branchVersionDescription.versionFormat
-                );
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-        return branchVersionFormatMap;
-    }
 }
