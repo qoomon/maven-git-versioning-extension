@@ -2,14 +2,10 @@ package com.qoomon.maven.extension.branchversioning;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.Maps;
-import com.google.inject.Key;
+import com.qoomon.maven.BuildProperties;
 import com.qoomon.maven.GAV;
 import com.qoomon.maven.ModelUtil;
 import com.qoomon.maven.extension.branchversioning.config.BranchVersioningConfiguration;
-import com.qoomon.maven.extension.branchversioning.config.model.Configuration;
-import com.qoomon.maven.extension.branchversioning.config.model.BranchVersionDescription;
-import com.qoomon.maven.BuildProperties;
 import org.apache.commons.lang3.text.StrSubstitutor;
 import org.apache.maven.building.Source;
 import org.apache.maven.execution.MavenSession;
@@ -28,14 +24,13 @@ import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.Unmarshaller;
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import java.util.regex.Pattern;
 
 
 /**

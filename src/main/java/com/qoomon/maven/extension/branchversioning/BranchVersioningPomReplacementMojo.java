@@ -1,21 +1,19 @@
 package com.qoomon.maven.extension.branchversioning;
 
+import com.qoomon.maven.BuildProperties;
 import com.qoomon.maven.GAV;
 import com.qoomon.maven.ModelUtil;
-import com.qoomon.maven.BuildProperties;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-
 import org.apache.maven.plugins.annotations.*;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.logging.Logger;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 
 /**
  * Temporarily replace original pom files with pom files generated from in memory project models.
