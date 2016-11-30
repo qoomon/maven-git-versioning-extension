@@ -1,4 +1,4 @@
-package com.qoomon.maven.extension.branchversioning.config;
+package com.qoomon.maven.extension.branchversioning.config.model;
 
 import javax.xml.bind.annotation.*;
 import java.util.LinkedList;

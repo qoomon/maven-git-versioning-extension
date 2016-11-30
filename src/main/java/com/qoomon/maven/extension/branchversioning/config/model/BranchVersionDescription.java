@@ -1,4 +1,4 @@
-package com.qoomon.maven.extension.branchversioning.config;
+package com.qoomon.maven.extension.branchversioning.config.model;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -12,10 +12,10 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlAccessorType(XmlAccessType.FIELD)
 public class BranchVersionDescription {
 
-    @XmlElement(name = "pattern")
+    @XmlElement(required = true, name = "pattern")
     public String branchPattern;
 
-    @XmlElement
+    @XmlElement(required = true)
     public String versionFormat;
 
     public BranchVersionDescription(String branchPattern, String versionFormat) {
