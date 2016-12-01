@@ -22,7 +22,9 @@ create or update ${basedir}/.mvn/extensions.xml
 ```
 
 ### Configure
-create ${basedir}/.mvn/maven-branch-versioning-extension.xml
+Default Version Format: '${branchName}-SNAPSHOT'
+
+For Custom Configuration create ${basedir}/.mvn/maven-branch-versioning-extension.xml
 ``` xml
 <configuration>
     <branches>
