@@ -6,5 +6,6 @@ public class App {
         List<String> list = new LinkedList<>();
         long count = list.stream().count();
         System.out.println(count);
+        com.google.common.base.Preconditions.checkArgument(true);
     }
 }
