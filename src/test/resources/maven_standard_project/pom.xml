@@ -10,9 +10,15 @@
 
     <properties>
 
+
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>20.0</version>
+        </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -20,17 +26,5 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <artifactId>maven-branch-versioning-extension</artifactId>
-                <configuration>
-                    <!-- Specify the MyMojo parameter -->
-                    <outputDirectory>target/test-harness/project-to-test</outputDirectory>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
 
 </project>

@@ -73,6 +73,12 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
     }
 
     private Model provisionModel(Model model, Map<String, ?> options) throws IOException {
+
+        MavenSession session = SessionUtil.getMavenSession(sessionScope);
+        if(session == null){
+            return model;
+        }
+
         if (configuration.isDisabled()) {
             logger.info("Disabled.");
             return model;
@@ -95,8 +101,6 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
         }
 
         GAV projectGav = GAV.of(model);
-
-        MavenSession session = SessionUtil.getMavenSession(sessionScope);
 
         // check if belongs to project
         if (isProjectModule(session, pomFile)) {
