@@ -52,7 +52,7 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
 
     private boolean init = false;
 
-    private Cache<GAV, String> branchVersionMap = CacheBuilder.newBuilder().build();
+    private Cache<GAV, BranchVersion> branchVersionMap = CacheBuilder.newBuilder().build();
 
     public BranchVersioningModelProcessor() {
     }
@@ -75,7 +75,7 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
     private Model provisionModel(Model model, Map<String, ?> options) throws IOException {
 
         MavenSession session = SessionUtil.getMavenSession(sessionScope);
-        if(session == null){
+        if (session == null) {
             return model;
         }
 
@@ -121,18 +121,21 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
                     Model parentModel = ModelUtil.readModel(parentPomFile);
                     GAV parentModelGav = GAV.of(parentModel);
                     if (parentModelGav.equals(parentGav)) {
-                        String parentBranchVersion = deduceBranchVersion(parentGav, parentPomFile.getParentFile());
+                        BranchVersion parentBranchVersion = deduceBranchVersion(parentGav, parentPomFile.getParentFile());
                         logger.debug(projectGav + " adjust parent version to " + parentBranchVersion);
-                        model.getParent().setVersion(parentBranchVersion);
+                        model.getParent().setVersion(parentBranchVersion.get());
                     }
                 }
             }
 
             // always set version
             if (model.getVersion() != null) {
-                String branchVersion = deduceBranchVersion(projectGav, pomFile.getParentFile());
+                BranchVersion branchVersion = deduceBranchVersion(projectGav, pomFile.getParentFile());
                 logger.debug(projectGav + " temporary override version with " + branchVersion);
-                model.setVersion(branchVersion);
+                model.setVersion(branchVersion.get());
+
+                model.addProperty("git.branchName", branchVersion.getBranchName());
+                model.addProperty("git.commitHash", branchVersion.getCommitHash());
             }
 
         } else {
@@ -173,7 +176,7 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
     }
 
 
-    private String deduceBranchVersion(GAV gav, File gitDir) {
+    private BranchVersion deduceBranchVersion(GAV gav, File gitDir) {
         try {
             return branchVersionMap.get(gav, () -> {
                 FileRepositoryBuilder repositoryBuilder = new FileRepositoryBuilder().findGitDir(gitDir);
@@ -182,8 +185,8 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
                 try (Repository repository = repositoryBuilder.build()) {
                     final ObjectId head = repository.resolve(Constants.HEAD);
                     final String commitHash = head.getName();
-                    final String branchName = repository.getBranch();
-                    final boolean detachedHead = branchName.equals(commitHash);
+                    final boolean detachedHead = repository.getBranch().equals(commitHash);
+                    final String branchName = !detachedHead ? repository.getBranch() : "(HEAD detached at " + commitHash.substring(0, 7) + ")";
 
                     String branchVersion;
                     // Detached HEAD
@@ -210,11 +213,35 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
                             + " - branch: " + branchName
                             + " - version: " + branchVersion
                     );
-                    return branchVersion;
+                    return new BranchVersion(branchVersion, commitHash, branchName);
                 }
             });
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public class BranchVersion {
+        final String value;
+        final String commitHash;
+        final String branchName;
+
+        public BranchVersion(String value, String commitHash, String branchName) {
+            this.value = value;
+            this.commitHash = commitHash;
+            this.branchName = branchName;
+        }
+
+        public String get() {
+            return value;
+        }
+
+        public String getCommitHash() {
+            return commitHash;
+        }
+
+        public String getBranchName() {
+            return branchName;
         }
     }
 
