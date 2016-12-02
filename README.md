@@ -51,3 +51,13 @@ The version format is an arbitrary string.
  - e.g. '1.2.3-SNAPSHOT'
 - ${pomReleaseVersion}
  - e.g. '1.2.3'
+
+### Options
+- disableBranchVersioning
+ - if present disable extension, default: true
+  - e.g. mvn clean -DdisableBranchVersioning
+ 
+
+### Provided Properties
+- git.branchName
+- git.commitHash
