@@ -8,7 +8,7 @@ import org.apache.maven.session.scope.internal.SessionScope;
 /**
  * Created by qoomon on 30/11/2016.
  */
-public class SessionUtil {
+public class SessionScopeUtil {
 
     public static MavenSession getMavenSession(SessionScope sessionScope) {
         try {

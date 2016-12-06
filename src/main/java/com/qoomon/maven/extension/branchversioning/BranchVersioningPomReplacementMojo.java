@@ -41,14 +41,11 @@ public class BranchVersioningPomReplacementMojo extends AbstractMojo {
 
         MavenProject currentProject = mavenSession.getCurrentProject();
 
-        if (currentProject.isExecutionRoot()) {
-            logger.debug("executionRoot Processor: " + currentProject.getFile());
+        GAV gav = GAV.of(currentProject);
 
-            GAV gav = GAV.of(currentProject);
-            logger.debug(gav + "remove plugin");
+        logger.debug(gav + "remove plugin");
 
-            currentProject.getOriginalModel().getBuild().removePlugin(this.asPlugin());
-        }
+        currentProject.getOriginalModel().getBuild().removePlugin(this.asPlugin());
 
         temporaryOverridePomFileFromModel(currentProject);
     }

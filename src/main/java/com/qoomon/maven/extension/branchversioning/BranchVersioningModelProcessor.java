@@ -1,11 +1,10 @@
 package com.qoomon.maven.extension.branchversioning;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import com.qoomon.maven.BuildProperties;
 import com.qoomon.maven.GAV;
 import com.qoomon.maven.ModelUtil;
 import com.qoomon.maven.extension.branchversioning.config.BranchVersioningConfiguration;
+import com.qoomon.maven.extension.branchversioning.config.BranchVersioningConfigurationProvider;
 import org.apache.commons.lang3.text.StrSubstitutor;
 import org.apache.maven.building.Source;
 import org.apache.maven.execution.MavenSession;
@@ -30,7 +29,7 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
+import java.util.NoSuchElementException;
 
 
 /**
@@ -39,20 +38,14 @@ import java.util.concurrent.ExecutionException;
 @Component(role = ModelProcessor.class)
 public class BranchVersioningModelProcessor extends DefaultModelProcessor {
 
-    private static final String DEFAULT_BRANCH_VERSION_FORMAT = "${branchName}-SNAPSHOT";
-
     @Requirement
     private Logger logger;
 
     @Requirement
-    private BranchVersioningConfiguration configuration;
+    private BranchVersioningConfigurationProvider configurationProvider;
 
-    @Requirement
-    private SessionScope sessionScope;
+    private BranchVersioningConfiguration configuration = null;
 
-    private boolean init = false;
-
-    private Cache<GAV, BranchVersion> branchVersionMap = CacheBuilder.newBuilder().build();
 
     public BranchVersioningModelProcessor() {
     }
@@ -74,87 +67,68 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
 
     private Model provisionModel(Model model, Map<String, ?> options) throws IOException {
 
-        MavenSession session = SessionUtil.getMavenSession(sessionScope);
-        if (session == null) {
-            return model;
+        // init
+        if (configuration == null) {
+            logger.info("--- " + BuildProperties.projectArtifactId() + ":" + BuildProperties.projectVersion() + " ---");
+            configuration = configurationProvider.get();
+
+            if (configuration.isDisabled()) {
+                logger.info("Disabled.");
+            }
         }
 
         if (configuration.isDisabled()) {
-            logger.info("Disabled.");
             return model;
         }
 
-        // initial tasks
-        if (!init) {
-            logger.info("--- " + BuildProperties.projectArtifactId() + ":" + BuildProperties.projectVersion() + " ---");
-            init = true;
-        }
-
-        Source source = (Source) options.get(ModelProcessor.SOURCE);
-        if (source == null) {
-            return model;
-        }
-
-        File pomFile = new File(source.getLocation());
-        if (!pomFile.isFile()) {
+        Source pomSource = (Source) options.get(ModelProcessor.SOURCE);
+        File pomFile = new File(pomSource != null ? pomSource.getLocation() : "");
+        if (!isProjectPom(pomFile)) {
+            // skip unrelated models
+            logger.debug("skip unrelated model - source" + pomFile);
             return model;
         }
 
         GAV projectGav = GAV.of(model);
 
-        // check if belongs to project
-        if (isProjectModule(session, pomFile)) {
+        // deduce version
+        BranchVersion branchVersion = deduceBranchVersion(projectGav, pomFile.getParentFile());
 
-            // check for top level project
-            if (isExecutionRoot(session, pomFile)) {
-                logger.debug("executionRoot Processor: " + pomFile);
-                addBranchVersioningBuildPlugin(model); // has to be removed from model by plugin itself
-            }
+        // add properties
+        model.addProperty("git.branchName", branchVersion.getBranchName());
+        model.addProperty("git.commitHash", branchVersion.getCommitHash());
 
-            // update project version to branch version for current maven session
-            if (model.getParent() != null) {
+        // update project version
+        if (model.getVersion() != null) {
+            logger.debug(projectGav + " temporary override version with " + branchVersion);
+            model.setVersion(branchVersion.get());
+        }
 
-                GAV parentGav = GAV.of(model.getParent());
-
-                File parentPomFile = new File(pomFile.getParentFile(), model.getParent().getRelativePath());
-                if (parentPomFile.exists()) {
-                    Model parentModel = ModelUtil.readModel(parentPomFile);
-                    GAV parentModelGav = GAV.of(parentModel);
-                    if (parentModelGav.equals(parentGav)) {
-                        BranchVersion parentBranchVersion = deduceBranchVersion(parentGav, parentPomFile.getParentFile());
-                        logger.debug(projectGav + " adjust parent version to " + parentBranchVersion);
-                        model.getParent().setVersion(parentBranchVersion.get());
-                    }
+        // update parent version
+        if (model.getParent() != null) {
+            File parentPomFile = new File(pomFile.getParentFile(), model.getParent().getRelativePath());
+            GAV parentGav = GAV.of(model.getParent());
+            if (parentPomFile.exists() && isProjectPom(parentPomFile)) {
+                // check if parent pom file match project parent
+                Model parentModel = ModelUtil.readModel(parentPomFile);
+                GAV parentProjectGav = GAV.of(parentModel);
+                if (parentProjectGav.equals(parentGav)) {
+                    BranchVersion parentBranchVersion = deduceBranchVersion(parentGav, parentPomFile.getParentFile());
+                    logger.debug(projectGav + " adjust parent version to " + parentBranchVersion);
+                    model.getParent().setVersion(parentBranchVersion.get());
                 }
             }
-
-            // always set version
-            if (model.getVersion() != null) {
-                BranchVersion branchVersion = deduceBranchVersion(projectGav, pomFile.getParentFile());
-                logger.debug(projectGav + " temporary override version with " + branchVersion);
-                model.setVersion(branchVersion.get());
-
-                model.addProperty("git.branchName", branchVersion.getBranchName());
-                model.addProperty("git.commitHash", branchVersion.getCommitHash());
-            }
-
-        } else {
-            // skip unrelated models
-            logger.debug(projectGav + " skipping unrelated model - source" + pomFile);
         }
+
+        // add plugin
+        addBranchVersioningBuildPlugin(model); // has to be removed from model by plugin itself
 
         return model;
     }
 
-    private boolean isProjectModule(MavenSession session, File pomFile) throws IOException {
-        File rootProjectDirectory = session.getRequest().getMultiModuleProjectDirectory();
-        return pomFile.getParentFile().getCanonicalPath()
-                .startsWith(rootProjectDirectory.getCanonicalPath());
-    }
-
-    private boolean isExecutionRoot(MavenSession session, File pomFile) throws IOException {
-        return pomFile.getCanonicalPath()
-                .equals(session.getRequest().getPom().getCanonicalPath());
+    private boolean isProjectPom(File pomFile) throws IOException {
+        // only project pom files ends in .xml, pom files from dependencies from repository ends in .pom
+        return pomFile.isFile() && pomFile.getName().endsWith(".xml");
     }
 
 
@@ -177,46 +151,44 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
 
 
     private BranchVersion deduceBranchVersion(GAV gav, File gitDir) {
-        try {
-            return branchVersionMap.get(gav, () -> {
-                FileRepositoryBuilder repositoryBuilder = new FileRepositoryBuilder().findGitDir(gitDir);
-                logger.debug(gav + "git directory " + repositoryBuilder.getGitDir());
 
-                try (Repository repository = repositoryBuilder.build()) {
-                    final ObjectId head = repository.resolve(Constants.HEAD);
-                    final String commitHash = head.getName();
-                    final boolean detachedHead = repository.getBranch().equals(commitHash);
-                    final String branchName = !detachedHead ? repository.getBranch() : "(HEAD detached at " + commitHash.substring(0, 7) + ")";
 
-                    String branchVersion;
-                    // Detached HEAD
-                    if (detachedHead) {
-                        branchVersion = commitHash;
-                    } else {
-                        Map<String, String> branchVersioningDataMap = new HashMap<>();
-                        branchVersioningDataMap.put("commitHash", commitHash);
-                        branchVersioningDataMap.put("branchName", branchName);
-                        branchVersioningDataMap.put("pomVersion", gav.getVersion());
-                        branchVersioningDataMap.put("pomReleaseVersion", gav.getVersion().replaceFirst("-SNAPSHOT$", ""));
+        FileRepositoryBuilder repositoryBuilder = new FileRepositoryBuilder().findGitDir(gitDir);
+        logger.debug(gav + "git directory " + repositoryBuilder.getGitDir());
 
-                        // find version format for branch
-                        String versionFormat = configuration.getBranchVersionFormatMap().entrySet().stream()
-                                .filter(entry -> entry.getKey().matcher(branchName).find())
-                                .findFirst()
-                                .map(Map.Entry::getValue)
-                                .orElse(DEFAULT_BRANCH_VERSION_FORMAT);
-                        branchVersion = StrSubstitutor.replace(versionFormat, branchVersioningDataMap);
-                    }
+        try (Repository repository = repositoryBuilder.build()) {
+            final ObjectId head = repository.resolve(Constants.HEAD);
+            final String commitHash = head.getName();
+            final boolean detachedHead = repository.getBranch().equals(commitHash);
+            final String branchName = !detachedHead ? repository.getBranch() : "(HEAD detached at " + commitHash.substring(0, 7) + ")";
 
-                    logger.info(gav.getArtifactId()
-                            + ":" + gav.getVersion()
-                            + " - branch: " + branchName
-                            + " - version: " + branchVersion
-                    );
-                    return new BranchVersion(branchVersion, commitHash, branchName);
-                }
-            });
-        } catch (ExecutionException e) {
+            String branchVersion;
+            // Detached HEAD
+            if (detachedHead) {
+                branchVersion = commitHash;
+            } else {
+                Map<String, String> branchVersioningDataMap = new HashMap<>();
+                branchVersioningDataMap.put("commitHash", commitHash);
+                branchVersioningDataMap.put("branchName", branchName);
+                branchVersioningDataMap.put("pomVersion", gav.getVersion());
+                branchVersioningDataMap.put("pomReleaseVersion", gav.getVersion().replaceFirst("-SNAPSHOT$", ""));
+
+                // find version format for branch
+                String versionFormat = configuration.getBranchVersionFormatMap().entrySet().stream()
+                        .filter(entry -> entry.getKey().matcher(branchName).find())
+                        .findFirst()
+                        .map(Map.Entry::getValue)
+                        .orElseThrow(() -> new NoSuchElementException("No Version Format for '" + branchName + "' branch"));
+                branchVersion = StrSubstitutor.replace(versionFormat, branchVersioningDataMap);
+            }
+
+            logger.info(gav.getArtifactId()
+                    + ":" + gav.getVersion()
+                    + " - branch: " + branchName
+                    + " - version: " + branchVersion);
+
+            return new BranchVersion(branchVersion, commitHash, branchName);
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }

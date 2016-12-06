@@ -1,8 +1,0 @@
-<configuration>
-    <versionFormats>
-        <format>
-            <branchPattern>^master$</branchPattern>
-            <versionFormat>${pomReleaseVersion}</versionFormat>
-        </format>
-    </versionFormats>
-</configuration>
