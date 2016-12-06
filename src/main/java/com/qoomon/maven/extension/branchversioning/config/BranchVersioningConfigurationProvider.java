@@ -35,15 +35,12 @@ public class BranchVersioningConfigurationProvider {
 
     public BranchVersioningConfiguration get() {
 
-        boolean disable = false;
         MavenSession session = SessionScopeUtil.getMavenSession(sessionScope);
-        if (session == null) {
-            disable = true;
-        } else {
-            String disablePropertyValue = session.getUserProperties().getProperty(DISABLE_BRANCH_VERSIONING_PROPERTY_KEY);
-            if (disablePropertyValue != null) {
-                disable = Boolean.valueOf(disablePropertyValue);
-            }
+
+        boolean disable = false;
+        String disablePropertyValue = session.getUserProperties().getProperty(DISABLE_BRANCH_VERSIONING_PROPERTY_KEY);
+        if (disablePropertyValue != null) {
+            disable = Boolean.valueOf(disablePropertyValue);
         }
 
         LinkedHashMap<Pattern, String> branchVersionFormatMap = new LinkedHashMap<>();
