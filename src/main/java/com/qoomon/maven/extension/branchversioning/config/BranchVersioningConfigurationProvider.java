@@ -33,29 +33,36 @@ public class BranchVersioningConfigurationProvider {
     @Requirement
     private SessionScope sessionScope;
 
+    private BranchVersioningConfiguration configuration;
+
     public BranchVersioningConfiguration get() {
 
-        MavenSession session = SessionScopeUtil.getMavenSession(sessionScope);
+        if (configuration == null) {
 
-        boolean disable = false;
-        String disablePropertyValue = session.getUserProperties().getProperty(DISABLE_BRANCH_VERSIONING_PROPERTY_KEY);
-        if (disablePropertyValue != null) {
-            disable = Boolean.valueOf(disablePropertyValue);
-        }
+            MavenSession session = SessionScopeUtil.getMavenSession(sessionScope);
 
-        LinkedHashMap<Pattern, String> branchVersionFormatMap = new LinkedHashMap<>();
-        if (!disable) {
-            File rootProjectDirectory = session.getRequest().getMultiModuleProjectDirectory();
-            File configFile = new File(rootProjectDirectory, ".mvn/" + BuildProperties.projectArtifactId() + ".xml");
-            if (configFile.exists()) {
-                Configuration configuration = loadConfiguration(configFile);
-                branchVersionFormatMap = generateBranchVersionFormatMap(configuration);
+            boolean disable = false;
+            String disablePropertyValue = session.getUserProperties().getProperty(DISABLE_BRANCH_VERSIONING_PROPERTY_KEY);
+            if (disablePropertyValue != null) {
+                disable = Boolean.valueOf(disablePropertyValue);
             }
-            // add default
-            branchVersionFormatMap.put(Pattern.compile(".*"), DEFAULT_BRANCH_VERSION_FORMAT);
+
+            LinkedHashMap<Pattern, String> branchVersionFormatMap = new LinkedHashMap<>();
+            if (!disable) {
+                File rootProjectDirectory = session.getRequest().getMultiModuleProjectDirectory();
+                File configFile = new File(rootProjectDirectory, ".mvn/" + BuildProperties.projectArtifactId() + ".xml");
+                if (configFile.exists()) {
+                    Configuration configuration = loadConfiguration(configFile);
+                    branchVersionFormatMap = generateBranchVersionFormatMap(configuration);
+                }
+                // add default
+                branchVersionFormatMap.put(Pattern.compile(".*"), DEFAULT_BRANCH_VERSION_FORMAT);
+            }
+
+            configuration = new BranchVersioningConfiguration(disable, branchVersionFormatMap);
         }
 
-        return new BranchVersioningConfiguration(disable, branchVersionFormatMap);
+        return configuration;
     }
 
     private Configuration loadConfiguration(File configFile) {

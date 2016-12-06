@@ -1,5 +1,6 @@
 package com.qoomon.maven.extension.branchversioning;
 
+import com.google.inject.OutOfScopeException;
 import com.qoomon.maven.BuildProperties;
 import com.qoomon.maven.GAV;
 import com.qoomon.maven.ModelUtil;
@@ -7,7 +8,6 @@ import com.qoomon.maven.extension.branchversioning.config.BranchVersioningConfig
 import com.qoomon.maven.extension.branchversioning.config.BranchVersioningConfigurationProvider;
 import org.apache.commons.lang3.text.StrSubstitutor;
 import org.apache.maven.building.Source;
-import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Build;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Plugin;
@@ -42,13 +42,14 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
     private Logger logger;
 
     @Requirement
+    private SessionScope sessionScope;
+
+    @Requirement
     private BranchVersioningConfigurationProvider configurationProvider;
+
 
     private BranchVersioningConfiguration configuration = null;
 
-
-    public BranchVersioningModelProcessor() {
-    }
 
     @Override
     public Model read(File input, Map<String, ?> options) throws IOException {
@@ -66,6 +67,15 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
     }
 
     private Model provisionModel(Model model, Map<String, ?> options) throws IOException {
+
+        try {
+            // in some unknown cases there is no maven session available
+            // e.g. intelliJ project import
+            SessionScopeUtil.getMavenSession(sessionScope);
+        } catch (OutOfScopeException ex) {
+            logger.error("", ex);
+            return model;
+        }
 
         // init
         if (configuration == null) {
