@@ -1,6 +1,5 @@
 package com.qoomon.maven.extension.branchversioning;
 
-import com.google.inject.OutOfScopeException;
 import com.qoomon.maven.BuildProperties;
 import com.qoomon.maven.GAV;
 import com.qoomon.maven.ModelUtil;
@@ -8,6 +7,7 @@ import com.qoomon.maven.extension.branchversioning.config.BranchVersioningConfig
 import com.qoomon.maven.extension.branchversioning.config.BranchVersioningConfigurationProvider;
 import org.apache.commons.lang3.text.StrSubstitutor;
 import org.apache.maven.building.Source;
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Build;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Plugin;
@@ -27,9 +27,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.util.*;
+
+import static com.qoomon.maven.extension.branchversioning.SessionScopeUtil.*;
 
 
 /**
@@ -37,6 +37,9 @@ import java.util.NoSuchElementException;
  */
 @Component(role = ModelProcessor.class)
 public class BranchVersioningModelProcessor extends DefaultModelProcessor {
+
+    private static final String DISABLE_VERSIONING_PROPERTY_KEY = "versioning.disable";
+    private static final String BRANCH_VERSIONING_PROPERTY_KEY = "versioning.branch";
 
     @Requirement
     private Logger logger;
@@ -47,6 +50,9 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
     @Requirement
     private BranchVersioningConfigurationProvider configurationProvider;
 
+    private boolean initialized = false;
+
+    private boolean disabled = false;
 
     private BranchVersioningConfiguration configuration = null;
 
@@ -68,28 +74,41 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
 
     private Model provisionModel(Model model, Map<String, ?> options) throws IOException {
 
-        try {
-            // in some unknown cases there is no maven session available
-            // e.g. intelliJ project import
-            SessionScopeUtil.getMavenSession(sessionScope);
-        } catch (OutOfScopeException ex) {
-            logger.error("", ex);
+        if (disabled) {
             return model;
         }
 
-        // init
-        if (configuration == null) {
+        Optional<MavenSession> mavenSession = get(sessionScope, MavenSession.class);
+
+        // disabled extension if no maven session is present - sometimes there is no maven session available e.g. intelliJ project import
+        if (!mavenSession.isPresent()) {
+            logger.warn("Skip provisioning. No MavenSession present.");
+            disabled = true;
+            return model;
+        }
+
+        // ---------------- initialize ----------------
+
+        if (!initialized) {
             logger.info("--- " + BuildProperties.projectArtifactId() + ":" + BuildProperties.projectVersion() + " ---");
+
+            Properties userProperties = mavenSession.get().getUserProperties();
+
+            String disablePropertyValue = userProperties.getProperty(DISABLE_VERSIONING_PROPERTY_KEY);
+            if (disablePropertyValue != null) {
+                disabled = Boolean.valueOf(disablePropertyValue);
+                if (disabled) {
+                    logger.info("Disabled.");
+                    return model;
+                }
+            }
+
             configuration = configurationProvider.get();
 
-            if (configuration.isDisabled()) {
-                logger.info("Disabled.");
-            }
+            initialized = true;
         }
 
-        if (configuration.isDisabled()) {
-            return model;
-        }
+        // ---------------- provisioning ----------------
 
         Source pomSource = (Source) options.get(ModelProcessor.SOURCE);
         File pomFile = new File(pomSource != null ? pomSource.getLocation() : "");

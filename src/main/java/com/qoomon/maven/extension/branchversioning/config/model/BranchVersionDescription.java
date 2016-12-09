@@ -18,11 +18,7 @@ public class BranchVersionDescription {
     @XmlElement(required = true)
     public String versionFormat;
 
-    public BranchVersionDescription(String branchPattern, String versionFormat) {
-        this.branchPattern = branchPattern;
-        this.versionFormat = versionFormat;
-    }
+    @XmlElement(required = false)
+    public String tagFormat;
 
-    private BranchVersionDescription() {
-    }
 }
