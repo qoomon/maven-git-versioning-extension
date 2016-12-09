@@ -1,7 +1,5 @@
 package com.qoomon.maven.extension.branchversioning.config;
 
-import org.codehaus.plexus.component.annotations.Component;
-
 import java.util.LinkedHashMap;
 import java.util.regex.Pattern;
 
@@ -10,12 +8,9 @@ import java.util.regex.Pattern;
  */
 public class BranchVersioningConfiguration {
 
-    private final boolean disable;
-
     private final LinkedHashMap<Pattern, String> branchVersionFormatMap;
 
-    public BranchVersioningConfiguration(boolean disable, LinkedHashMap<Pattern, String> branchVersionFormatMap) {
-        this.disable = disable;
+    public BranchVersioningConfiguration(LinkedHashMap<Pattern, String> branchVersionFormatMap) {
         this.branchVersionFormatMap = branchVersionFormatMap;
     }
 
@@ -23,7 +18,4 @@ public class BranchVersioningConfiguration {
         return branchVersionFormatMap;
     }
 
-    public boolean isDisabled() {
-        return disable;
-    }
 }

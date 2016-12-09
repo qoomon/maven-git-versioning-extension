@@ -1,6 +1,7 @@
 package com.qoomon.maven.extension.branchversioning.config;
 
 import com.qoomon.maven.BuildProperties;
+import com.qoomon.maven.extension.branchversioning.ExtensionUtil;
 import com.qoomon.maven.extension.branchversioning.SessionScopeUtil;
 import com.qoomon.maven.extension.branchversioning.config.model.BranchVersionDescription;
 import com.qoomon.maven.extension.branchversioning.config.model.Configuration;
@@ -15,6 +16,7 @@ import javax.xml.bind.Unmarshaller;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.LinkedHashMap;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 /**
@@ -22,8 +24,6 @@ import java.util.regex.Pattern;
  */
 @Component(role = BranchVersioningConfigurationProvider.class, instantiationStrategy = "singleton")
 public class BranchVersioningConfigurationProvider {
-
-    private static final String DISABLE_BRANCH_VERSIONING_PROPERTY_KEY = "disableBranchVersioning";
 
     private static final String DEFAULT_BRANCH_VERSION_FORMAT = "${branchName}-SNAPSHOT";
 
@@ -39,31 +39,25 @@ public class BranchVersioningConfigurationProvider {
 
         if (configuration == null) {
 
-            MavenSession session = SessionScopeUtil.getMavenSession(sessionScope);
-
-            boolean disable = false;
-            String disablePropertyValue = session.getUserProperties().getProperty(DISABLE_BRANCH_VERSIONING_PROPERTY_KEY);
-            if (disablePropertyValue != null) {
-                disable = Boolean.valueOf(disablePropertyValue);
-            }
+            Optional<MavenSession> session = SessionScopeUtil.get(sessionScope, MavenSession.class);
 
             LinkedHashMap<Pattern, String> branchVersionFormatMap = new LinkedHashMap<>();
-            if (!disable) {
-                File rootProjectDirectory = session.getRequest().getMultiModuleProjectDirectory();
-                File configFile = new File(rootProjectDirectory, ".mvn/" + BuildProperties.projectArtifactId() + ".xml");
-                if (configFile.exists()) {
-                    Configuration configuration = loadConfiguration(configFile);
-                    branchVersionFormatMap = generateBranchVersionFormatMap(configuration);
-                }
-                // add default
-                branchVersionFormatMap.put(Pattern.compile(".*"), DEFAULT_BRANCH_VERSION_FORMAT);
-            }
 
-            configuration = new BranchVersioningConfiguration(disable, branchVersionFormatMap);
+            File configFile = ExtensionUtil.getConfigFile(session.get().getRequest(), BuildProperties.projectArtifactId());
+            if (configFile.exists()) {
+                Configuration configurationModel = loadConfiguration(configFile);
+                branchVersionFormatMap = generateBranchVersionFormatMap(configurationModel);
+            }
+            // add default
+            branchVersionFormatMap.put(Pattern.compile(".*"), DEFAULT_BRANCH_VERSION_FORMAT);
+
+
+            configuration = new BranchVersioningConfiguration(branchVersionFormatMap);
         }
 
         return configuration;
     }
+
 
     private Configuration loadConfiguration(File configFile) {
         logger.debug("load config from " + configFile);
