@@ -189,11 +189,12 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
             final ObjectId head = repository.resolve(Constants.HEAD);
             final String commitHash = head.getName();
             final boolean detachedHead = repository.getBranch().equals(commitHash);
-            final String branchName = !detachedHead ? repository.getBranch() : "(HEAD detached at " + commitHash.substring(0, 7) + ")";
+            final String branchName = Optional.ofNullable(System.getenv("GIT_BRANCH_NAME"))
+                    .orElse(repository.getBranch());
+
 
             String branchVersion;
-            // Detached HEAD
-            if (detachedHead) {
+            if (branchName.equals(commitHash)) {
                 branchVersion = commitHash;
             } else {
                 Map<String, String> branchVersioningDataMap = new HashMap<>();
