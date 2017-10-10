@@ -45,17 +45,17 @@ The version format is an arbitrary string.
 
 ##### Available Placeholders
 - ${commitHash}
- - e.g. '0fc20459a8eceb2c4abb9bf0af45a6e8af17b94b'
+  - e.g. '0fc20459a8eceb2c4abb9bf0af45a6e8af17b94b'
 - ${branchName}
- - e.g. 'master', 'feature/next-big-thing', ...
+  - e.g. 'master', 'feature-next-big-thing', ...
 - ${pomVersion}
- - e.g. '1.2.3-SNAPSHOT'
+  - e.g. '1.2.3-SNAPSHOT'
 - ${pomReleaseVersion}
- - e.g. '1.2.3'
+  - e.g. '1.2.3'
 
 ### Options
 - disableBranchVersioning
- - if present disable extension, default: true
+  - if present disable extension, default: true
   - e.g. mvn clean -DdisableBranchVersioning
  
 

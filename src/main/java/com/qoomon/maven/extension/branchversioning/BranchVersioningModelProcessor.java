@@ -216,7 +216,8 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
                     + " - branch: " + branchName
                     + " - version: " + branchVersion);
 
-            return new BranchVersion(branchVersion, commitHash, branchName);
+            return new BranchVersion(branchVersion.replace("/", "-"),
+                    commitHash, branchName);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
