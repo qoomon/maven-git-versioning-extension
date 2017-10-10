@@ -54,6 +54,9 @@ The version format is an arbitrary string.
   - e.g. '1.2.3'
 
 ### Options
+-  provide branch name as environment variable GIT_BRANCH_NAME
+  - useful for CI build in detached mode
+  - e.g. export GIT_BRANCH_NAME=$CI_BRANCH_NAME
 - disableBranchVersioning
   - if present disable extension, default: true
   - e.g. mvn clean -DdisableBranchVersioning
