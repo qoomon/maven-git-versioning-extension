@@ -6,7 +6,7 @@ import org.apache.maven.model.Parent;
 import org.apache.maven.project.MavenProject;
 
 /**
- * Maven artifact identifier consisting of groupId / artifactId / version.
+ * Maven artifact identifier consisting of groupId / artifactId / getVersion.
  */
 public class GAV {
     private String groupId;

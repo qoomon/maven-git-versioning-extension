@@ -12,6 +12,7 @@ public class BuildPropertiesTest {
     @Test
     public void value() throws Exception {
         // GIVEN
+
         // WHEN
         String projectGroupId = BuildProperties.value("project.groupId");
 

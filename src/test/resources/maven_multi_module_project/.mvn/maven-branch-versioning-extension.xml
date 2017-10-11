@@ -2,7 +2,7 @@
     <branches>
         <branch>
             <pattern>^master$</pattern>
-            <versionFormat>${pomReleaseVersion}</versionFormat>
+            <versionFormat>${version.release}</versionFormat>
         </branch>
     </branches>
 </configuration>

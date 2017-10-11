@@ -19,7 +19,6 @@ import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.logging.Logger;
 import org.eclipse.jgit.lib.Constants;
-import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
@@ -28,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.util.*;
+import java.util.stream.Stream;
 
 import static com.qoomon.maven.extension.branchversioning.SessionScopeUtil.*;
 
@@ -38,14 +38,17 @@ import static com.qoomon.maven.extension.branchversioning.SessionScopeUtil.*;
 @Component(role = ModelProcessor.class)
 public class BranchVersioningModelProcessor extends DefaultModelProcessor {
 
-    private static final String DISABLE_VERSIONING_PROPERTY_KEY = "versioning.disable";
-    private static final String BRANCH_VERSIONING_PROPERTY_KEY = "versioning.branch";
+    private static final String PROJECT_BRANCH_PROPERTY_KEY = "project.branch";
+    public static final String PROJECT_BRANCH_ENVIRONMENT_VARIABLE_NAME = "MAVEN_PROJECT_BRANCH";
 
     @Requirement
     private Logger logger;
 
     @Requirement
     private SessionScope sessionScope;
+
+    // can not be injected cause it is not always available
+    private MavenSession mavenSession;
 
     @Requirement
     private BranchVersioningConfigurationProvider configurationProvider;
@@ -54,7 +57,7 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
 
     private boolean disabled = false;
 
-    private BranchVersioningConfiguration configuration = null;
+    private BranchVersioningConfiguration configuration;
 
 
     @Override
@@ -74,38 +77,15 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
 
     private Model provisionModel(Model model, Map<String, ?> options) throws IOException {
 
-        if (disabled) {
-            return model;
-        }
-
-        Optional<MavenSession> mavenSession = get(sessionScope, MavenSession.class);
-
-        // disabled extension if no maven session is present - sometimes there is no maven session available e.g. intelliJ project import
-        if (!mavenSession.isPresent()) {
-            logger.warn("Skip provisioning. No MavenSession present.");
-            disabled = true;
-            return model;
-        }
-
         // ---------------- initialize ----------------
 
         if (!initialized) {
-            logger.info("--- " + BuildProperties.projectArtifactId() + ":" + BuildProperties.projectVersion() + " ---");
-
-            Properties userProperties = mavenSession.get().getUserProperties();
-
-            String disablePropertyValue = userProperties.getProperty(DISABLE_VERSIONING_PROPERTY_KEY);
-            if (disablePropertyValue != null) {
-                disabled = Boolean.valueOf(disablePropertyValue);
-                if (disabled) {
-                    logger.info("Disabled.");
-                    return model;
-                }
-            }
-
-            configuration = configurationProvider.get();
-
+            initialize();
             initialized = true;
+        }
+
+        if (disabled) {
+            return model;
         }
 
         // ---------------- provisioning ----------------
@@ -120,20 +100,20 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
 
         GAV projectGav = GAV.of(model);
 
-        // deduce version
-        BranchVersion branchVersion = deduceBranchVersion(projectGav, pomFile.getParentFile());
+        // deduce getVersion
+        ProjectVersion projectVersion = deduceBranchVersion(projectGav, pomFile.getParentFile());
 
         // add properties
-        model.addProperty("git.branchName", branchVersion.getBranchName());
-        model.addProperty("git.commitHash", branchVersion.getCommitHash());
+        model.addProperty("project.branch", projectVersion.getBranch());
+        model.addProperty("project.commit", projectVersion.getCommit());
 
-        // update project version
+        // update project getVersion
         if (model.getVersion() != null) {
-            logger.debug(projectGav + " temporary override version with " + branchVersion);
-            model.setVersion(branchVersion.get());
+            logger.debug(projectGav + " temporary override getVersion with " + projectVersion);
+            model.setVersion(projectVersion.getVersion());
         }
 
-        // update parent version
+        // update parent getVersion
         if (model.getParent() != null) {
             File parentPomFile = new File(pomFile.getParentFile(), model.getParent().getRelativePath());
             GAV parentGav = GAV.of(model.getParent());
@@ -142,9 +122,9 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
                 Model parentModel = ModelUtil.readModel(parentPomFile);
                 GAV parentProjectGav = GAV.of(parentModel);
                 if (parentProjectGav.equals(parentGav)) {
-                    BranchVersion parentBranchVersion = deduceBranchVersion(parentGav, parentPomFile.getParentFile());
-                    logger.debug(projectGav + " adjust parent version to " + parentBranchVersion);
-                    model.getParent().setVersion(parentBranchVersion.get());
+                    ProjectVersion parentProjectVersion = deduceBranchVersion(parentGav, parentPomFile.getParentFile());
+                    logger.debug(projectGav + " adjust parent getVersion to " + parentProjectVersion);
+                    model.getParent().setVersion(parentProjectVersion.getVersion());
                 }
             }
         }
@@ -155,7 +135,30 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
         return model;
     }
 
-    private boolean isProjectPom(File pomFile) throws IOException {
+    private void initialize() {
+        logger.info("--- " + BuildProperties.projectArtifactId() + ":" + BuildProperties.projectVersion() + " ---");
+
+        Optional<MavenSession> mavenSessionOptional = get(sessionScope, MavenSession.class);
+        if (!mavenSessionOptional.isPresent()) {
+            logger.warn("Skip provisioning. No MavenSession present.");
+            disabled = true;
+        } else {
+            mavenSession = mavenSessionOptional.get();
+
+            //  check if extension is disabled
+            String versionBranch = mavenSession.getUserProperties().getProperty(PROJECT_BRANCH_PROPERTY_KEY);
+            if ("disable".equals(versionBranch)) {
+                logger.info("Disabled.");
+                disabled = true;
+            }
+
+            if (!disabled) {
+                this.configuration = configurationProvider.get();
+            }
+        }
+    }
+
+    private boolean isProjectPom(File pomFile) {
         // only project pom files ends in .xml, pom files from dependencies from repository ends in .pom
         return pomFile.isFile() && pomFile.getName().endsWith(".xml");
     }
@@ -179,72 +182,74 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
     }
 
 
-    private BranchVersion deduceBranchVersion(GAV gav, File gitDir) {
-
+    private ProjectVersion deduceBranchVersion(GAV gav, File gitDir) throws IOException {
 
         FileRepositoryBuilder repositoryBuilder = new FileRepositoryBuilder().findGitDir(gitDir);
         logger.debug(gav + "git directory " + repositoryBuilder.getGitDir());
 
         try (Repository repository = repositoryBuilder.build()) {
-            final ObjectId head = repository.resolve(Constants.HEAD);
-            final String commitHash = head.getName();
-            final boolean detachedHead = repository.getBranch().equals(commitHash);
-            final String branchName = Optional.ofNullable(System.getenv("GIT_BRANCH_NAME"))
-                    .orElse(repository.getBranch());
+            final String commit = repository.resolve(Constants.HEAD).getName();
+            final boolean detachedHead = repository.getBranch().equals(commit);
 
-
-            String branchVersion;
-            if (branchName.equals(commitHash)) {
-                branchVersion = commitHash;
+            final String branch;
+            if (!detachedHead) {
+                branch = repository.getBranch();
             } else {
-                Map<String, String> branchVersioningDataMap = new HashMap<>();
-                branchVersioningDataMap.put("commitHash", commitHash);
-                branchVersioningDataMap.put("branchName", branchName);
-                branchVersioningDataMap.put("pomVersion", gav.getVersion());
-                branchVersioningDataMap.put("pomReleaseVersion", gav.getVersion().replaceFirst("-SNAPSHOT$", ""));
-
-                // find version format for branch
-                String versionFormat = configuration.getBranchVersionFormatMap().entrySet().stream()
-                        .filter(entry -> entry.getKey().matcher(branchName).find())
-                        .findFirst()
-                        .map(Map.Entry::getValue)
-                        .orElseThrow(() -> new NoSuchElementException("No Version Format for '" + branchName + "' branch"));
-                branchVersion = StrSubstitutor.replace(versionFormat, branchVersioningDataMap);
+                branch = Stream.of(
+                        mavenSession.getUserProperties().getProperty(PROJECT_BRANCH_PROPERTY_KEY),
+                        System.getenv(PROJECT_BRANCH_ENVIRONMENT_VARIABLE_NAME))
+                        .filter(Objects::nonNull).findFirst()
+                        .orElseThrow(() ->
+                                new IllegalStateException("No Branch Name provided in Detached HEAD state."));
             }
+
+            Map<String, String> branchVersioningDataMap = new HashMap<>();
+            branchVersioningDataMap.put("commit", commit);
+            branchVersioningDataMap.put("commit.short", commit.substring(0,7));
+            branchVersioningDataMap.put("branch", branch);
+            branchVersioningDataMap.put("version", gav.getVersion());
+            branchVersioningDataMap.put("version.release", gav.getVersion().replaceFirst("-SNAPSHOT$", ""));
+
+            // find getVersion format for branch
+            String versionFormat = configuration.getBranchVersionFormatMap().entrySet().stream()
+                    .filter(entry -> entry.getKey().matcher(branch).find())
+                    .findFirst()
+                    .map(Map.Entry::getValue)
+                    .orElseThrow(() -> new NoSuchElementException("No Version Format for '" + branch + "' branch."));
+            String branchVersion = StrSubstitutor.replace(versionFormat, branchVersioningDataMap);
+
 
             logger.info(gav.getArtifactId()
                     + ":" + gav.getVersion()
-                    + " - branch: " + branchName
-                    + " - version: " + branchVersion);
+                    + " - branch: " + branch
+                    + " - getVersion: " + branchVersion);
 
-            return new BranchVersion(branchVersion.replace("/", "-"),
-                    commitHash, branchName);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+            return new ProjectVersion(branchVersion.replace("/", "-"),
+                    commit, branch);
         }
     }
 
-    public class BranchVersion {
+    public class ProjectVersion {
         final String value;
-        final String commitHash;
-        final String branchName;
+        final String commit;
+        final String branch;
 
-        public BranchVersion(String value, String commitHash, String branchName) {
-            this.value = value;
-            this.commitHash = commitHash;
-            this.branchName = branchName;
+        public ProjectVersion(String version, String commit, String branch) {
+            this.value = version;
+            this.commit = commit;
+            this.branch = branch;
         }
 
-        public String get() {
+        public String getVersion() {
             return value;
         }
 
-        public String getCommitHash() {
-            return commitHash;
+        public String getCommit() {
+            return commit;
         }
 
-        public String getBranchName() {
-            return branchName;
+        public String getBranch() {
+            return branch;
         }
     }
 

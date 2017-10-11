@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
 @Component(role = BranchVersioningConfigurationProvider.class, instantiationStrategy = "singleton")
 public class BranchVersioningConfigurationProvider {
 
-    private static final String DEFAULT_BRANCH_VERSION_FORMAT = "${branchName}-SNAPSHOT";
+    private static final String DEFAULT_BRANCH_VERSION_FORMAT = "${branch}-SNAPSHOT";
 
     @Requirement
     private Logger logger;
@@ -34,6 +34,7 @@ public class BranchVersioningConfigurationProvider {
     private SessionScope sessionScope;
 
     private BranchVersioningConfiguration configuration;
+
 
     public BranchVersioningConfiguration get() {
 
