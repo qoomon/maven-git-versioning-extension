@@ -59,7 +59,7 @@ public class BranchVersioningPomReplacementMojo extends AbstractMojo {
     }
 
     /**
-     * Attach temporary POM files to the projects so install and deployed files contains new version.
+     * Attach temporary POM files to the projects so install and deployed files contains new getVersion.
      *
      * @param project maven project
      */
