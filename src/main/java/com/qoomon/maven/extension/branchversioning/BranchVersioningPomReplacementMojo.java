@@ -39,15 +39,19 @@ public class BranchVersioningPomReplacementMojo extends AbstractMojo {
     @Override
     public synchronized void execute() throws MojoExecutionException, MojoFailureException {
 
-        MavenProject currentProject = mavenSession.getCurrentProject();
+        try {
+            MavenProject currentProject = mavenSession.getCurrentProject();
 
-        GAV gav = GAV.of(currentProject);
+            GAV gav = GAV.of(currentProject);
 
-        logger.debug(gav + "remove plugin");
+            logger.debug(gav + "remove plugin");
 
-        currentProject.getOriginalModel().getBuild().removePlugin(this.asPlugin());
+            currentProject.getOriginalModel().getBuild().removePlugin(asPlugin());
 
-        temporaryOverridePomFileFromModel(currentProject);
+            temporaryOverridePomFileFromModel(currentProject);
+        } catch (Exception e) {
+            throw new MojoExecutionException("Branch Versioning Pom Replacement Mojo", e);
+        }
     }
 
     static Plugin asPlugin() {
@@ -62,21 +66,18 @@ public class BranchVersioningPomReplacementMojo extends AbstractMojo {
      * Attach temporary POM files to the projects so install and deployed files contains new getVersion.
      *
      * @param project maven project
+     * @throws IOException if pom model write fails
      */
-    public void temporaryOverridePomFileFromModel(MavenProject project) {
-        try {
+    public void temporaryOverridePomFileFromModel(MavenProject project) throws IOException {
 
-            File tmpPomFile = new File(project.getBuild().getDirectory(), "branch_pom.xml");
-            tmpPomFile.getParentFile().mkdirs();
+        File tmpPomFile = new File(project.getBuild().getDirectory(), "branch_pom.xml");
+        tmpPomFile.getParentFile().mkdirs();
 
-            ModelUtil.writeModel(project.getOriginalModel(), tmpPomFile);
+        ModelUtil.writeModel(project.getOriginalModel(), tmpPomFile);
 
-            logger.debug(project.getArtifact() + " temporary override pom file with " + tmpPomFile);
+        logger.debug(project.getArtifact() + " temporary override pom file with " + tmpPomFile);
 
-            project.setPomFile(tmpPomFile);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        project.setPomFile(tmpPomFile);
     }
 
 }

@@ -7,7 +7,7 @@
 
     <groupId>com.qoomon</groupId>
     <artifactId>maven-branch-versioning-extension</artifactId>
-    <version>3.1.0</version>
+    <version>3.1.1</version>
     <packaging>maven-plugin</packaging>
 
     <name>Maven Branch Versioning Extension</name>
@@ -208,7 +208,7 @@
             <distributionManagement>
                 <!--Deploy to Nexus Command-->
                 <!--export GPG_TTY=$(tty)-->
-                <!--mvn deploy -P release -Dgpg.passphrase=PASSWORD-->
+                <!--mvn deploy -P release-->
                 <snapshotRepository>
                     <id>sonatype-nexus-snapshots</id>
                     <name>Sonatype Nexus Snapshots</name>
