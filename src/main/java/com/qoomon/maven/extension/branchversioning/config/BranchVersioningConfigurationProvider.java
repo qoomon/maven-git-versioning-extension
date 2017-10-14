@@ -15,6 +15,7 @@ import org.simpleframework.xml.core.Persister;
 
 import java.io.File;
 import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
@@ -35,19 +36,25 @@ public class BranchVersioningConfigurationProvider {
     private BranchVersioningConfiguration configuration;
 
 
-    public BranchVersioningConfiguration get() {
+    public BranchVersioningConfiguration get() throws Exception {
+
 
         if (configuration == null) {
 
             Optional<MavenSession> session = SessionScopeUtil.get(sessionScope, MavenSession.class);
 
-            LinkedHashMap<Pattern, String> branchVersionFormatMap = new LinkedHashMap<>();
+            Map<Pattern, String> branchVersionFormatMap = new LinkedHashMap<>();
 
             File configFile = ExtensionUtil.getConfigFile(session.get().getRequest(), BuildProperties.projectArtifactId());
             if (configFile.exists()) {
-                Configuration configurationModel = loadConfiguration(configFile);
-                branchVersionFormatMap = generateBranchVersionFormatMap(configurationModel);
+                try {
+                    Configuration configurationModel = loadConfiguration(configFile);
+                    branchVersionFormatMap = generateBranchVersionFormatMap(configurationModel);
+                } catch (Exception e) {
+                    throw new Exception(configFile.toString(), e);
+                }
             }
+
             // add default
             branchVersionFormatMap.put(Pattern.compile(".*"), DEFAULT_BRANCH_VERSION_FORMAT);
 
@@ -56,22 +63,19 @@ public class BranchVersioningConfigurationProvider {
         }
 
         return configuration;
+
     }
 
 
-    private Configuration loadConfiguration(File configFile) {
+    private Configuration loadConfiguration(File configFile) throws Exception {
         logger.debug("load config from " + configFile);
         Serializer serializer = new Persister();
-        try {
-            return serializer.read(Configuration.class, configFile);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return serializer.read(Configuration.class, configFile);
     }
 
 
-    private LinkedHashMap<Pattern, String> generateBranchVersionFormatMap(Configuration configuration) {
-        LinkedHashMap<Pattern, String> map = new LinkedHashMap<>();
+    private Map<Pattern, String> generateBranchVersionFormatMap(Configuration configuration) {
+        Map<Pattern, String> map = new LinkedHashMap<>();
         for (BranchVersionDescription branchVersionDescription : configuration.branches) {
             map.put(
                     Pattern.compile(branchVersionDescription.pattern),

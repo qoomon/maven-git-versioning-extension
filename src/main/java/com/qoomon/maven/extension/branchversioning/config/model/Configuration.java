@@ -1,5 +1,7 @@
 package com.qoomon.maven.extension.branchversioning.config.model;
 
+import org.simpleframework.xml.ElementList;
+
 import java.util.LinkedList;
 import java.util.List;
 
@@ -8,6 +10,7 @@ import java.util.List;
  */
 public class Configuration {
 
+    @ElementList(type = BranchVersionDescription.class)
     public List<BranchVersionDescription> branches = new LinkedList<>();
 
 }
