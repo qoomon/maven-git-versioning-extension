@@ -10,11 +10,10 @@ import org.apache.maven.session.scope.internal.SessionScope;
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.logging.Logger;
+import org.simpleframework.xml.Serializer;
+import org.simpleframework.xml.core.Persister;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.Unmarshaller;
 import java.io.File;
-import java.io.FileInputStream;
 import java.util.LinkedHashMap;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -62,9 +61,9 @@ public class BranchVersioningConfigurationProvider {
 
     private Configuration loadConfiguration(File configFile) {
         logger.debug("load config from " + configFile);
-        try (FileInputStream configFileInputStream = new FileInputStream(configFile)) {
-            Unmarshaller unmarshaller = JAXBContext.newInstance(Configuration.class).createUnmarshaller();
-            return (Configuration) unmarshaller.unmarshal(configFileInputStream);
+        Serializer serializer = new Persister();
+        try {
+            return serializer.read(Configuration.class, configFile);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -75,7 +74,7 @@ public class BranchVersioningConfigurationProvider {
         LinkedHashMap<Pattern, String> map = new LinkedHashMap<>();
         for (BranchVersionDescription branchVersionDescription : configuration.branches) {
             map.put(
-                    Pattern.compile(branchVersionDescription.branchPattern),
+                    Pattern.compile(branchVersionDescription.pattern),
                     branchVersionDescription.versionFormat
             );
         }
