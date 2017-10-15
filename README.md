@@ -7,6 +7,8 @@ This extension will generate project versions, based on current git branch.
 
 **The pom files will not be modified, versions are modified in memory only.**
 
+![Example](doc/MavenBranchVersioningExtension.png)
+
 ## Install 
 
 ### add core extension
