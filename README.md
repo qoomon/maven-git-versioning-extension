@@ -3,8 +3,9 @@
 [![Build Status](https://travis-ci.org/qoomon/maven-branch-versioning-extension.svg?branch=master)](https://travis-ci.org/qoomon/maven-branch-versioning-extension)
 [![Dependency Status](https://dependencyci.com/github/qoomon/maven-branch-versioning-extension/badge)](https://dependencyci.com/github/qoomon/maven-branch-versioning-extension)
  
-This extension will simulate project versions, based on current git branch.
-The pom files will not be modified, versions are modified in memory only.
+This extension will generate project versions, based on current git branch.
+
+**The pom files will not be modified, versions are modified in memory only.**
 
 ## Install 
 
