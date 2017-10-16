@@ -8,15 +8,14 @@ import com.qoomon.maven.extension.branchversioning.config.model.Configuration;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.session.scope.internal.SessionScope;
 import org.codehaus.plexus.component.annotations.Component;
-import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.logging.Logger;
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 
+import javax.inject.Inject;
 import java.io.File;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.regex.Pattern;
 
 /**
@@ -25,34 +24,34 @@ import java.util.regex.Pattern;
 @Component(role = BranchVersioningConfigurationProvider.class, instantiationStrategy = "singleton")
 public class BranchVersioningConfigurationProvider {
 
-    private static final String DEFAULT_BRANCH_VERSION_FORMAT = "${branch}-SNAPSHOT";
-
-    @Requirement
     private Logger logger;
 
-    @Requirement
     private SessionScope sessionScope;
+
+
+    private static final String DEFAULT_BRANCH_VERSION_FORMAT = "${branch}-SNAPSHOT";
 
     private BranchVersioningConfiguration configuration;
 
+    @Inject
+    public BranchVersioningConfigurationProvider(Logger logger, SessionScope sessionScope) {
+        this.logger = logger;
+        this.sessionScope = sessionScope;
+    }
 
-    public BranchVersioningConfiguration get() throws Exception {
-
+    public BranchVersioningConfiguration get() {
 
         if (configuration == null) {
 
-            Optional<MavenSession> session = SessionScopeUtil.get(sessionScope, MavenSession.class);
+            MavenSession session = SessionScopeUtil.get(sessionScope, MavenSession.class).get();
 
             Map<Pattern, String> branchVersionFormatMap = new LinkedHashMap<>();
 
-            File configFile = ExtensionUtil.getConfigFile(session.get().getRequest(), BuildProperties.projectArtifactId());
+            File configFile = ExtensionUtil.getConfigFile(session.getRequest(), BuildProperties.projectArtifactId());
             if (configFile.exists()) {
-                try {
-                    Configuration configurationModel = loadConfiguration(configFile);
-                    branchVersionFormatMap = generateBranchVersionFormatMap(configurationModel);
-                } catch (Exception e) {
-                    throw new Exception(configFile.toString(), e);
-                }
+
+                Configuration configurationModel = loadConfiguration(configFile);
+                branchVersionFormatMap = generateBranchVersionFormatMap(configurationModel);
             }
 
             // add default
@@ -67,10 +66,14 @@ public class BranchVersioningConfigurationProvider {
     }
 
 
-    private Configuration loadConfiguration(File configFile) throws Exception {
-        logger.debug("load config from " + configFile);
-        Serializer serializer = new Persister();
-        return serializer.read(Configuration.class, configFile);
+    private Configuration loadConfiguration(File configFile) {
+        try {
+            logger.debug("load config from " + configFile);
+            Serializer serializer = new Persister();
+            return serializer.read(Configuration.class, configFile);
+        } catch (Exception e) {
+            throw new RuntimeException(configFile.toString(), e);
+        }
     }
 
 

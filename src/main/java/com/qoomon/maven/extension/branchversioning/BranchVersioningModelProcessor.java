@@ -17,13 +17,13 @@ import org.apache.maven.model.building.ModelProcessor;
 import org.apache.maven.model.io.ModelParseException;
 import org.apache.maven.session.scope.internal.SessionScope;
 import org.codehaus.plexus.component.annotations.Component;
-import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.logging.Logger;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
+import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,27 +40,33 @@ import static com.qoomon.maven.extension.branchversioning.SessionScopeUtil.*;
 @Component(role = ModelProcessor.class)
 public class BranchVersioningModelProcessor extends DefaultModelProcessor {
 
-    private static final String PROJECT_BRANCH_PROPERTY_KEY = "project.branch";
-    public static final String PROJECT_BRANCH_ENVIRONMENT_VARIABLE_NAME = "MAVEN_PROJECT_BRANCH";
-
-    @Requirement
     private Logger logger;
 
-    @Requirement
     private SessionScope sessionScope;
+
+    private BranchVersioningConfigurationProvider configurationProvider;
+
+
+    private static final String PROJECT_BRANCH_PROPERTY_KEY = "project.branch";
+
+    private static final String PROJECT_BRANCH_ENVIRONMENT_VARIABLE_NAME = "MAVEN_PROJECT_BRANCH";
 
     // can not be injected cause it is not always available
     private MavenSession mavenSession;
 
-    @Requirement
-    private BranchVersioningConfigurationProvider configurationProvider;
+    private BranchVersioningConfiguration configuration;
 
     private boolean initialized = false;
 
     private boolean disabled = false;
 
-    private BranchVersioningConfiguration configuration;
 
+    @Inject
+    public BranchVersioningModelProcessor(Logger logger, SessionScope sessionScope, BranchVersioningConfigurationProvider configurationProvider) {
+        this.logger = logger;
+        this.sessionScope = sessionScope;
+        this.configurationProvider = configurationProvider;
+    }
 
     @Override
     public Model read(File input, Map<String, ?> options) throws IOException {
