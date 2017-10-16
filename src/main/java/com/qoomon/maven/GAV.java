@@ -1,6 +1,5 @@
 package com.qoomon.maven;
 
-import com.google.common.base.Preconditions;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;
 import org.apache.maven.project.MavenProject;
@@ -21,9 +20,11 @@ public class GAV {
      * @param version    the version of the maven object
      */
     public GAV(String groupId, String artifactId, String version) {
-        Preconditions.checkNotNull(groupId);
-        Preconditions.checkNotNull(artifactId);
-        Preconditions.checkNotNull(version);
+
+        if (groupId == null) throw new IllegalArgumentException("groupId must not be null");
+        if (artifactId == null) throw new IllegalArgumentException("artifactId must not be null");
+        if (version == null) throw new IllegalArgumentException("version must not be null");
+
         this.groupId = groupId;
         this.artifactId = artifactId;
         this.version = version;

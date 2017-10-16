@@ -12,6 +12,7 @@ import org.apache.maven.plugins.annotations.*;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.logging.Logger;
 
+import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 
@@ -30,11 +31,15 @@ public class BranchVersioningPomReplacementMojo extends AbstractMojo {
 
     static final String GOAL = "pom-replacement";
 
-    @Parameter(defaultValue = "${session}", readonly = true)
     private MavenSession mavenSession;
 
-    @Component
     private Logger logger;
+
+    @Inject
+    public BranchVersioningPomReplacementMojo(Logger logger, MavenSession mavenSession) {
+        this.mavenSession = mavenSession;
+        this.logger = logger;
+    }
 
     @Override
     public synchronized void execute() throws MojoExecutionException, MojoFailureException {
