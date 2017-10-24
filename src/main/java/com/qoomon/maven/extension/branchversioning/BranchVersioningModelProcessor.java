@@ -226,7 +226,7 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
             Map<String, String> branchVersioningDataMap = new HashMap<>();
             branchVersioningDataMap.put("commit", commit);
             branchVersioningDataMap.put("commit.short", commit.substring(0, 7));
-            branchVersioningDataMap.put("branch", branch);
+            branchVersioningDataMap.put("branch", branch.replace("/", "-"));
             branchVersioningDataMap.put("version", gav.getVersion());
             branchVersioningDataMap.put("version.release", gav.getVersion().replaceFirst("-SNAPSHOT$", ""));
 
@@ -242,10 +242,9 @@ public class BranchVersioningModelProcessor extends DefaultModelProcessor {
             logger.info(gav.getArtifactId()
                     + ":" + gav.getVersion()
                     + " - branch: " + branch
-                    + " - getVersion: " + branchVersion);
+                    + " - branch-version: " + branchVersion);
 
-            return new ProjectVersion(branchVersion.replace("/", "-"),
-                    commit, branch);
+            return new ProjectVersion(branchVersion, commit, branch);
         }
     }
 
