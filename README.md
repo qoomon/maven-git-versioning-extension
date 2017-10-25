@@ -1,4 +1,4 @@
-# Branch Versioning Extension 
+# Maven Branch Versioning Extension 
 [![Maven Central](https://img.shields.io/maven-central/v/com.qoomon/maven-branch-versioning-extension.svg)](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.qoomon%22%20AND%20a%3A%22maven-branch-versioning-extension%22)
 [![Build Status](https://travis-ci.org/qoomon/maven-branch-versioning-extension.svg?branch=master)](https://travis-ci.org/qoomon/maven-branch-versioning-extension)
 [![Dependency Status](https://dependencyci.com/github/qoomon/maven-branch-versioning-extension/badge)](https://dependencyci.com/github/qoomon/maven-branch-versioning-extension)
