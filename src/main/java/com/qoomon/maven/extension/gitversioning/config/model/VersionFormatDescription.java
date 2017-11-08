@@ -1,4 +1,4 @@
-package com.qoomon.maven.extension.branchversioning.config.model;
+package com.qoomon.maven.extension.gitversioning.config.model;
 
 
 import org.simpleframework.xml.Element;
@@ -6,10 +6,13 @@ import org.simpleframework.xml.Element;
 /**
  * Created by qoomon on 26/11/2016.
  */
-public class BranchVersionDescription {
+public class VersionFormatDescription {
 
     @Element
     public String pattern;
+
+    @Element(required = false)
+    public String prefix = "";
 
     @Element
     public String versionFormat;

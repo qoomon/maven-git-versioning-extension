@@ -2,7 +2,7 @@
             xsi:schemaLocation="http://maven.apache.org/EXTENSIONS/1.0.0 http://maven.apache.org/xsd/core-extensions-1.0.0.xsd">
     <extension>
         <groupId>com.qoomon</groupId>
-        <artifactId>maven-branch-versioning-extension</artifactId>
-        <version>3.1.0</version>
+        <artifactId>maven-git-versioning-extension</artifactId>
+        <version>1.0.0</version>
     </extension>
 </extensions>

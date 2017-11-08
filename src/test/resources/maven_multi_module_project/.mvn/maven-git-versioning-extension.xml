@@ -1,0 +1,20 @@
+<configuration>
+    <branches>
+        <branch>
+            <pattern>master</pattern>
+            <versionFormat>${version.release}</versionFormat>
+        </branch>
+        <branch>
+            <pattern>release/.*</pattern>
+            <prefix>release/</prefix>
+            <versionFormat>${branch}-SNAPSHOT</versionFormat>
+        </branch>
+    </branches>
+    <tags>
+        <tag>
+            <pattern>version/.*</pattern>
+            <prefix>version/</prefix>
+            <versionFormat>${tag}</versionFormat>
+        </tag>
+    </tags>
+</configuration>
