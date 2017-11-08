@@ -4,7 +4,7 @@
  
 This extension will generate project versions, based on current **GIT branch** or **GIT tag**.
 
-ℹ **The pom files will not be modified, versions are modified in memory only.**
+ℹ &nbsp; **The pom files will not be modified, versions are modified in memory only.**
 
 ![Example](doc/MavenGitVersioningExtension.png)
 
