@@ -1,7 +1,6 @@
 # Maven Git Versioning Extension 
 [![Maven Central](https://img.shields.io/maven-central/v/com.qoomon/maven-git-versioning-extension.svg)](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.qoomon%22%20AND%20a%3A%22maven-git-versioning-extension%22)
 [![Build Status](https://travis-ci.org/qoomon/maven-git-versioning-extension.svg?branch=master)](https://travis-ci.org/qoomon/maven-git-versioning-extension)
-[![Dependency Status](https://dependencyci.com/github/qoomon/maven-git-versioning-extension/badge)](https://dependencyci.com/github/qoomon/maven-git-versioning-extension)
  
 This extension will generate project versions, based on current git branch or tag.
 
@@ -29,20 +28,20 @@ create or update ${basedir}/.mvn/extensions.xml
 ### Configure
 Default Branch Version Format: ```${branch}-SNAPSHOT```
 
-For Custom Configuration create ```${project.basedir}/.mvn/maven-git-versioning-extension.xml```
-* ```<configuration>``
-    * ```<branches>``` Branch specific configurations.
-        * ```<branch>``` 
-            * ```<pattern>``` An arbitrary regex to match branch names
-            * ```<prefix>``` Remove prefix from ```${branch}``` placeholder
-            * ```<versionFormat>``` An arbitrary string, see [Version Format Placeholders](#Version Format Placeholders)
-    * ```<tags>``` Tag specific configurations
-        * ```<tag>``` 
-            * ```<pattern>``` An arbitrary regex to match tag names
-            * ```<prefix>``` Remove prefix from ```${tag}``` placeholder
-            * ```<versionFormat>``` An arbitrary string, see [Version Format Placeholders](#Version Format Placeholders)
+For Custom Configuration create ```${project.basedir}/.mvn/maven-git-versioning-extension.xml```.
+* ```<configuration>```
+  * ```<branches>``` Branch specific configurations.
+    * ```<branch>``` 
+      * ```<pattern>``` An arbitrary regex to match branch names
+      * ```<prefix>``` Remove prefix from ```${branch}``` placeholder
+      * ```<versionFormat>``` An arbitrary string, see [Version Format Placeholders](#Version Format Placeholders)
+  * ```<tags>``` Tag specific configurations
+    * ```<tag>``` 
+      * ```<pattern>``` An arbitrary regex to match tag names
+      * ```<prefix>``` Remove prefix from ```${tag}``` placeholder
+      * ```<versionFormat>``` An arbitrary string, see [Version Format Placeholders](#Version Format Placeholders)
         
-##### Config Example ``maven-git-versioning-extension.xml```
+##### Config Example ```maven-git-versioning-extension.xml```
 ``` xml
 <configuration>
     <branches>
@@ -96,7 +95,7 @@ For Custom Configuration create ```${project.basedir}/.mvn/maven-git-versioning-
    - ```mvn -Dproject.tag=$CUSTOM_TAG_NAME ...```
    - ```export MAVEN_PROJECT_TAG=$CUSTOM_TAG_NAME```
 - disable plugin
-   - ```mvn -Dproject.gitVersioning=false ...``
+   - ```mvn -Dproject.gitVersioning=false ...```
 
 
 ### Provided Project Properties
