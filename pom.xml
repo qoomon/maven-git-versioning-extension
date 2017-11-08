@@ -6,17 +6,17 @@
     </prerequisites>
 
     <groupId>com.qoomon</groupId>
-    <artifactId>maven-branch-versioning-extension</artifactId>
-    <version>3.1.3</version>
+    <artifactId>maven-git-versioning-extension</artifactId>
+    <version>1.0.0</version>
     <packaging>maven-plugin</packaging>
 
-    <name>Maven Branch Versioning Extension</name>
-    <description>Maven Branch Versioning Extension</description>
-    <url>https://github.com/qoomon/maven-branch-versioning-extension</url>
+    <name>Maven Git Versioning Extension</name>
+    <description>Maven Git Versioning Extension</description>
+    <url>https://github.com/qoomon/maven-git-versioning-extension</url>
 
     <scm>
-        <url>https://github.com/qoomon/maven-branch-versioning-extension.git</url>
-        <connection>scm:git:https://github.com/qoomon/maven-branch-versioning-extension.git</connection>
+        <url>https://github.com/qoomon/maven-git-versioning-extension.git</url>
+        <connection>scm:git:https://github.com/qoomon/maven-git-versioning-extension.git</connection>
     </scm>
 
     <licenses>

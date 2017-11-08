@@ -1,4 +1,4 @@
-package com.qoomon.maven.extension.branchversioning;
+package com.qoomon.maven.extension.gitversioning;
 
 import com.qoomon.maven.BuildProperties;
 import com.qoomon.maven.GAV;
@@ -21,13 +21,13 @@ import java.io.IOException;
  * <p>
  * !!! DO NOT ADD THIS PLUGIN MANUALLY TO POM !!!
  * <p>
- * utilized by {@link BranchVersioningModelProcessor}
+ * utilized by {@link VersioningModelProcessor}
  */
-@Mojo(name = BranchVersioningPomReplacementMojo.GOAL,
+@Mojo(name = VersioningPomReplacementMojo.GOAL,
         defaultPhase = LifecyclePhase.PREPARE_PACKAGE,
         instantiationStrategy = InstantiationStrategy.SINGLETON,
         threadSafe = true)
-public class BranchVersioningPomReplacementMojo extends AbstractMojo {
+public class VersioningPomReplacementMojo extends AbstractMojo {
 
     static final String GOAL = "pom-replacement";
 
@@ -36,7 +36,7 @@ public class BranchVersioningPomReplacementMojo extends AbstractMojo {
     private Logger logger;
 
     @Inject
-    public BranchVersioningPomReplacementMojo(Logger logger, MavenSession mavenSession) {
+    public VersioningPomReplacementMojo(Logger logger, MavenSession mavenSession) {
         this.mavenSession = mavenSession;
         this.logger = logger;
     }
@@ -55,7 +55,7 @@ public class BranchVersioningPomReplacementMojo extends AbstractMojo {
 
             temporaryOverridePomFileFromModel(currentProject);
         } catch (Exception e) {
-            throw new MojoExecutionException("Branch Versioning Pom Replacement Mojo", e);
+            throw new MojoExecutionException("Git Versioning Pom Replacement Mojo", e);
         }
     }
 
@@ -75,7 +75,7 @@ public class BranchVersioningPomReplacementMojo extends AbstractMojo {
      */
     public void temporaryOverridePomFileFromModel(MavenProject project) throws IOException {
 
-        File tmpPomFile = new File(project.getBuild().getDirectory(), "branch_pom.xml");
+        File tmpPomFile = new File(project.getBuild().getDirectory(), "git_pom.xml");
         tmpPomFile.getParentFile().mkdirs();
 
         ModelUtil.writeModel(project.getOriginalModel(), tmpPomFile);

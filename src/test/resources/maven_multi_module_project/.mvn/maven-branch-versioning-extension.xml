@@ -1,8 +1,0 @@
-<configuration>
-    <branches>
-        <branch>
-            <pattern>^master$</pattern>
-            <versionFormat>${version.release}</versionFormat>
-        </branch>
-    </branches>
-</configuration>
