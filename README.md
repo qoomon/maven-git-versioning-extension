@@ -34,12 +34,12 @@ For Custom Configuration create ```${project.basedir}/.mvn/maven-git-versioning-
     * ```<branch>``` 
       * ```<pattern>``` An arbitrary regex to match branch names
       * ```<prefix>``` Remove prefix from ```${branch}``` placeholder
-      * ```<versionFormat>``` An arbitrary string, see [Version Format Placeholders](#Version Format Placeholders)
+      * ```<versionFormat>``` An arbitrary string, see [Version Format Placeholders](#version-format-placeholders)
   * ```<tags>``` Tag specific configurations
     * ```<tag>``` 
       * ```<pattern>``` An arbitrary regex to match tag names
       * ```<prefix>``` Remove prefix from ```${tag}``` placeholder
-      * ```<versionFormat>``` An arbitrary string, see [Version Format Placeholders](#Version Format Placeholders)
+      * ```<versionFormat>``` An arbitrary string, see [Version Format Placeholders](#version-format-placeholders)
         
 ##### Config Example ```maven-git-versioning-extension.xml```
 ``` xml
