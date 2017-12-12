@@ -95,7 +95,7 @@ For Custom Configuration create ```${project.basedir}/.mvn/maven-git-versioning-
    - ```mvn -Dproject.tag=$CUSTOM_TAG_NAME ...```
    - ```export MAVEN_PROJECT_TAG=$CUSTOM_TAG_NAME```
 - disable plugin
-   - ```mvn -Dproject.gitVersioning=false ...```
+   - ```mvn -DgitVersioning=false ...```
 
 
 ### Provided Project Properties
