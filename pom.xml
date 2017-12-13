@@ -7,7 +7,7 @@
 
     <groupId>com.qoomon</groupId>
     <artifactId>maven-git-versioning-extension</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <packaging>maven-plugin</packaging>
 
     <name>Maven Git Versioning Extension</name>
@@ -30,7 +30,7 @@
     <developers>
         <developer>
             <name>Bengt Brodersen</name>
-            <url>http://qoomon.me</url>
+            <url>https://qoomon.me</url>
             <roles>
                 <role>project creator</role>
             </roles>
