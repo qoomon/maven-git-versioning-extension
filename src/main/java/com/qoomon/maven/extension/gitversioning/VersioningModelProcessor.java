@@ -116,7 +116,7 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
 
             GAV projectGav = GAV.of(model);
 
-            // deduce getVersion
+            // deduce version
             ProjectVersion projectVersion = deduceProjectVersion(projectGav, pomFile.getParentFile());
 
             // add properties
@@ -124,13 +124,7 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
             model.addProperty("project.tag", projectVersion.getTag());
             model.addProperty("project.commit", projectVersion.getCommit());
 
-            // update project getVersion
-            if (model.getVersion() != null) {
-                logger.debug(projectGav + " temporary override getVersion with " + projectVersion);
-                model.setVersion(projectVersion.getVersion());
-            }
-
-            // update parent getVersion
+            // update parent version
             if (model.getParent() != null) {
                 File parentPomFile = new File(pomFile.getParentFile(), model.getParent().getRelativePath());
                 GAV parentGav = GAV.of(model.getParent());
@@ -140,10 +134,17 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
                     GAV parentProjectGav = GAV.of(parentModel);
                     if (parentProjectGav.equals(parentGav)) {
                         ProjectVersion parentProjectVersion = deduceProjectVersion(parentGav, parentPomFile.getParentFile());
-                        logger.debug(projectGav + " adjust parent getVersion to " + parentProjectVersion);
+                        logger.debug(projectGav + " adjust project parent version to " + parentProjectVersion);
                         model.getParent().setVersion(parentProjectVersion.getVersion());
                     }
                 }
+            }
+
+            // update project version
+            if (model.getParent() == null
+                    || !model.getParent().getVersion().equals(projectVersion.getVersion())) {
+                logger.debug(projectGav + " adjust project version to " + projectVersion);
+                model.setVersion(projectVersion.getVersion());
             }
 
             // add plugin
@@ -155,7 +156,7 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
         }
     }
 
-    private void initialize() throws Exception {
+    private void initialize() {
         logger.info("--- " + BuildProperties.projectArtifactId() + ":" + BuildProperties.projectVersion() + " ---");
 
         Optional<MavenSession> mavenSessionOptional = get(sessionScope, MavenSession.class);
@@ -357,20 +358,20 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
 
     class ProjectVersion {
 
-        final String value;
+        final String version;
         final String commit;
         final String branch;
         final String tag;
 
         ProjectVersion(String version, String commit, String branch, String tag) {
-            this.value = version;
+            this.version = version;
             this.commit = commit;
             this.branch = branch;
             this.tag = tag;
         }
 
         String getVersion() {
-            return value;
+            return version;
         }
 
         String getCommit() {
@@ -383,6 +384,11 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
 
         String getTag() {
             return tag;
+        }
+
+        @Override
+        public String toString() {
+            return version;
         }
     }
 
