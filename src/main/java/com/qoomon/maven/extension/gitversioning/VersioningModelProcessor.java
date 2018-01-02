@@ -31,6 +31,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.util.*;
+import java.util.regex.MatchResult;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -237,6 +240,8 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
                 if (versionTag.isPresent()) {
 
                     Map<String, String> tagVersionDataMap = buildCommonVersionDataMap(headCommit, gav);
+                    addPatternGroups(versionTag.get(), tagVersionFormatDescription.pattern, tagVersionDataMap);
+
                     tagVersionDataMap.put("tag", versionTag.get()
                             .replaceFirst(tagVersionFormatDescription.prefix, "")
                             .replace("/", "-"));
@@ -259,6 +264,8 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
                         .orElseThrow(() -> new ModelParseException(gitDir + ": No version format for branch '" + headBranch + "' found.", 0, 0));
 
                 Map<String, String> branchVersionDataMap = buildCommonVersionDataMap(headCommit, gav);
+                addPatternGroups(headBranch, branchVersionFormatDescription.pattern, branchVersionDataMap);
+
                 branchVersionDataMap.put("branch", headBranch
                         .replaceFirst(branchVersionFormatDescription.prefix, "")
                         .replace("/", "-"));
@@ -277,6 +284,16 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
                     + " -> version: " + projectVersion.get().getVersion());
 
             return projectVersion.get();
+        }
+    }
+
+    private void addPatternGroups(String label, String pattern, Map<String, String> dataMap) {
+        Pattern p = Pattern.compile(pattern);
+        Matcher m = p.matcher(label);
+        if(m.find()) {
+            for (int i = 0; i <= m.groupCount(); i++) {
+                dataMap.put(String.valueOf(i), m.group(i));
+            }
         }
     }
 
