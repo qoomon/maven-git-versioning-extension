@@ -86,6 +86,8 @@ For Custom Configuration create ```${project.basedir}/.mvn/maven-git-versioning-
 - ```${commit.short}```
   - short current commit hash
   - e.g. '0fc2045'
+- ```${PATTERN_GROUP_NAME or PATTERN_GROUP_INDEX}```
+  - Contents of group in the regex pattern can be addressed by group name or group index
 
 ### Options
 - provide or overwrite branch name
