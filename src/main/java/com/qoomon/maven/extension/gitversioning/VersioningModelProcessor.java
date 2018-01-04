@@ -31,6 +31,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -237,6 +239,7 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
                 if (versionTag.isPresent()) {
 
                     Map<String, String> tagVersionDataMap = buildCommonVersionDataMap(headCommit, gav);
+                    tagVersionDataMap.addAll(getRegexGroupValueMap(tagVersionFormatDescription.pattern, versionTag.get()));
                     tagVersionDataMap.put("tag", versionTag.get()
                             .replaceFirst(tagVersionFormatDescription.prefix, "")
                             .replace("/", "-"));
@@ -259,6 +262,7 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
                         .orElseThrow(() -> new ModelParseException(gitDir + ": No version format for branch '" + headBranch + "' found.", 0, 0));
 
                 Map<String, String> branchVersionDataMap = buildCommonVersionDataMap(headCommit, gav);
+                tagVersionDataMap.addAll(getRegexGroupValueMap(branchVersionFormatDescription.pattern, headBranch));
                 branchVersionDataMap.put("branch", headBranch
                         .replaceFirst(branchVersionFormatDescription.prefix, "")
                         .replace("/", "-"));
@@ -354,6 +358,34 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
             return "0000000000000000000000000000000000000000";
         }
         return head.getName();
+    }
+    
+    /** 
+     * @return a map of group-index and group-name to matching value
+    */
+    private  Map<String, String> getRegexGroupValueMap(String regex, String text) {
+      Map<String, String> result = new HashMap<>();
+      Pattern groupPattern = Pattern.compile(regex);
+      Matcher groupMatcher = groupPattern.matcher(text);
+      if(groupMatcher.find()) {
+        // add group index to value entries
+        for (int i = 0; i <= groupMatcher.groupCount(); i++) {
+          result.put(String.valueOf(i), groupMatcher.group(i));
+        }
+        
+        // determine group ames
+        Pattern groupNamePattern = Pattern.compile("\\(\\?<(?<name>[a-zA-Z][a-zA-Z0-9]*)>");
+        Matcher groupNameMatcher = groupNamePattern.matcher(groupPattern.toString());
+        
+        // add group name to value Entries
+        while (groupNameMatcher.find()) {
+          String groupName = groupNameMatcher.group("name");
+          result.put(groupName, groupMatcher.group(groupName));
+        }
+      }
+      return result.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue()
+                              .replaceFirst(branchVersionFormatDescription.prefix, "")
+                              .replace("/", "-")));
     }
 
     class ProjectVersion {
