@@ -207,8 +207,7 @@
             </build>
             <distributionManagement>
                 <!--Deploy to Nexus Command-->
-                <!--export GPG_TTY=$(tty)-->
-                <!--mvn deploy -P release-->
+                <!--GPG_TTY=$(tty) mvn deploy -P release-->
                 <snapshotRepository>
                     <id>sonatype-nexus-snapshots</id>
                     <name>Sonatype Nexus Snapshots</name>
