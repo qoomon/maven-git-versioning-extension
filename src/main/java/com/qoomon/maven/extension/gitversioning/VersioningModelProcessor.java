@@ -363,7 +363,6 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
             // add group index to value entries
             for (int i = 0; i <= groupMatcher.groupCount(); i++) {
                 result.put(String.valueOf(i), groupMatcher.group(i));
-                logger.error(String.valueOf(i) + " - " + groupMatcher.group(i));
             }
 
             // determine group ames
@@ -374,7 +373,6 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
             while (groupNameMatcher.find()) {
                 String groupName = groupNameMatcher.group("name");
                 result.put(groupName, groupMatcher.group(groupName));
-                logger.error(groupName + " - " + groupMatcher.group(groupName));
             }
         }
         return result;
