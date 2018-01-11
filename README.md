@@ -76,18 +76,18 @@ For Custom Configuration create `${project.basedir}/.mvn/maven-git-versioning-ex
 </configuration>
 ```
 
-#### Version Format Placeholders
+#### Version Format & Placeholders
+
+**'/' characters within version will be replaced by '-'**
 
 - `${branch}` (only available in within branch configuration)
 
   - current branch name
-  - '/' characters within branch name will be replaced by '-'
   - e.g. 'master', 'feature-next-big-thing', ...
 
 - `${tag}` (only available in within tag configuration)
 
   - current tag name, if multiple tags point to current commit tag names are sorted by `org.apache.maven.artifact.versioning.DefaultArtifactVersion` and the last one is selected
-  - '/' characters within tag name will be replaced by '-'
   - e.g. 'version/1.0.1', 'version-1.0.0', ...
 
 - `${version}`
