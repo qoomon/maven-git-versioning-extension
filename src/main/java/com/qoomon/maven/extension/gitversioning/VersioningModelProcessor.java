@@ -31,7 +31,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.util.*;
+
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -121,8 +124,12 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
             ProjectVersion projectVersion = deduceProjectVersion(projectGav, pomFile.getParentFile());
 
             // add properties
-            model.addProperty("project.branch", projectVersion.getBranch());
-            model.addProperty("project.tag", projectVersion.getTag());
+            if (projectVersion.getBranch() != null) {
+                model.addProperty("project.branch", projectVersion.getBranch());
+            }
+            if (projectVersion.getTag() != null) {
+                model.addProperty("project.tag", projectVersion.getTag());
+            }
             model.addProperty("project.commit", projectVersion.getCommit());
 
             // update parent version
@@ -209,76 +216,60 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
         FileRepositoryBuilder repositoryBuilder = new FileRepositoryBuilder().findGitDir(gitDir);
         logger.debug(gav + "git directory " + repositoryBuilder.getGitDir());
 
-        ProjectVersion projectVersion = null;
         try (Repository repository = repositoryBuilder.build()) {
 
             final String headCommit = getHeadCommit(repository);
-
+            String projectBranchName = null;
+            String projectTagName = null;
+            VersionFormatDescription projectVersionFormatDescription = null;
+            Map<String, String> projectVersionDataMap = buildCommonVersionDataMap(headCommit, gav);
 
             if (!configuration.getTagVersionDescriptions().isEmpty()) {
-
                 final List<String> headTags = getHeadTags(repository);
-
                 if (!headTags.isEmpty()) {
-
-                    Optional<String> versionTag = Optional.empty();
-
-                    VersionFormatDescription tagVersionFormatDescription = null;
-
                     for (VersionFormatDescription versionFormatDescription : configuration.getTagVersionDescriptions()) {
-                        versionTag = headTags.stream().sequential()
-                                .filter(tagName -> tagName.matches(versionFormatDescription.pattern))
+                        String tagName = headTags.stream().sequential()
+                                .filter(tag -> tag.matches(versionFormatDescription.pattern))
                                 .sorted((versionLeft, versionRight) -> {
                                     DefaultArtifactVersion tagVersionLeft = new DefaultArtifactVersion(removePrefix(versionLeft, versionFormatDescription.prefix));
                                     DefaultArtifactVersion tagVersionRight = new DefaultArtifactVersion(removePrefix(versionRight, versionFormatDescription.prefix));
                                     return tagVersionLeft.compareTo(tagVersionRight) * -1; // -1 revert sorting, latest version first
                                 })
-                                .findFirst();
+                                .findFirst().orElse(null);
 
-                        if (versionTag.isPresent()) {
-                            tagVersionFormatDescription = versionFormatDescription;
+                        if (tagName != null) {
+                            projectTagName = tagName;
+                            projectVersionFormatDescription = versionFormatDescription;
+                            projectVersionDataMap.put("tag", removePrefix(projectTagName, projectVersionFormatDescription.prefix));
+                            projectVersionDataMap.putAll(getRegexGroupValueMap(projectVersionFormatDescription.pattern, projectTagName));
                             break;
                         }
-                    }
-
-
-                    if (versionTag.isPresent()) {
-
-                        Map<String, String> tagVersionDataMap = buildCommonVersionDataMap(headCommit, gav);
-                        tagVersionDataMap.put("tag", removePrefix(versionTag.get(), tagVersionFormatDescription.prefix));
-
-                        String tagVersion = StrSubstitutor.replace(tagVersionFormatDescription.versionFormat, tagVersionDataMap);
-
-                        projectVersion = new ProjectVersion(escapeVersion(tagVersion), headCommit, "", versionTag.get());
                     }
                 }
             }
 
 
-            if (projectVersion == null) {
-                final String headBranch = getHeadBranch(repository)
+            if (projectTagName == null) {
+                final String branchName = getHeadBranch(repository)
                         .orElseThrow(() -> new ModelParseException(gitDir + ": No Branch Name provided in Detached HEAD state. See documentation.", 0, 0));
 
-                // find version format for branch
-                VersionFormatDescription branchVersionFormatDescription = configuration.getBranchVersionDescriptions().stream()
-                        .filter(versionFormatDescription -> headBranch.matches(versionFormatDescription.pattern))
+                projectBranchName = branchName;
+                projectVersionFormatDescription = configuration.getBranchVersionDescriptions().stream()
+                        .filter(versionFormatDescription -> branchName.matches(versionFormatDescription.pattern))
                         .findFirst()
-                        .orElseThrow(() -> new ModelParseException(gitDir + ": No version format for branch '" + headBranch + "' found.", 0, 0));
+                        .orElseThrow(() -> new ModelParseException(gitDir + ": No version format for branch '" + branchName + "' found.", 0, 0));
 
-                Map<String, String> branchVersionDataMap = buildCommonVersionDataMap(headCommit, gav);
-                branchVersionDataMap.put("branch", removePrefix(headBranch, branchVersionFormatDescription.prefix));
-
-                String branchVersion = StrSubstitutor.replace(branchVersionFormatDescription.versionFormat, branchVersionDataMap);
-
-                projectVersion = new ProjectVersion(escapeVersion(branchVersion), headCommit, headBranch, "");
+                projectVersionDataMap.put("branch", removePrefix(projectBranchName, projectVersionFormatDescription.prefix));
+                projectVersionDataMap.putAll(getRegexGroupValueMap(projectVersionFormatDescription.pattern, projectBranchName));
             }
 
+            String version = StrSubstitutor.replace(projectVersionFormatDescription.versionFormat, projectVersionDataMap);
+            ProjectVersion projectVersion = new ProjectVersion(escapeVersion(version), headCommit, projectBranchName, projectTagName);
 
             logger.info(gav.getArtifactId()
                     + ":" + gav.getVersion()
-                    + (!projectVersion.getTag().isEmpty()
-                    ? " - tag: " + projectVersion.getTag()
-                    : " - branch: " + projectVersion.getBranch())
+                    + (projectVersion.getTag() != null ? " - tag: " + projectVersion.getTag() : "")
+                    + (projectVersion.getTag() != null ? " - branch: " + projectVersion.getBranch() : "")
                     + " -> version: " + projectVersion.getVersion());
 
             return projectVersion;
@@ -361,6 +352,34 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
         return head.getName();
     }
 
+    /**
+     * @return a map of group-index and group-name to matching value
+     */
+    private Map<String, String> getRegexGroupValueMap(String regex, String text) {
+        Map<String, String> result = new HashMap<>();
+        Pattern groupPattern = Pattern.compile(regex);
+        Matcher groupMatcher = groupPattern.matcher(text);
+        if (groupMatcher.find()) {
+            // add group index to value entries
+            for (int i = 0; i <= groupMatcher.groupCount(); i++) {
+                result.put(String.valueOf(i), groupMatcher.group(i));
+                logger.error(String.valueOf(i) + " - " + groupMatcher.group(i));
+            }
+
+            // determine group ames
+            Pattern groupNamePattern = Pattern.compile("\\(\\?<(?<name>[a-zA-Z][a-zA-Z0-9]*)>");
+            Matcher groupNameMatcher = groupNamePattern.matcher(groupPattern.toString());
+
+            // add group name to value Entries
+            while (groupNameMatcher.find()) {
+                String groupName = groupNameMatcher.group("name");
+                result.put(groupName, groupMatcher.group(groupName));
+                logger.error(groupName + " - " + groupMatcher.group(groupName));
+            }
+        }
+        return result;
+    }
+
     private static String removePrefix(String string, String prefix) {
         return string.replaceFirst(Pattern.quote(prefix), "");
     }
@@ -404,6 +423,4 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
             return version;
         }
     }
-
-
 }
