@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -208,47 +209,53 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
         FileRepositoryBuilder repositoryBuilder = new FileRepositoryBuilder().findGitDir(gitDir);
         logger.debug(gav + "git directory " + repositoryBuilder.getGitDir());
 
-        Optional<ProjectVersion> projectVersion = Optional.empty();
+        ProjectVersion projectVersion = null;
         try (Repository repository = repositoryBuilder.build()) {
 
             final String headCommit = getHeadCommit(repository);
-            final List<String> headTags = getHeadTags(repository);
+
 
             if (!configuration.getTagVersionDescriptions().isEmpty()) {
 
-                Optional<String> versionTag = Optional.empty();
-                VersionFormatDescription tagVersionFormatDescription = null;
-                for (VersionFormatDescription versionFormatDescription : configuration.getTagVersionDescriptions()) {
-                    versionTag = headTags.stream().sequential()
-                            .filter(tagName -> tagName.matches(versionFormatDescription.pattern))
-                            .sorted((tagLeft, tagRight) -> {
-                                DefaultArtifactVersion tagVersionLeft = new DefaultArtifactVersion(tagLeft.replaceFirst(versionFormatDescription.prefix, ""));
-                                DefaultArtifactVersion tagVersionRight = new DefaultArtifactVersion(tagRight.replaceFirst(versionFormatDescription.prefix, ""));
-                                return tagVersionLeft.compareTo(tagVersionRight) * -1; // -1 revert sorting, latest version first
+                final List<String> headTags = getHeadTags(repository);
 
-                            })
-                            .findFirst();
-                    if (versionTag.isPresent()) {
-                        tagVersionFormatDescription = versionFormatDescription;
-                        break;
+                if (!headTags.isEmpty()) {
+
+                    Optional<String> versionTag = Optional.empty();
+
+                    VersionFormatDescription tagVersionFormatDescription = null;
+
+                    for (VersionFormatDescription versionFormatDescription : configuration.getTagVersionDescriptions()) {
+                        versionTag = headTags.stream().sequential()
+                                .filter(tagName -> tagName.matches(versionFormatDescription.pattern))
+                                .sorted((versionLeft, versionRight) -> {
+                                    DefaultArtifactVersion tagVersionLeft = new DefaultArtifactVersion(removePrefix(versionLeft, versionFormatDescription.prefix));
+                                    DefaultArtifactVersion tagVersionRight = new DefaultArtifactVersion(removePrefix(versionRight, versionFormatDescription.prefix));
+                                    return tagVersionLeft.compareTo(tagVersionRight) * -1; // -1 revert sorting, latest version first
+                                })
+                                .findFirst();
+
+                        if (versionTag.isPresent()) {
+                            tagVersionFormatDescription = versionFormatDescription;
+                            break;
+                        }
                     }
-                }
 
-                if (versionTag.isPresent()) {
 
-                    Map<String, String> tagVersionDataMap = buildCommonVersionDataMap(headCommit, gav);
-                    tagVersionDataMap.put("tag", versionTag.get()
-                            .replaceFirst(tagVersionFormatDescription.prefix, "")
-                            .replace("/", "-"));
+                    if (versionTag.isPresent()) {
 
-                    String tagVersion = StrSubstitutor.replace(tagVersionFormatDescription.versionFormat, tagVersionDataMap);
+                        Map<String, String> tagVersionDataMap = buildCommonVersionDataMap(headCommit, gav);
+                        tagVersionDataMap.put("tag", removePrefix(versionTag.get(), tagVersionFormatDescription.prefix));
 
-                    projectVersion = Optional.of(new ProjectVersion(tagVersion, headCommit, "", versionTag.get()));
+                        String tagVersion = StrSubstitutor.replace(tagVersionFormatDescription.versionFormat, tagVersionDataMap);
+
+                        projectVersion = new ProjectVersion(escapeVersion(tagVersion), headCommit, "", versionTag.get());
+                    }
                 }
             }
 
 
-            if (!projectVersion.isPresent()) {
+            if (projectVersion == null) {
                 final String headBranch = getHeadBranch(repository)
                         .orElseThrow(() -> new ModelParseException(gitDir + ": No Branch Name provided in Detached HEAD state. See documentation.", 0, 0));
 
@@ -259,24 +266,22 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
                         .orElseThrow(() -> new ModelParseException(gitDir + ": No version format for branch '" + headBranch + "' found.", 0, 0));
 
                 Map<String, String> branchVersionDataMap = buildCommonVersionDataMap(headCommit, gav);
-                branchVersionDataMap.put("branch", headBranch
-                        .replaceFirst(branchVersionFormatDescription.prefix, "")
-                        .replace("/", "-"));
+                branchVersionDataMap.put("branch", removePrefix(headBranch, branchVersionFormatDescription.prefix));
 
                 String branchVersion = StrSubstitutor.replace(branchVersionFormatDescription.versionFormat, branchVersionDataMap);
 
-                projectVersion = Optional.of(new ProjectVersion(branchVersion, headCommit, headBranch, ""));
+                projectVersion = new ProjectVersion(escapeVersion(branchVersion), headCommit, headBranch, "");
             }
 
 
             logger.info(gav.getArtifactId()
                     + ":" + gav.getVersion()
-                    + (!projectVersion.get().getTag().isEmpty()
-                    ? " - tag: " + projectVersion.get().getTag()
-                    : " - branch: " + projectVersion.get().getBranch())
-                    + " -> version: " + projectVersion.get().getVersion());
+                    + (!projectVersion.getTag().isEmpty()
+                    ? " - tag: " + projectVersion.getTag()
+                    : " - branch: " + projectVersion.getBranch())
+                    + " -> version: " + projectVersion.getVersion());
 
-            return projectVersion.get();
+            return projectVersion;
         }
     }
 
@@ -354,6 +359,14 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
             return "0000000000000000000000000000000000000000";
         }
         return head.getName();
+    }
+
+    private static String removePrefix(String string, String prefix) {
+        return string.replaceFirst(Pattern.quote(prefix), "");
+    }
+
+    private static String escapeVersion(String version) {
+        return version.replace("/", "-");
     }
 
     class ProjectVersion {
