@@ -80,12 +80,12 @@ For Custom Configuration create `${project.basedir}/.mvn/maven-git-versioning-ex
 
 **'/' characters within version will be replaced by '-'**
 
-- `${branch}` (only available in within branch configuration)
+- `${branch}` (only available within branch configuration)
 
   - current branch name
   - e.g. 'master', 'feature-next-big-thing', ...
 
-- `${tag}` (only available in within tag configuration)
+- `${tag}` (only available within tag configuration)
 
   - current tag name, if multiple tags point to current commit tag names are sorted by `org.apache.maven.artifact.versioning.DefaultArtifactVersion` and the last one is selected
   - e.g. 'version/1.0.1', 'version-1.0.0', ...
