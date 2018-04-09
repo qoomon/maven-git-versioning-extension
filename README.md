@@ -129,12 +129,12 @@ For Custom Configuration create `${project.basedir}/.mvn/maven-git-versioning-ex
 
 ### Options
 
-- provide or overwrite branch name
+- provide or overwrite branch name, especially useful for CI builds
 
   - `mvn -Dproject.branch=$CUSTOM_BRANCH_NAME ...`
   - `export MAVEN_PROJECT_BRANCH=$CUSTOM_BRANCH_NAME`
 
-- provide or overwrite tag name
+- provide or overwrite tag name, especially useful for CI builds
 
   - `mvn -Dproject.tag=$CUSTOM_TAG_NAME ...`
   - `export MAVEN_PROJECT_TAG=$CUSTOM_TAG_NAME`
