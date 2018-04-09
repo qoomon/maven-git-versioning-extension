@@ -129,15 +129,12 @@ For Custom Configuration create `${project.basedir}/.mvn/maven-git-versioning-ex
 
 ### Options
 
-- provide or overwrite branch name, especially useful for CI builds
-
-  - `mvn -Dproject.branch=$CUSTOM_BRANCH_NAME ...`
+- provide or overwrite branch/tag name, especially useful for CI builds
   - `export MAVEN_PROJECT_BRANCH=$CUSTOM_BRANCH_NAME`
-
-- provide or overwrite tag name, especially useful for CI builds
-
-  - `mvn -Dproject.tag=$CUSTOM_TAG_NAME ...`
   - `export MAVEN_PROJECT_TAG=$CUSTOM_TAG_NAME`
+  
+  - `mvn -Dproject.branch=$CUSTOM_BRANCH_NAME ...`
+  - `mvn -Dproject.tag=$CUSTOM_TAG_NAME ...`
 
 - disable plugin
 
@@ -153,3 +150,10 @@ For Custom Configuration create `${project.basedir}/.mvn/maven-git-versioning-ex
 
 - create a branch before maven execution `git checkout -b $CUSTOM_BRANCH_NAME`
 - see [provide branch name](#options)
+
+## GitLab CI Setup
+```yml
+before_script:
+  - export MAVEN_PROJECT_BRANCH=$CI_COMMIT_REF_NAME
+  - export MAVEN_PROJECT_TAG=$CI_COMMIT_REF_NAME
+```
