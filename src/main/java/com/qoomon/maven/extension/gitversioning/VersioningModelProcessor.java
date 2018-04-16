@@ -20,6 +20,9 @@ import org.apache.maven.model.io.ModelParseException;
 import org.apache.maven.session.scope.internal.SessionScope;
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.logging.Logger;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.Status;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Repository;
@@ -218,13 +221,14 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
 
         try (Repository repository = repositoryBuilder.build()) {
 
+            final Status status = getStatus(repository);
             final String headCommit = getHeadCommit(repository);
             String projectBranchName = null;
             String projectTagName = null;
             VersionFormatDescription projectVersionFormatDescription = null;
             Map<String, String> projectVersionDataMap = buildCommonVersionDataMap(headCommit, gav);
 
-            if (!configuration.getTagVersionDescriptions().isEmpty()) {
+            if (status.isClean() && !configuration.getTagVersionDescriptions().isEmpty()) {
                 final List<String> headTags = getHeadTags(repository);
                 if (!headTags.isEmpty()) {
                     for (VersionFormatDescription versionFormatDescription : configuration.getTagVersionDescriptions()) {
@@ -285,6 +289,14 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
         versionDataMap.put("version.release", gav.getVersion()
                 .replaceFirst("-SNAPSHOT$", ""));
         return versionDataMap;
+    }
+
+    private Status getStatus(Repository repository) {
+        try {
+            return Git.wrap(repository).status().call();
+        } catch (GitAPIException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private Optional<String> getHeadBranch(Repository repository) throws IOException {
