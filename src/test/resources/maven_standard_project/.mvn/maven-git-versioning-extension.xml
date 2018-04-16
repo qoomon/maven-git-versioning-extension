@@ -2,7 +2,7 @@
     <branches>
         <branch>
             <pattern>master</pattern>
-            <versionFormat>${version.release}</versionFormat>
+            <versionFormat>mvn project</versionFormat>
         </branch>
         <branch>
             <pattern>release/.*</pattern>
@@ -10,14 +10,14 @@
             <versionFormat>${branch}-SNAPSHOT</versionFormat>
         </branch>
         <branch>
-            <pattern><![CDATA[(?<foo>feature)/(.*)]]></pattern>
+            <pattern><![CDATA[feature/(?<feature>.*)]]></pattern>
             <prefix></prefix>
-            <versionFormat>${foo}-${tag}</versionFormat>
+            <versionFormat>${feature}-SNAPSHOT</versionFormat>
         </branch>
     </branches>
     <tags>
         <tag>
-            <pattern>version/.*</pattern>
+            <pattern>.*</pattern>
             <prefix>version/</prefix>
             <versionFormat>${tag}</versionFormat>
         </tag>
