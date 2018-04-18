@@ -43,7 +43,7 @@ For Custom Configuration create `${project.basedir}/.mvn/maven-git-versioning-ex
       - `<prefix>` Remove prefix from `${branch}` placeholder
       - `<versionFormat>` An arbitrary string, see [Version Format Placeholders](#version-format-placeholders)
 
-  - `<tags>` Tag specific configurations
+  - `<tags>` Tag specific configurations - **ignored if workingtree is dirty**
 
     - `<tag>`
 
