@@ -158,4 +158,4 @@ before_script:
 ```
 ### Solve Detached Head State
 - create a branch before maven execution `git checkout -b $CUSTOM_BRANCH_NAME`
-- see [provide branch name](#options)
+- see [provide or overwrite branch/tag name](#options)
