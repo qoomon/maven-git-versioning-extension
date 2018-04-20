@@ -151,6 +151,10 @@ For Custom Configuration create `${project.basedir}/.mvn/maven-git-versioning-ex
 - create a branch before maven execution `git checkout -b $CUSTOM_BRANCH_NAME`
 - see [provide branch name](#options)
 
+
+## Commandline to Read from Maven Project
+`mvn --non-recursive exec:exec -Dexec.executable='echo' -Dexec.args='${project.version}' -q`
+
 ## GitLab CI Setup
 ```yml
 before_script:
