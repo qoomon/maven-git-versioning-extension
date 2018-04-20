@@ -27,7 +27,7 @@ create or update ${basedir}/.mvn/extensions.xml
 </extensions>
 ```
 
-### Configure
+## Configure
 
 Default Branch Version Format: `${branch}-SNAPSHOT`
 
@@ -124,9 +124,7 @@ For Custom Configuration create `${project.basedir}/.mvn/maven-git-versioning-ex
       <pattern><![CDATA[(?<type>[^/]*)/(?<name>.*)]]></pattern>
       <versionformat>${type}-${name}</versionformat>
       ```
-
-
-
+      
 ### Options
 
 - provide or overwrite branch/tag name, especially useful for CI builds
@@ -140,16 +138,11 @@ For Custom Configuration create `${project.basedir}/.mvn/maven-git-versioning-ex
 
   - `mvn -DgitVersioning=false ...`
 
-### Provided Project Properties
+## Provided Project Properties
 
 - project.branch
 - project.tag
 - project.commit
-
-### Git Detached Head State
-
-- create a branch before maven execution `git checkout -b $CUSTOM_BRANCH_NAME`
-- see [provide branch name](#options)
 
 
 ## Miscellaneous Hints
@@ -163,3 +156,6 @@ before_script:
   - export MAVEN_PROJECT_BRANCH=$CI_COMMIT_REF_NAME
   - export MAVEN_PROJECT_TAG=$CI_COMMIT_REF_NAME
 ```
+### Solve Detached Head State
+- create a branch before maven execution `git checkout -b $CUSTOM_BRANCH_NAME`
+- see [provide branch name](#options)
