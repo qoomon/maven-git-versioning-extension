@@ -152,10 +152,12 @@ For Custom Configuration create `${project.basedir}/.mvn/maven-git-versioning-ex
 - see [provide branch name](#options)
 
 
-## Commandline to Read from Maven Project
+## Miscellaneous Hints
+
+### Commandline to Read from Maven Project
 `mvn --non-recursive exec:exec -Dexec.executable='echo' -Dexec.args='${project.version}' -q`
 
-## GitLab CI Setup
+### GitLab CI Setup
 ```yml
 before_script:
   - export MAVEN_PROJECT_BRANCH=$CI_COMMIT_REF_NAME
