@@ -41,15 +41,17 @@ For Custom Configuration create `${project.basedir}/.mvn/maven-git-versioning-ex
 
       - `<pattern>` An arbitrary regex to match branch names
       - `<prefix>` Remove prefix from `${branch}` placeholder
-      - `<versionFormat>` An arbitrary string, see [Version Format Placeholders](#version-format-placeholders)
+      - `<versionFormat>` An arbitrary string, see [Version Format & Placeholders](#Version-Format-&-Placeholders)
 
-  - `<tags>` Tag specific configurations - **ignored if workingtree is dirty**
-
+  - `<tags>` Tag specific configurations
+  
+    **only considered while detached HEAD `git checkout <TAG>` or `COMMIT_REF_NAME` was provided**<br>
+    
     - `<tag>`
 
       - `<pattern>` An arbitrary regex to match tag names
       - `<prefix>` Remove prefix from `${tag}` placeholder
-      - `<versionFormat>` An arbitrary string, see [Version Format Placeholders](#version-format-placeholders)
+      - `<versionFormat>` An arbitrary string, see [Version Format & Placeholders](#Version-Format-&-Placeholders)
 
 #### Config Example `maven-git-versioning-extension.xml`
 
@@ -128,14 +130,10 @@ For Custom Configuration create `${project.basedir}/.mvn/maven-git-versioning-ex
 ### Options
 
 - provide or overwrite branch/tag name, especially useful for CI builds
-  - `export MAVEN_PROJECT_BRANCH=$CUSTOM_BRANCH_NAME`
-  - `export MAVEN_PROJECT_TAG=$CUSTOM_TAG_NAME`
-  
-  - `mvn -Dproject.branch=$CUSTOM_BRANCH_NAME ...`
-  - `mvn -Dproject.tag=$CUSTOM_TAG_NAME ...`
+  - `export MAVEN_PROJECT_COMMIT_REF_NAME=$CUSTOM_COMMIT_REF_NAME`
+  - `mvn -DgitVersioning.commitRefName-=$CUSTOM_COMMIT_REF_NAME ...`
 
 - disable plugin
-
   - `mvn -DgitVersioning=false ...`
 
 ## Provided Project Properties
@@ -153,8 +151,7 @@ For Custom Configuration create `${project.basedir}/.mvn/maven-git-versioning-ex
 ### GitLab CI Setup
 ```yml
 before_script:
-  - export MAVEN_PROJECT_BRANCH=$CI_COMMIT_REF_NAME
-  - export MAVEN_PROJECT_TAG=$CI_COMMIT_REF_NAME
+  - export MAVEN_PROJECT_COMMIT_REF_NAME=$CI_COMMIT_REF_NAME
 ```
 ### Solve Detached Head State
 - create a branch before maven execution `git checkout -b $CUSTOM_BRANCH_NAME`

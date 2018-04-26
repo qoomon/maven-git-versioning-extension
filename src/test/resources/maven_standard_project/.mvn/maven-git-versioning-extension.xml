@@ -2,7 +2,7 @@
     <branches>
         <branch>
             <pattern>master</pattern>
-            <versionFormat>mvn project</versionFormat>
+            <versionFormat>${version.release}</versionFormat>
         </branch>
         <branch>
             <pattern>release/.*</pattern>

@@ -27,9 +27,6 @@ public class VersioningConfigurationProvider {
 
     private SessionScope sessionScope;
 
-
-    private static final VersionFormatDescription DEFAULT_BRANCH_VERSION_DESCRIPTION= defaultVersionDescription();
-
     private VersioningConfiguration configuration;
 
     @Inject
@@ -46,6 +43,7 @@ public class VersioningConfigurationProvider {
 
             List<VersionFormatDescription> branchVersionDescriptions = new LinkedList<>();
             List<VersionFormatDescription> tagVersionDescriptions = new LinkedList<>();
+            VersionFormatDescription commitVersionDescription = defaultCommitVersionFormat();
 
             File configFile = ExtensionUtil.getConfigFile(session.getRequest(), BuildProperties.projectArtifactId());
             if (configFile.exists()) {
@@ -57,22 +55,28 @@ public class VersioningConfigurationProvider {
                 logger.info("No configuration file found. Apply default configuration.");
             }
 
-            branchVersionDescriptions.add(DEFAULT_BRANCH_VERSION_DESCRIPTION);
+            branchVersionDescriptions.add(defaultBranchVersionFormat());
 
-            configuration = new VersioningConfiguration(branchVersionDescriptions, tagVersionDescriptions);
+            configuration = new VersioningConfiguration(branchVersionDescriptions, tagVersionDescriptions, commitVersionDescription);
         }
 
         return configuration;
 
     }
 
-    private static VersionFormatDescription defaultVersionDescription() {
+    private static VersionFormatDescription defaultBranchVersionFormat() {
         VersionFormatDescription result = new VersionFormatDescription();
         result.pattern = ".*";
         result.versionFormat = "${branch}-SNAPSHOT";
         return result;
     }
 
+    private static VersionFormatDescription defaultCommitVersionFormat() {
+        VersionFormatDescription result = new VersionFormatDescription();
+        result.pattern = ".*";
+        result.versionFormat = "${commit}";
+        return result;
+    }
 
     private Configuration loadConfiguration(File configFile) {
         try {
