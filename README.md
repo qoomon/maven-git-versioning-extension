@@ -45,7 +45,7 @@ For Custom Configuration create `${project.basedir}/.mvn/maven-git-versioning-ex
 
   - `<tags>` Tag specific configurations
   
-    **only considered while detached HEAD `git checkout <TAG>` or `COMMIT_REF_NAME` was provided**<br>
+    ⚠ **only considered while detached HEAD `git checkout <TAG>` or `COMMIT_REF_NAME` was provided**<br>
     
     - `<tag>`
 
