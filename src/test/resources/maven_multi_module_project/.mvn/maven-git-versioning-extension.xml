@@ -9,10 +9,15 @@
             <prefix>release/</prefix>
             <versionFormat>${branch}-SNAPSHOT</versionFormat>
         </branch>
+        <branch>
+            <pattern><![CDATA[feature/(?<feature>.*)]]></pattern>
+            <prefix></prefix>
+            <versionFormat>${feature}-SNAPSHOT</versionFormat>
+        </branch>
     </branches>
     <tags>
         <tag>
-            <pattern>version/.*</pattern>
+            <pattern>.*</pattern>
             <prefix>version/</prefix>
             <versionFormat>${tag}</versionFormat>
         </tag>
