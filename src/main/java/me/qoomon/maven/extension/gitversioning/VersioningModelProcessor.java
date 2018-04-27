@@ -1,11 +1,11 @@
-package com.qoomon.maven.extension.gitversioning;
+package me.qoomon.maven.extension.gitversioning;
 
-import com.qoomon.maven.BuildProperties;
-import com.qoomon.maven.GAV;
-import com.qoomon.maven.ModelUtil;
-import com.qoomon.maven.extension.gitversioning.config.VersioningConfiguration;
-import com.qoomon.maven.extension.gitversioning.config.VersioningConfigurationProvider;
-import com.qoomon.maven.extension.gitversioning.config.model.VersionFormatDescription;
+import me.qoomon.maven.BuildProperties;
+import me.qoomon.maven.GAV;
+import me.qoomon.maven.ModelUtil;
+import me.qoomon.maven.extension.gitversioning.config.VersioningConfiguration;
+import me.qoomon.maven.extension.gitversioning.config.VersioningConfigurationProvider;
+import me.qoomon.maven.extension.gitversioning.config.model.VersionFormatDescription;
 import org.apache.commons.lang3.text.StrSubstitutor;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.apache.maven.building.Source;
@@ -40,7 +40,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.qoomon.maven.extension.gitversioning.SessionScopeUtil.*;
+import static me.qoomon.maven.extension.gitversioning.SessionScopeUtil.*;
 
 
 /**

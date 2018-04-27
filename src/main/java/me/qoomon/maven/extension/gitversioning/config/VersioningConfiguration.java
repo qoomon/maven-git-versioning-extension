@@ -1,6 +1,6 @@
-package com.qoomon.maven.extension.gitversioning.config;
+package me.qoomon.maven.extension.gitversioning.config;
 
-import com.qoomon.maven.extension.gitversioning.config.model.VersionFormatDescription;
+import me.qoomon.maven.extension.gitversioning.config.model.VersionFormatDescription;
 
 import java.util.List;
 import java.util.Objects;

@@ -1,4 +1,4 @@
-package com.qoomon.maven.extension.gitversioning.config.model;
+package me.qoomon.maven.extension.gitversioning.config.model;
 
 import org.simpleframework.xml.ElementList;
 
