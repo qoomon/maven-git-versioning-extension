@@ -153,7 +153,7 @@ For Custom Configuration create `${project.basedir}/.mvn/maven-git-versioning-ex
 
 ## Miscellaneous Hints
 
-### Commandline to Read from Maven Project
+### Commandline To Print Project Version
 `mvn --non-recursive exec:exec -Dexec.executable='echo' -Dexec.args='${project.version}' -q`
 
 ### GitLab CI Setup
