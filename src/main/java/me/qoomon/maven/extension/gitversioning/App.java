@@ -1,4 +1,4 @@
-package com.qoomon.maven.extension.gitversioning;
+package me.qoomon.maven.extension.gitversioning;
 
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.eclipse.jgit.lib.Constants;
