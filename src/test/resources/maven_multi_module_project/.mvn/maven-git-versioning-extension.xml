@@ -11,7 +11,6 @@
         </branch>
         <branch>
             <pattern><![CDATA[feature/(?<feature>.*)]]></pattern>
-            <prefix></prefix>
             <versionFormat>${feature}-SNAPSHOT</versionFormat>
         </branch>
     </branches>
