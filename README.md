@@ -36,6 +36,8 @@ For Custom Configuration create `${project.basedir}/.mvn/maven-git-versioning-ex
 - `<configuration>`
 
   - `<branches>` Branch specific configurations.
+    
+    ℹ ** can be provided by setting environment variable `MAVEN_PROJECT_BRANCH`
 
     - `<branch>`
 
@@ -45,7 +47,7 @@ For Custom Configuration create `${project.basedir}/.mvn/maven-git-versioning-ex
 
   - `<tags>` Tag specific configurations
   
-    ⚠ **only considered while detached HEAD `git checkout <TAG>` or `COMMIT_REF_NAME` was provided**<br>
+    ⚠ **only considered if detached HEAD `git checkout <TAG>` or environment variable `MAVEN_PROJECT_TAG` was provided**<br>
     
     - `<tag>`
 
@@ -130,8 +132,11 @@ For Custom Configuration create `${project.basedir}/.mvn/maven-git-versioning-ex
 ### Options
 
 - provide or overwrite branch/tag name, especially useful for CI builds
-  - `export MAVEN_PROJECT_COMMIT_REF_NAME=$CUSTOM_COMMIT_REF_NAME`
-  - `mvn -DgitVersioning.commitRefName-=$CUSTOM_COMMIT_REF_NAME ...`
+  - `export MAVEN_PROJECT_BRANCH=$CUSTOM_BRANCH_NAME`
+  - `export MAVEN_PROJECT_TAG=$CUSTOM_TAG_NAME`
+  
+  - `mvn -Dproject.branch=$CUSTOM_BRANCH_NAME ...`
+  - `mvn -Dproject.tag=$CUSTOM_TAG_NAME ...`
 
 - disable plugin
   - `mvn -DgitVersioning=false ...`
@@ -151,7 +156,11 @@ For Custom Configuration create `${project.basedir}/.mvn/maven-git-versioning-ex
 ### GitLab CI Setup
 ```yml
 before_script:
-  - export MAVEN_PROJECT_COMMIT_REF_NAME=$CI_COMMIT_REF_NAME
+  - if [ -n "$CI_COMMIT_TAG" ]; then
+       export MAVEN_PROJECT_TAG=$CI_COMMIT_TAG;
+    else
+       export MAVEN_PROJECT_BRANCH=$CI_COMMIT_REF_NAME;
+    fi
 ```
 ### Solve Detached Head State
 - create a branch before maven execution `git checkout -b $CUSTOM_BRANCH_NAME`

@@ -57,8 +57,12 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
 
     private static final String GIT_VERSIONING_PROPERTY_KEY = "gitVersioning";
 
-    private static final String PROJECT_COMMIT_REF_NAME_PROPERTY_KEY = "gitVersioning.commitRefName";
-    private static final String PROJECT_COMMIT_REF_NAME_ENVIRONMENT_VARIABLE_NAME = "MAVEN_PROJECT_COMMIT_REF_NAME";
+    private static final String PROJECT_BRANCH_PROPERTY_KEY = "project.branch";
+    private static final String PROJECT_BRANCH_ENVIRONMENT_VARIABLE_NAME = "MAVEN_PROJECT_BRANCH";
+
+    private static final String PROJECT_TAG_PROPERTY_KEY = "project.tag";
+    private static final String PROJECT_TAG_ENVIRONMENT_VARIABLE_NAME = "MAVEN_PROJECT_TAG";
+
 
     // can not be injected cause it is not always available
     private MavenSession mavenSession;
@@ -216,7 +220,7 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
 
             final Status status = getStatus(repository);
             if (!status.isClean()) {
-                logger.warn(" project repository working tree is not clean!");
+                logger.warn("project repository working tree is not clean!");
             }
 
             String projectCommitRefName = headCommit;
@@ -226,38 +230,29 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
             projectVersionDataMap.put("commit", headCommit);
             projectVersionDataMap.put("commit.short", headCommit.substring(0, 7));
 
-            Optional<String> providedCommitRefName = Stream.of(
-                    mavenSession.getUserProperties().getProperty(PROJECT_COMMIT_REF_NAME_PROPERTY_KEY),
-                    System.getenv(PROJECT_COMMIT_REF_NAME_ENVIRONMENT_VARIABLE_NAME))
+            final boolean detachedHead = !getHeadBranch(repository).isPresent();
+            Optional<String> providedTag = Stream.of(
+                    mavenSession.getUserProperties().getProperty(PROJECT_TAG_PROPERTY_KEY),
+                    System.getenv(PROJECT_TAG_ENVIRONMENT_VARIABLE_NAME))
                     .sequential().filter(Objects::nonNull).findFirst();
-            if (providedCommitRefName.isPresent()) {
-                boolean commitTag = false;
-                for (VersionFormatDescription versionFormatDescription : configuration.getTagVersionDescriptions()) {
-                    if (providedCommitRefName.get().matches(versionFormatDescription.pattern)) {
-                        projectCommitRefName = providedCommitRefName.get();
-                        projectCommitRefType = "tag";
-                        projectVersionFormatDescription = versionFormatDescription;
-                        commitTag = true;
-                        break;
-                    }
-                }
-                if (!commitTag) {
-                    for (VersionFormatDescription versionFormatDescription : configuration.getBranchVersionDescriptions()) {
-                        if (providedCommitRefName.get().matches(versionFormatDescription.pattern)) {
-                            projectCommitRefName = providedCommitRefName.get();
-                            projectCommitRefType = "branch";
-                            projectVersionFormatDescription = versionFormatDescription;
-                            break;
-                        }
-                    }
-                }
-            } else {
-                final boolean detachedHead = ObjectId.isId(getHeadBranch(repository).get());
-                logger.debug("detachedHead: " + detachedHead);
+            Optional<String> providedBranch = Stream.of(
+                    mavenSession.getUserProperties().getProperty(PROJECT_BRANCH_PROPERTY_KEY),
+                    System.getenv(PROJECT_BRANCH_ENVIRONMENT_VARIABLE_NAME))
+                    .sequential().filter(Objects::nonNull).findFirst();
 
-                if (detachedHead) {
-                    final List<String> headTags = getHeadTags(repository);
+            if (providedTag.isPresent() && providedBranch.isPresent()) {
+                logger.warn("provided branch[" + providedBranch.get() + "] will be ignored " +
+                        "due to provided tag[" + providedTag + "] !");
+            }
 
+            if (providedTag.isPresent() || detachedHead) {
+                logger.debug("tag version");
+
+                final List<String> headTags = providedTag.isPresent()
+                        ? Collections.singletonList(providedTag.get())
+                        : getHeadTags(repository);
+
+                if (!headTags.isEmpty()) {
                     for (VersionFormatDescription versionFormatDescription : configuration.getTagVersionDescriptions()) {
                         Optional<String> headVersionTag = headTags.stream().sequential()
                                 .filter(tag -> tag.matches(versionFormatDescription.pattern))
@@ -274,8 +269,15 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
                             break;
                         }
                     }
-                } else {
-                    final Optional<String> headBranch = getHeadBranch(repository);
+                }
+            } else {
+                logger.debug("branch version");
+
+                final Optional<String> headBranch = providedBranch.isPresent()
+                        ? providedBranch
+                        : getHeadBranch(repository);
+
+                if (headBranch.isPresent()) {
                     for (VersionFormatDescription versionFormatDescription : configuration.getBranchVersionDescriptions()) {
                         if (headBranch.get().matches(versionFormatDescription.pattern)) {
                             projectCommitRefName = headBranch.get();
@@ -323,9 +325,12 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
             return Optional.of("master");
         }
 
+        if (ObjectId.isId(repository.getBranch())) {
+            return Optional.empty();
+        }
+
         return Optional.ofNullable(repository.getBranch());
     }
-
 
 
     private List<String> getHeadTags(Repository repository) throws IOException {
@@ -408,19 +413,19 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
             this.commitRefType = commitRefType;
         }
 
-        public String getVersion() {
+        String getVersion() {
             return version;
         }
 
-        public String getCommit() {
+        String getCommit() {
             return commit;
         }
 
-        public String getCommitRefName() {
+        String getCommitRefName() {
             return commitRefName;
         }
 
-        public String getCommitRefType() {
+        String getCommitRefType() {
             return commitRefType;
         }
 
