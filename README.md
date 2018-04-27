@@ -10,7 +10,7 @@ This extension will generate project versions, based on current **GIT branch** o
 
 ## Install
 
-### add core extension
+### Add Extension
 
 create or update ${basedir}/.mvn/extensions.xml
 
@@ -27,7 +27,7 @@ create or update ${basedir}/.mvn/extensions.xml
 </extensions>
 ```
 
-## Configure
+## Configure Extension
 
 Default Branch Version Format: `${branch}-SNAPSHOT`
 
@@ -37,8 +37,8 @@ For Custom Configuration create `${project.basedir}/.mvn/maven-git-versioning-ex
 
   - `<branches>` Branch specific configurations.
     
-    ℹ ** can be provided by setting environment variable `MAVEN_PROJECT_BRANCH`
-
+    ⚠ **only considered if HEAD attached to a branch `git checkout <BRANCH>` or branch is provided by environment variable or maven paremeter**
+    
     - `<branch>`
 
       - `<pattern>` An arbitrary regex to match branch names
@@ -47,7 +47,7 @@ For Custom Configuration create `${project.basedir}/.mvn/maven-git-versioning-ex
 
   - `<tags>` Tag specific configurations
   
-    ⚠ **only considered if detached HEAD `git checkout <TAG>` or environment variable `MAVEN_PROJECT_TAG` was provided**<br>
+    ⚠ **only considered if HEAD is detached `git checkout <TAG>` or tag is provided by environment variable or maven paremeter**
     
     - `<tag>`
 
@@ -132,11 +132,12 @@ For Custom Configuration create `${project.basedir}/.mvn/maven-git-versioning-ex
 ### Options
 
 - provide or overwrite branch/tag name, especially useful for CI builds
-  - `export MAVEN_PROJECT_BRANCH=$CUSTOM_BRANCH_NAME`
-  - `export MAVEN_PROJECT_TAG=$CUSTOM_TAG_NAME`
-  
-  - `mvn -Dproject.branch=$CUSTOM_BRANCH_NAME ...`
-  - `mvn -Dproject.tag=$CUSTOM_TAG_NAME ...`
+  - **Environment Variables**
+    - `export MAVEN_PROJECT_BRANCH=$CUSTOM_BRANCH_NAME`
+    - `export MAVEN_PROJECT_TAG=$CUSTOM_TAG_NAME`
+  - **Maven Parameters**
+    - `mvn -Dproject.branch=$CUSTOM_BRANCH_NAME ...`
+    - `mvn -Dproject.tag=$CUSTOM_TAG_NAME ...`
 
 - disable plugin
   - `mvn -DgitVersioning=false ...`
