@@ -38,7 +38,7 @@ For Custom Configuration create `${project.basedir}/.mvn/maven-git-versioning-ex
   - `<branches>` Branch specific configurations.
     
     ⚠ **only considered if HEAD attached to a branch `git checkout <BRANCH>`<br>
-    ` ` ` ` ` `or branch is provided by environment variable or maven paremeter**
+      or branch is provided by environment variable or maven paremeter**
     
     - `<branch>`
 
@@ -49,7 +49,7 @@ For Custom Configuration create `${project.basedir}/.mvn/maven-git-versioning-ex
   - `<tags>` Tag specific configurations
   
     ⚠ **only considered if HEAD is detached `git checkout <TAG>`<br>
-    ` ` ` ` ` `or tag is provided by environment variable or maven paremeter**
+      or tag is provided by environment variable or maven paremeter**
     
     - `<tag>`
 
