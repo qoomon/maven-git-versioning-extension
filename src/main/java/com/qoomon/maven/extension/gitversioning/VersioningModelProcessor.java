@@ -124,8 +124,8 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
 
             // add properties
             model.addProperty("project.commit", projectVersion.getCommit());
-            model.addProperty("project.tag", projectVersion.getCommitRefType().equals("tag") ? projectVersion.getCommitRefName() : null);
-            model.addProperty("project.branch", projectVersion.getCommitRefType().equals("branch") ? projectVersion.getCommitRefName() : null);
+            model.addProperty("project.tag", projectVersion.getCommitRefType().equals("tag") ? projectVersion.getCommitRefName() : "");
+            model.addProperty("project.branch", projectVersion.getCommitRefType().equals("branch") ? projectVersion.getCommitRefName() : "");
 
             // update parent version
             if (model.getParent() != null) {
