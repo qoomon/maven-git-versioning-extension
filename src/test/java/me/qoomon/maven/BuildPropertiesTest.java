@@ -1,4 +1,4 @@
-package com.qoomon.maven;
+package me.qoomon.maven;
 
 import org.junit.Test;
 
@@ -17,7 +17,7 @@ public class BuildPropertiesTest {
         String projectGroupId = BuildProperties.value("project.groupId");
 
         // THEN
-        assertEquals("com.qoomon", projectGroupId);
+        assertEquals("me.qoomon", projectGroupId);
 
     }
 

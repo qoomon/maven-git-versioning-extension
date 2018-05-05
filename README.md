@@ -1,6 +1,6 @@
 # Maven Git Versioning Extension
 
-[![Maven Central](https://img.shields.io/maven-central/v/com.qoomon/maven-git-versioning-extension.svg)](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.qoomon%22%20AND%20a%3A%22maven-git-versioning-extension%22) [![Build Status](https://travis-ci.org/qoomon/maven-git-versioning-extension.svg?branch=master)](https://travis-ci.org/qoomon/maven-git-versioning-extension)
+[![Maven Central](https://img.shields.io/maven-central/v/me.qoomon/maven-git-versioning-extension.svg)](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22me.qoomon%22%20AND%20a%3A%22maven-git-versioning-extension%22) [![Build Status](https://travis-ci.org/qoomon/maven-git-versioning-extension.svg?branch=master)](https://travis-ci.org/qoomon/maven-git-versioning-extension)
 
 This extension will generate project versions, based on current **GIT branch** or **GIT tag**.
 
@@ -19,7 +19,7 @@ create or update ${basedir}/.mvn/extensions.xml
             xsi:schemaLocation="http://maven.apache.org/EXTENSIONS/1.0.0 http://maven.apache.org/xsd/core-extensions-1.0.0.xsd">
 
     <extension>
-        <groupId>com.qoomon</groupId>
+        <groupId>me.qoomon</groupId>
         <artifactId>maven-git-versioning-extension</artifactId>
         <version>LATEST</version>
     </extension>

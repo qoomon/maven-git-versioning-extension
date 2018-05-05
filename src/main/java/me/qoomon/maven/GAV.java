@@ -1,4 +1,4 @@
-package com.qoomon.maven;
+package me.qoomon.maven;
 
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;

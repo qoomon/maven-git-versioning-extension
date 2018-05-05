@@ -1,4 +1,4 @@
-package com.qoomon.maven.extension.gitversioning;
+package me.qoomon.maven.extension.gitversioning;
 
 import org.apache.maven.execution.MavenExecutionRequest;
 

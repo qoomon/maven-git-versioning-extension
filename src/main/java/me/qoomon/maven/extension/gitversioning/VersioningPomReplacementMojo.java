@@ -1,8 +1,8 @@
-package com.qoomon.maven.extension.gitversioning;
+package me.qoomon.maven.extension.gitversioning;
 
-import com.qoomon.maven.BuildProperties;
-import com.qoomon.maven.GAV;
-import com.qoomon.maven.ModelUtil;
+import me.qoomon.maven.BuildProperties;
+import me.qoomon.maven.GAV;
+import me.qoomon.maven.ModelUtil;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.plugin.AbstractMojo;

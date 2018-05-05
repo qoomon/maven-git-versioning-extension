@@ -5,7 +5,7 @@
         <maven>3.0</maven>
     </prerequisites>
 
-    <groupId>com.qoomon</groupId>
+    <groupId>me.qoomon</groupId>
     <artifactId>maven-git-versioning-extension</artifactId>
     <version>3.0.0</version>
     <packaging>maven-plugin</packaging>
