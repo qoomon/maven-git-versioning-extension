@@ -1,4 +1,4 @@
-package com.qoomon.maven;
+package me.qoomon.maven;
 
 import java.io.IOException;
 import java.io.InputStream;

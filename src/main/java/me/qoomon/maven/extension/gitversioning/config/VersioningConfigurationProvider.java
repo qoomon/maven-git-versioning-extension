@@ -1,10 +1,10 @@
-package com.qoomon.maven.extension.gitversioning.config;
+package me.qoomon.maven.extension.gitversioning.config;
 
-import com.qoomon.maven.BuildProperties;
-import com.qoomon.maven.extension.gitversioning.ExtensionUtil;
-import com.qoomon.maven.extension.gitversioning.SessionScopeUtil;
-import com.qoomon.maven.extension.gitversioning.config.model.VersionFormatDescription;
-import com.qoomon.maven.extension.gitversioning.config.model.Configuration;
+import me.qoomon.maven.BuildProperties;
+import me.qoomon.maven.extension.gitversioning.ExtensionUtil;
+import me.qoomon.maven.extension.gitversioning.SessionScopeUtil;
+import me.qoomon.maven.extension.gitversioning.config.model.VersionFormatDescription;
+import me.qoomon.maven.extension.gitversioning.config.model.Configuration;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.session.scope.internal.SessionScope;
 import org.codehaus.plexus.component.annotations.Component;
