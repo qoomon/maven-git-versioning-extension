@@ -2,7 +2,7 @@
 
 [![Maven Central](https://img.shields.io/maven-central/v/me.qoomon/maven-git-versioning-extension.svg)](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22me.qoomon%22%20AND%20a%3A%22maven-git-versioning-extension%22) [![Build Status](https://travis-ci.org/qoomon/maven-git-versioning-extension.svg?branch=master)](https://travis-ci.org/qoomon/maven-git-versioning-extension)
 
-This extension will generate project versions, based on current **GIT branch** or **GIT tag**.
+This extension will virtually set project versions, based on current **GIT branch** or **GIT tag**.
 
 ℹ **The pom files will not be modified, versions are modified in memory only.**
 
