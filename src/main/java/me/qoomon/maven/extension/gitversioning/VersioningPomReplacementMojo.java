@@ -10,9 +10,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.*;
 import org.apache.maven.project.MavenProject;
-import org.codehaus.plexus.logging.Logger;
 
-import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 
@@ -31,25 +29,19 @@ public class VersioningPomReplacementMojo extends AbstractMojo {
 
     static final String GOAL = "pom-replacement";
 
+    @Parameter(defaultValue = "${project}", readonly = true, required = true)
+    private MavenProject currentProject;
+
+    @Parameter(defaultValue = "${session}", readonly = true, required = true)
     private MavenSession mavenSession;
-
-    private Logger logger;
-
-    @Inject
-    public VersioningPomReplacementMojo(Logger logger, MavenSession mavenSession) {
-        this.mavenSession = mavenSession;
-        this.logger = logger;
-    }
 
     @Override
     public synchronized void execute() throws MojoExecutionException, MojoFailureException {
 
         try {
-            MavenProject currentProject = mavenSession.getCurrentProject();
-
             GAV gav = GAV.of(currentProject);
 
-            logger.debug(gav + "remove plugin");
+            getLog().debug(gav + "remove plugin");
 
             currentProject.getOriginalModel().getBuild().removePlugin(asPlugin());
 
@@ -80,7 +72,7 @@ public class VersioningPomReplacementMojo extends AbstractMojo {
 
         ModelUtil.writeModel(project.getOriginalModel(), tmpPomFile);
 
-        logger.debug(project.getArtifact() + " temporary override pom file with " + tmpPomFile);
+        getLog().debug(project.getArtifact() + " temporary override pom file with " + tmpPomFile);
 
         project.setPomFile(tmpPomFile);
     }
