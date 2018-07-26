@@ -63,6 +63,8 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
     private static final String PROJECT_TAG_PROPERTY_KEY = "project.tag";
     private static final String PROJECT_TAG_ENVIRONMENT_VARIABLE_NAME = "MAVEN_PROJECT_TAG";
 
+    // Save info and warn messages already printed. Lets us print each unique message once and once only
+    private final Set<String> loggedMessages = Collections.synchronizedSet(new HashSet<>());
 
     // can not be injected cause it is not always available
     private MavenSession mavenSession;
@@ -164,11 +166,11 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
     }
 
     private void initialize() {
-        logger.info("--- " + BuildProperties.projectArtifactId() + ":" + BuildProperties.projectVersion() + " ---");
+        logInfo("--- " + BuildProperties.projectArtifactId() + ":" + BuildProperties.projectVersion() + " ---");
 
         Optional<MavenSession> mavenSessionOptional = get(sessionScope, MavenSession.class);
         if (!mavenSessionOptional.isPresent()) {
-            logger.warn("Skip provisioning. No MavenSession present.");
+            logWarn("Skip provisioning. No MavenSession present.");
             disabled = true;
         } else {
             mavenSession = mavenSessionOptional.get();
@@ -176,7 +178,7 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
             //  check if extension is disabled
             String gitVersioning = mavenSession.getUserProperties().getProperty(GIT_VERSIONING_PROPERTY_KEY);
             if ("false".equals(gitVersioning)) {
-                logger.info("Disabled.");
+                logInfo("Disabled.");
                 disabled = true;
             }
 
@@ -220,7 +222,7 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
 
             final Status status = getStatus(repository);
             if (!status.isClean()) {
-                logger.warn("project repository working tree is not clean!");
+                logWarn("project repository working tree is not clean!");
             }
 
             String projectCommitRefName = headCommit;
@@ -241,7 +243,7 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
                     .sequential().filter(Objects::nonNull).findFirst();
 
             if (providedTag.isPresent() && providedBranch.isPresent()) {
-                logger.warn("provided branch[" + providedBranch.get() + "] will be ignored " +
+                logWarn("provided branch[" + providedBranch.get() + "] will be ignored " +
                         "due to provided tag[" + providedTag + "] !");
             }
 
@@ -295,7 +297,7 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
             String version = StrSubstitutor.replace(projectVersionFormatDescription.versionFormat, projectVersionDataMap);
             ProjectVersion projectVersion = new ProjectVersion(escapeVersion(version), headCommit, projectCommitRefName, projectCommitRefType);
 
-            logger.info(gav.getArtifactId() + ":" + gav.getVersion()
+            logInfo(gav.getArtifactId() + ":" + gav.getVersion()
                     + " - " + projectVersion.getCommitRefType() + ": " + projectVersion.getCommitRefName()
                     + " -> version: " + projectVersion.getVersion());
 
@@ -432,6 +434,26 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
         @Override
         public String toString() {
             return version;
+        }
+    }
+
+    private void logWarn(String msg) {
+        if (logger.isDebugEnabled()) {
+            // Always print if debugging enabled...
+            logger.warn(msg);
+        } else if (loggedMessages.add(msg)) {
+            // ONLY print first time we see this exact message
+            logger.warn(msg);
+        }
+    }
+
+    private void logInfo(String msg) {
+        if (logger.isDebugEnabled()) {
+            // Always print if debugging enabled...
+            logger.info(msg);
+        } else if (loggedMessages.add(msg)) {
+            // ONLY print first time we see this exact message
+            logger.info(msg);
         }
     }
 }
