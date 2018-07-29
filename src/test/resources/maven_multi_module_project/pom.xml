@@ -6,7 +6,7 @@
 
     <groupId>test</groupId>
     <artifactId>multi-module</artifactId>
-    <version>999.0-SNAPSHOT</version>
+    <version>4.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <properties>
@@ -20,6 +20,7 @@
     <modules>
         <module>multi-module-api</module>
         <module>multi-module-service</module>
+        <module>multi-module-db</module>
     </modules>
 
     <dependencyManagement>
@@ -32,6 +33,11 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>multi-module-service</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>multi-module-db</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>
