@@ -3,6 +3,6 @@
     <extension>
         <groupId>me.qoomon</groupId>
         <artifactId>maven-git-versioning-extension</artifactId>
-        <version>3.0.2</version>
+        <version>3.1.0</version>
     </extension>
 </extensions>
