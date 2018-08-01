@@ -1,5 +1,6 @@
 package me.qoomon.maven.extension.gitversioning.config;
 
+import com.google.common.collect.Lists;
 import me.qoomon.maven.BuildProperties;
 import me.qoomon.maven.extension.gitversioning.ExtensionUtil;
 import me.qoomon.maven.extension.gitversioning.SessionScopeUtil;
@@ -41,7 +42,7 @@ public class VersioningConfigurationProvider {
 
             MavenSession session = SessionScopeUtil.get(sessionScope, MavenSession.class).get();
 
-            List<VersionFormatDescription> branchVersionDescriptions = new LinkedList<>();
+            List<VersionFormatDescription> branchVersionDescriptions = Lists.newArrayList(defaultBranchVersionFormat());
             List<VersionFormatDescription> tagVersionDescriptions = new LinkedList<>();
             VersionFormatDescription commitVersionDescription = defaultCommitVersionFormat();
 
@@ -49,13 +50,14 @@ public class VersioningConfigurationProvider {
             if (configFile.exists()) {
 
                 Configuration configurationModel = loadConfiguration(configFile);
-                branchVersionDescriptions.addAll(configurationModel.branches);
-                tagVersionDescriptions.addAll(configurationModel.tags);
+                branchVersionDescriptions.addAll(0, configurationModel.branches);
+                tagVersionDescriptions.addAll(0, configurationModel.tags);
+                if(configurationModel.commitVersionFormat != null){
+                    commitVersionDescription = new VersionFormatDescription(".*", "", configurationModel.commitVersionFormat);
+                }
             } else {
                 logger.info("No configuration file found. Apply default configuration.");
             }
-
-            branchVersionDescriptions.add(defaultBranchVersionFormat());
 
             configuration = new VersioningConfiguration(branchVersionDescriptions, tagVersionDescriptions, commitVersionDescription);
         }
@@ -65,17 +67,11 @@ public class VersioningConfigurationProvider {
     }
 
     private static VersionFormatDescription defaultBranchVersionFormat() {
-        VersionFormatDescription result = new VersionFormatDescription();
-        result.pattern = ".*";
-        result.versionFormat = "${branch}-SNAPSHOT";
-        return result;
+        return new VersionFormatDescription(".*", "", "${branch}-SNAPSHOT");
     }
 
     private static VersionFormatDescription defaultCommitVersionFormat() {
-        VersionFormatDescription result = new VersionFormatDescription();
-        result.pattern = ".*";
-        result.versionFormat = "${commit}";
-        return result;
+        return new VersionFormatDescription(".*", "", "${commit}");
     }
 
     private Configuration loadConfiguration(File configFile) {

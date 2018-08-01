@@ -36,28 +36,40 @@ For Custom Configuration create `${project.basedir}/.mvn/maven-git-versioning-ex
 - `<configuration>`
 
   - `<branches>` Branch specific configurations.
-    
-    ⚠ **only considered if HEAD attached to a branch `git checkout <BRANCH>`<br>
-      or branch is provided by environment variable or maven paremeter**
-    
+     
     - `<branch>`
 
       - `<pattern>` An arbitrary regex to match branch names
       - `<prefix>` Remove prefix from `${branch}` placeholder
       - `<versionFormat>` An arbitrary string, see [Version Format & Placeholders](#Version-Format-&-Placeholders)
-
-  - `<tags>` Tag specific configurations
   
-    ⚠ **only considered if HEAD is detached `git checkout <TAG>`<br>
-      or tag is provided by environment variable or maven paremeter**
+    ⚠ **only considered if...**
+      * HEAD attached to a branch `git checkout <BRANCH>`<br>
+      * Or branch name is provided by environment variable or maven parameter**
+  
+  
+  - `<tags>` Tag specific configurations
     
     - `<tag>`
 
       - `<pattern>` An arbitrary regex to match tag names
       - `<prefix>` Remove prefix from `${tag}` placeholder
       - `<versionFormat>` An arbitrary string, see [Version Format & Placeholders](#Version-Format-&-Placeholders)
+      
+    ⚠ **only considered if...**
+      * HEAD is detached `git checkout <TAG>`<br>
+      * Or tag name is provided by environment variable or maven parameter**
+      
+  - `<commit>` Commit specific configurations
 
-#### Config Example `maven-git-versioning-extension.xml`
+    - `<versionFormat>` An arbitrary string, see [Version Format & Placeholders](#Version-Format-&-Placeholders)
+    
+    ⚠ **only considered if...**
+      * HEAD is detached `git checkout <COMMIT>` and no matching version tag is pointing to HEAD<br>
+      * Or HEAD is detached and an empty tag is provided by environment variable or maven parameter<br>
+      * Or HEAD is attached to a branch and an empty branch is provided by environment variable or maven parameter**
+
+#### Default Config`maven-git-versioning-extension.xml`
 
 ```xml
 <configuration>
@@ -79,6 +91,9 @@ For Custom Configuration create `${project.basedir}/.mvn/maven-git-versioning-ex
             <versionFormat>${tag}</versionFormat>
         </tag>
     </tags>
+    <commit>
+        <versionFormat>${commit}</versionFormat>
+    </commit>
 </configuration>
 ```
 

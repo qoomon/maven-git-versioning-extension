@@ -9,12 +9,20 @@ import org.simpleframework.xml.Element;
 public class VersionFormatDescription {
 
     @Element
-    public String pattern;
+    public String pattern = ".*";
 
     @Element(required = false)
     public String prefix = "";
 
     @Element
-    public String versionFormat;
+    public String versionFormat = "${commit}";
 
+    public VersionFormatDescription() {
+    }
+
+    public VersionFormatDescription(String pattern, String prefix, String versionFormat) {
+        this.pattern = pattern;
+        this.prefix = prefix;
+        this.versionFormat = versionFormat;
+    }
 }
