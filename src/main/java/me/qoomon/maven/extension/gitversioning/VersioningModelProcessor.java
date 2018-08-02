@@ -255,12 +255,20 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
 
             Optional<String> headBranch = getHeadBranch(repository);
             if(providedBranch != null){
-                headBranch = Optional.of(providedBranch);
+                if(!providedBranch.isEmpty()){
+                    headBranch = Optional.of(providedBranch);
+                } else {
+                    headBranch = Optional.empty();
+                }
             }
 
             List<String> headTags = getHeadTags(repository);
             if(providedTag != null){
-                headTags = Collections.singletonList(providedTag);
+                if(!providedTag.isEmpty()){
+                    headTags = Collections.singletonList(providedTag);
+                } else {
+                    headTags = Collections.emptyList();
+                }
             }
 
             // default versioning
