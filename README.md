@@ -193,3 +193,5 @@ else
     export MAVEN_PROJECT_BRANCH=${GIT_BRANCH#origin/};
 fi
 ```
+or for maven plugin (without tag support)
+`maven <Goal> -Dproject.branch={GIT_BRANCH#origin/}`
