@@ -174,11 +174,22 @@ For Custom Configuration create `${project.basedir}/.mvn/maven-git-versioning-ex
 `mvn --non-recursive exec:exec -Dexec.executable='echo' -Dexec.args='${project.version}' -q`
 
 ### GitLab CI Setup
-```yml
+excute this snippet before running your maven command
+```shell
 before_script:
   - if [ -n "$CI_COMMIT_TAG" ]; then
        export MAVEN_PROJECT_TAG=$CI_COMMIT_TAG;
     else
        export MAVEN_PROJECT_BRANCH=$CI_COMMIT_REF_NAME;
     fi
+```
+
+### Jenkins Setup
+excute this snippet before running your maven command
+```shell
+if [[ "$GIT_BRANCH" = 'origin/tags/'* ]]; then e
+    export MAVEN_PROJECT_TAG=${GIT_BRANCH#origin/tags/};
+else 
+    export MAVEN_PROJECT_BRANCH=${GIT_BRANCH#origin/};
+fi
 ```
