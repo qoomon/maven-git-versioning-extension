@@ -194,4 +194,6 @@ else
 fi
 ```
 or for maven plugin (without tag support)
-`maven <Goal> -Dproject.branch={GIT_BRANCH#origin/}`
+```shell
+maven <Goal> -Dproject.branch={GIT_BRANCH#origin/}
+```
