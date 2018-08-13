@@ -187,7 +187,7 @@ before_script:
 ### Jenkins Setup
 excute this snippet before running your maven command
 ```shell
-if [[ "$GIT_BRANCH" = 'origin/tags/'* ]]; then e
+if [[ "$GIT_BRANCH" = origin/tags/* ]]; then e
     export MAVEN_PROJECT_TAG=${GIT_BRANCH#origin/tags/};
 else 
     export MAVEN_PROJECT_BRANCH=${GIT_BRANCH#origin/};
