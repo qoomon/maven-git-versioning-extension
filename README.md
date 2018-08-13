@@ -195,5 +195,5 @@ fi
 ```
 or for maven plugin (without tag support)
 ```shell
-maven <Goal> -Dproject.branch={GIT_BRANCH#origin/}
+maven <Goal> -Dproject.branch=${GIT_BRANCH#origin/}
 ```
