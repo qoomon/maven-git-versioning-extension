@@ -151,11 +151,9 @@ For Custom Configuration create `${project.basedir}/.mvn/maven-git-versioning-ex
       <versionformat>${type}-${name}</versionformat>
       ```
       
-### Options
+### Parameters % Environment Variables
 
-- provide **branch** or **tag**
-  
-  ℹ especially useful for CI builds
+- Provide **branch** or **tag** name ℹ especially useful for CI builds 
   - **Environment Variables**
     - `export MAVEN_PROJECT_BRANCH=$CUSTOM_BRANCH_NAME`
     - `export MAVEN_PROJECT_TAG=$CUSTOM_TAG_NAME`
@@ -163,7 +161,7 @@ For Custom Configuration create `${project.basedir}/.mvn/maven-git-versioning-ex
     - `mvn -Dproject.branch=$CUSTOM_BRANCH_NAME ...`
     - `mvn -Dproject.tag=$CUSTOM_TAG_NAME ...`
 
-- disable plugin
+- Disable Plugin
   - `mvn -DgitVersioning=false ...`
 
 ## Provided Project Properties
