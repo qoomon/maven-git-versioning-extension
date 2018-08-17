@@ -41,7 +41,7 @@ For Custom Configuration create `${project.basedir}/.mvn/maven-git-versioning-ex
 
       - `<pattern>` An arbitrary regex to match branch names (has to be a **full match pattern** e.g. `feature/.*` )
       - `<prefix>` Remove prefix from `${branch}` placeholder
-      - `<versionFormat>` An arbitrary string, see [Version Format & Placeholders](#Version-Format-&-Placeholders)
+      - `<versionFormat>` An arbitrary string, see [Version Format & Placeholders](#version-format--placeholders)
   
     ⚠ **only considered if...**
       * HEAD attached to a branch `git checkout <BRANCH>`<br>
@@ -54,7 +54,7 @@ For Custom Configuration create `${project.basedir}/.mvn/maven-git-versioning-ex
 
       - `<pattern>` An arbitrary regex to match tag names (has to be a **full match pattern** e.g. `releases/.*` )
       - `<prefix>` Remove prefix from `${tag}` placeholder
-      - `<versionFormat>` An arbitrary string, see [Version Format & Placeholders](#Version-Format-&-Placeholders)
+      - `<versionFormat>` An arbitrary string, see [Version Format & Placeholders](#version-format--placeholders)
       
     ⚠ **only considered if...**
       * HEAD is detached `git checkout <TAG>`<br>
@@ -62,7 +62,7 @@ For Custom Configuration create `${project.basedir}/.mvn/maven-git-versioning-ex
       
   - `<commit>` Commit specific configurations
 
-    - `<versionFormat>` An arbitrary string, see [Version Format & Placeholders](#Version-Format-&-Placeholders)
+    - `<versionFormat>` An arbitrary string, see [Version Format & Placeholders](#version-format--placeholders)
     
     ⚠ **only considered if...**
       * HEAD is detached `git checkout <COMMIT>` and no matching version tag is pointing to HEAD<br>
