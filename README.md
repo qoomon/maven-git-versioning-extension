@@ -161,7 +161,7 @@ For Custom Configuration create `${project.basedir}/.mvn/maven-git-versioning-ex
     - `mvn -Dproject.branch=$CUSTOM_BRANCH_NAME ...`
     - `mvn -Dproject.tag=$CUSTOM_TAG_NAME ...`
   
-  ℹ especially useful for CI builds see [Miscellaneous Hints](#miscellaneous-hints)
+  ℹ Especially useful for **CI builds** see [Miscellaneous Hints](#miscellaneous-hints)
 
 - Disable Plugin
   - `mvn -DgitVersioning=false ...`
