@@ -39,7 +39,7 @@ For Custom Configuration create `${project.basedir}/.mvn/maven-git-versioning-ex
      
     - `<branch>`
 
-      - `<pattern>` An arbitrary regex to match branch names
+      - `<pattern>` An arbitrary regex to match branch names (has to be a **full match pattern** e.g. `feature/.*` )
       - `<prefix>` Remove prefix from `${branch}` placeholder
       - `<versionFormat>` An arbitrary string, see [Version Format & Placeholders](#Version-Format-&-Placeholders)
   
@@ -52,7 +52,7 @@ For Custom Configuration create `${project.basedir}/.mvn/maven-git-versioning-ex
     
     - `<tag>`
 
-      - `<pattern>` An arbitrary regex to match tag names
+      - `<pattern>` An arbitrary regex to match tag names (has to be a **full match pattern** e.g. `releases/.*` )
       - `<prefix>` Remove prefix from `${tag}` placeholder
       - `<versionFormat>` An arbitrary string, see [Version Format & Placeholders](#Version-Format-&-Placeholders)
       
@@ -69,7 +69,7 @@ For Custom Configuration create `${project.basedir}/.mvn/maven-git-versioning-ex
       * Or HEAD is detached and an empty tag is provided by environment variable or maven parameter<br>
       * Or HEAD is attached to a branch and an empty branch is provided by environment variable or maven parameter**
 
-#### Default Config`maven-git-versioning-extension.xml`
+#### Example Config `maven-git-versioning-extension.xml`
 
 ```xml
 <configuration>
@@ -78,6 +78,11 @@ For Custom Configuration create `${project.basedir}/.mvn/maven-git-versioning-ex
             <pattern>master</pattern>
             <versionFormat>${version.release}</versionFormat>
         </branch>
+        <branch>
+             <pattern>feature/.*</pattern>
+             <prefix>feature/</prefix>
+             <versionFormat>${branch}-SNAPSHOT</versionFormat>
+         </branch>
         <branch>
              <pattern>release/.*</pattern>
              <prefix>release/</prefix>
