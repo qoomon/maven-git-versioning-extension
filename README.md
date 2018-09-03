@@ -182,7 +182,10 @@ For Custom Configuration create `${project.basedir}/.mvn/maven-git-versioning-ex
 ### Commandline To Print Project Version
 `mvn --non-recursive exec:exec -Dexec.executable='echo' -Dexec.args='${project.version}' -q`
 
-### GitLab CI Setup
+### CI
+Most CI systems does checkouts in a detached HEAD state so no branch information is available, however they provide environment variables with this information so you can provide these to the maven git versioning extension. See below.
+
+#### GitLab CI Setup
 excute this snippet before running your maven command
 ```shell
 before_script:
@@ -193,7 +196,7 @@ before_script:
     fi
 ```
 
-### Jenkins Setup
+#### Jenkins Setup
 excute this snippet before running your maven command
 ```shell
 if [[ "$GIT_BRANCH" = origin/tags/* ]]; then e
