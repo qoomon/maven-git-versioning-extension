@@ -31,6 +31,8 @@ create or update ${basedir}/.mvn/extensions.xml
 </extensions>
 ```
 
+### [CI/CD](#cicd) Setup
+
 ## Configure Extension
 
 Default Branch Version Format: `${branch}-SNAPSHOT`
@@ -182,8 +184,8 @@ For Custom Configuration create `${project.basedir}/.mvn/maven-git-versioning-ex
 ### Commandline To Print Project Version
 `mvn --non-recursive exec:exec -Dexec.executable='echo' -Dexec.args='${project.version}' -q`
 
-### CI
-Most CI systems does checkouts in a detached HEAD state so no branch information is available, however they provide environment variables with this information so you can provide these to the maven git versioning extension. See below.
+### CI/CD
+Most CI/CD systems does checkouts in a detached HEAD state so no branch information is available, however they provide environment variables with this information so you can provide these to the maven git versioning extension. See below.
 
 #### GitLab CI Setup
 excute this snippet before running your maven command
