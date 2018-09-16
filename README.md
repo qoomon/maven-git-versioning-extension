@@ -6,7 +6,7 @@ This extension will virtually set project versions, based on current **GIT branc
 
 ℹ **The pom files will not be modified, versions are modified in memory only.**
 * Get rid of...
-  * managing version on two places (pom.xml version tag and git version control)
+  * managing version on two places (pom.xml `<version>` tag and git version control)
   * `pom.xml` editing
   * merge conflicts
 
