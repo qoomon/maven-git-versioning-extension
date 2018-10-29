@@ -2,7 +2,6 @@ package me.qoomon.maven.extension.gitversioning;
 
 import me.qoomon.maven.BuildProperties;
 import me.qoomon.maven.GAV;
-import me.qoomon.maven.ModelUtil;
 import me.qoomon.maven.extension.gitversioning.config.VersioningConfiguration;
 import me.qoomon.maven.extension.gitversioning.config.VersioningConfigurationProvider;
 import me.qoomon.maven.extension.gitversioning.config.model.VersionFormatDescription;
@@ -10,10 +9,7 @@ import org.apache.commons.lang3.text.StrSubstitutor;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.apache.maven.building.Source;
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.model.Build;
-import org.apache.maven.model.Model;
-import org.apache.maven.model.Plugin;
-import org.apache.maven.model.PluginExecution;
+import org.apache.maven.model.*;
 import org.apache.maven.model.building.DefaultModelProcessor;
 import org.apache.maven.model.building.ModelProcessor;
 import org.apache.maven.session.scope.internal.SessionScope;
@@ -33,13 +29,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.util.*;
-
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import java.util.stream.Collectors;
 
-import static me.qoomon.maven.extension.gitversioning.SessionScopeUtil.*;
+import static me.qoomon.maven.extension.gitversioning.SessionScopeUtil.get;
 
 
 /**
@@ -47,12 +41,6 @@ import static me.qoomon.maven.extension.gitversioning.SessionScopeUtil.*;
  */
 @Component(role = ModelProcessor.class)
 public class VersioningModelProcessor extends DefaultModelProcessor {
-
-    private Logger logger;
-
-    private SessionScope sessionScope;
-
-    private VersioningConfigurationProvider configurationProvider;
 
     private static final String GIT_VERSIONING_PROPERTY_KEY = "gitVersioning";
 
@@ -62,6 +50,9 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
     private static final String PROJECT_TAG_PROPERTY_KEY = "project.tag";
     private static final String PROJECT_TAG_ENVIRONMENT_VARIABLE_NAME = "MAVEN_PROJECT_TAG";
 
+    private final Logger logger;
+    private final SessionScope sessionScope;
+    private final VersioningConfigurationProvider configurationProvider;
 
     private boolean initialized = false;
     // can not be injected cause it is not always available
@@ -74,12 +65,12 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
     private VersioningConfiguration configuration;
 
     // for preventing unnecessary logging
-    private Set<File> loggerProjectRepositoryDirectorySet = new HashSet<>();
-    private Set<GAV> loggerProjectModuleSet = new HashSet<>();
+    private final Set<File> loggerProjectRepositoryDirectorySet = new HashSet<>();
+    private final Set<GAV> loggerProjectModuleSet = new HashSet<>();
 
 
     @Inject
-    public VersioningModelProcessor(Logger logger, SessionScope sessionScope, VersioningConfigurationProvider configurationProvider) {
+    public VersioningModelProcessor(final Logger logger, final SessionScope sessionScope, final VersioningConfigurationProvider configurationProvider) {
         this.logger = logger;
         this.sessionScope = sessionScope;
         this.configurationProvider = configurationProvider;
@@ -101,11 +92,8 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
     }
 
     private Model provisionModel(Model model, Map<String, ?> options) throws IOException {
-
         try {
-
             // ---------------- initialize ----------------
-
             if (!initialized) {
                 initialize();
                 initialized = true;
@@ -121,7 +109,7 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
             File pomFile = new File(pomSource != null ? pomSource.getLocation() : "");
             if (!isProjectPom(pomFile)) {
                 // skip unrelated models
-                logger.debug("skip unrelated model - source" + pomFile);
+                logger.debug("skip unrelated model - source " + pomFile);
                 return model;
             }
 
@@ -129,6 +117,7 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
 
             // deduce version
             ProjectVersion projectVersion = deduceProjectVersion(projectGav, pomFile.getParentFile());
+
 
             // prevent unnecessary logging
             if(loggerProjectModuleSet.add(projectGav)) {
@@ -140,37 +129,46 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
             // prevent unnecessary logging
             if(loggerProjectRepositoryDirectorySet.add(projectVersion.getRepositoryPath())) {
                 if (projectVersion.isRepositoryDirty()) {
-                    logger.warn("project repository working tree is not clean!");
+                    logger.warn("Git working tree is not clean " + projectVersion.getRepositoryPath());
                 }
             }
 
-            // add properties
+            // add project properties
             model.addProperty("project.commit", projectVersion.getCommit());
             model.addProperty("project.tag", projectVersion.getCommitRefType().equals("tag") ? projectVersion.getCommitRefName() : "");
             model.addProperty("project.branch", projectVersion.getCommitRefType().equals("branch") ? projectVersion.getCommitRefName() : "");
 
-            // update parent version
-            if (model.getParent() != null) {
-                File parentPomFile = new File(pomFile.getParentFile(), model.getParent().getRelativePath());
-                GAV parentGav = GAV.of(model.getParent());
+
+            final Parent parent = model.getParent();
+            if (parent != null) {
+                // check if parent is part of project
+                File parentPomFile = new File(pomFile.getParentFile(), parent.getRelativePath());
+                GAV parentProjectGav = GAV.of(parent);
                 if (parentPomFile.exists() && isProjectPom(parentPomFile)) {
-                    // check if parent pom file match project parent
-                    Model parentModel = ModelUtil.readModel(parentPomFile);
-                    GAV parentProjectGav = GAV.of(parentModel);
-                    if (parentProjectGav.equals(parentGav)) {
-                        ProjectVersion parentProjectVersion = deduceProjectVersion(parentGav, parentPomFile.getParentFile());
-                        logger.debug(projectGav + " adjust project parent version to " + parentProjectVersion);
-                        model.getParent().setVersion(parentProjectVersion.getVersion());
+                    if (model.getVersion() != null){
+                        logger.warn("Do not set version tag in multi module project in " + pomFile);
+                        if (!model.getVersion().equals(parent.getVersion())){
+                            throw new IllegalStateException("project version has to match parent version");
+                        }
                     }
+                    // update parent version
+                    ProjectVersion parentProjectVersion = deduceProjectVersion(parentProjectGav, parentPomFile.getParentFile());
+                    logger.debug("adjust project parent version to " + parentProjectVersion + " in " + pomFile);
+                    parent.setVersion(parentProjectVersion.getVersion());
+
+//                    Model parentModel = ModelUtil.readModel(parentPomFile);
+//                    GAV parentProjectGavFromParentModel = GAV.of(parentModel);
+//                    if (parentProjectGavFromParentModel.equals(parentProjectGav)) {
+//                        // update parent version
+//                        ProjectVersion parentProjectVersion = deduceProjectVersion(parentProjectGav, parentPomFile.getParentFile());
+//                        logger.debug(projectGav + " adjust project parent version to " + parentProjectVersion);
+//                        parent.setVersion(parentProjectVersion.getVersion());
+//                    }
                 }
             }
 
             // update project version
-            if (model.getParent() == null
-                    || !model.getParent().getVersion().equals(projectVersion.getVersion())) {
-                logger.debug(projectGav + " adjust project version to " + projectVersion);
-                model.setVersion(projectVersion.getVersion());
-            }
+            model.setVersion(projectVersion.getVersion());
 
             // add plugin
             addBuildPlugin(model); // has to be removed from model by plugin itself
@@ -180,6 +178,7 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
             throw new IOException("Branch Versioning Model Processor", e);
         }
     }
+
 
     private void initialize() {
         logger.info("");
@@ -290,12 +289,13 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
             // tag versioning
             if(!headTags.isEmpty()){
                 for (VersionFormatDescription versionFormatDescription : configuration.getTagVersionDescriptions()) {
-                    Optional<String> headVersionTag = headTags.stream().sequential()
+                    @SuppressWarnings("SimplifyStreamApiCallChains") Optional<String> headVersionTag = headTags.stream().sequential()
                             .filter(tag -> tag.matches(versionFormatDescription.pattern))
                             .sorted((versionLeft, versionRight) -> {
                                 DefaultArtifactVersion tagVersionLeft = new DefaultArtifactVersion(removePrefix(versionLeft, versionFormatDescription.prefix));
                                 DefaultArtifactVersion tagVersionRight = new DefaultArtifactVersion(removePrefix(versionRight, versionFormatDescription.prefix));
-                                return tagVersionLeft.compareTo(tagVersionRight) * -1; // -1 revert sorting, latest version first
+                                // -1 revert sorting, latest version first
+                                return tagVersionLeft.compareTo(tagVersionRight) * -1;
                             })
                             .findFirst();
                     if (headVersionTag.isPresent()) {
@@ -392,7 +392,7 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
                 result.put(String.valueOf(i), groupMatcher.group(i));
             }
 
-            // determine group ames
+            // determine group names
             Pattern groupNamePattern = Pattern.compile("\\(\\?<(?<name>[a-zA-Z][a-zA-Z0-9]*)>");
             Matcher groupNameMatcher = groupNamePattern.matcher(groupPattern.toString());
 
@@ -451,11 +451,11 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
             return commitRefType;
         }
 
-        public File getRepositoryPath() {
+        File getRepositoryPath() {
             return repositoryPath;
         }
 
-        public boolean isRepositoryDirty() {
+        boolean isRepositoryDirty() {
             return repositoryDirty;
         }
 
