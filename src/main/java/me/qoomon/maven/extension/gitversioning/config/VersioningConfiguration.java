@@ -1,9 +1,9 @@
 package me.qoomon.maven.extension.gitversioning.config;
 
-import me.qoomon.maven.extension.gitversioning.config.model.VersionFormatDescription;
-
 import java.util.List;
 import java.util.Objects;
+
+import me.qoomon.maven.extension.gitversioning.config.model.VersionFormatDescription;
 
 /**
  * Created by qoomon on 30/11/2016.

@@ -21,9 +21,9 @@ public class GAV {
      */
     public GAV(String groupId, String artifactId, String version) {
 
-        if (groupId == null) throw new IllegalArgumentException("groupId must not be null");
-        if (artifactId == null) throw new IllegalArgumentException("artifactId must not be null");
-        if (version == null) throw new IllegalArgumentException("version must not be null");
+        if (groupId == null) throw new IllegalArgumentException("'groupId' is missing");
+        if (artifactId == null) throw new IllegalArgumentException("'artifactId' is missing");
+        if (version == null) throw new IllegalArgumentException("'version' is missing");
 
         this.groupId = groupId;
         this.artifactId = artifactId;
