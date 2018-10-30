@@ -115,9 +115,7 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
 
             GAV projectGav = GAV.of(model);
 
-            // deduce version
-            ProjectVersion projectVersion = deduceProjectVersion(projectGav, pomFile.getParentFile());
-
+            ProjectVersion projectVersion = deduceGitProjectVersion(projectGav, pomFile.getParentFile());
 
             // prevent unnecessary logging
             if (loggerProjectModuleSet.add(projectGav)) {
@@ -132,12 +130,6 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
                     logger.warn("Git working tree is not clean " + projectVersion.getRepositoryPath());
                 }
             }
-
-            // add project properties
-            model.addProperty("project.commit", projectVersion.getCommit());
-            model.addProperty("project.tag", projectVersion.getCommitRefType().equals("tag") ? projectVersion.getCommitRefName() : "");
-            model.addProperty("project.branch", projectVersion.getCommitRefType().equals("branch") ? projectVersion.getCommitRefName() : "");
-
 
             final Parent parent = model.getParent();
             if (parent != null) {
@@ -154,18 +146,9 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
                     }
 
                     // update parent version
-                    ProjectVersion parentProjectVersion = deduceProjectVersion(parentProjectGav, parentPomFile.getParentFile());
+                    ProjectVersion parentProjectVersion = deduceGitProjectVersion(parentProjectGav, parentPomFile.getParentFile());
                     logger.debug("adjust project parent version to " + parentProjectVersion + " in " + pomFile);
                     parent.setVersion(parentProjectVersion.getVersion());
-
-//                    Model parentModel = ModelUtil.readModel(parentPomFile);
-//                    GAV parentProjectGavFromParentModel = GAV.of(parentModel);
-//                    if (parentProjectGavFromParentModel.equals(parentProjectGav)) {
-//                        // update parent version
-//                        ProjectVersion parentProjectVersion = deduceProjectVersion(parentProjectGav, parentPomFile.getParentFile());
-//                        logger.debug(projectGav + " adjust project parent version to " + parentProjectVersion);
-//                        parent.setVersion(parentProjectVersion.getVersion());
-//                    }
                 }
             }
 
@@ -173,6 +156,11 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
                 // update project version
                 model.setVersion(projectVersion.getVersion());
             }
+
+            // add project properties
+            model.addProperty("project.commit", projectVersion.getCommit());
+            model.addProperty("project.tag", projectVersion.getCommitRefType().equals("tag") ? projectVersion.getCommitRefName() : "");
+            model.addProperty("project.branch", projectVersion.getCommitRefType().equals("branch") ? projectVersion.getCommitRefName() : "");
 
             // add plugin
             addBuildPlugin(model); // has to be removed from model by plugin itself
@@ -245,7 +233,7 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
     }
 
 
-    private ProjectVersion deduceProjectVersion(GAV gav, File gitDir) throws IOException {
+    private ProjectVersion deduceGitProjectVersion(GAV gav, File gitDir) throws IOException {
 
         FileRepositoryBuilder repositoryBuilder = new FileRepositoryBuilder().findGitDir(gitDir);
         logger.debug(gav + "git directory " + repositoryBuilder.getGitDir());
