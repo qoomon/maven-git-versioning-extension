@@ -45,7 +45,6 @@ public class VersioningPomReplacementMojo extends AbstractMojo {
             GAV gav = GAV.of(currentProject);
 
             getLog().debug(gav + "remove plugin");
-
             currentProject.getOriginalModel().getBuild().removePlugin(asPlugin());
 
             temporaryOverridePomFileFromModel(currentProject);

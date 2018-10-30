@@ -120,14 +120,14 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
 
 
             // prevent unnecessary logging
-            if(loggerProjectModuleSet.add(projectGav)) {
+            if (loggerProjectModuleSet.add(projectGav)) {
                 logger.info(projectGav.getArtifactId() + ":" + projectGav.getVersion()
                         + " - " + projectVersion.getCommitRefType() + ": " + projectVersion.getCommitRefName()
                         + " -> version: " + projectVersion.getVersion());
             }
 
             // prevent unnecessary logging
-            if(loggerProjectRepositoryDirectorySet.add(projectVersion.getRepositoryPath())) {
+            if (loggerProjectRepositoryDirectorySet.add(projectVersion.getRepositoryPath())) {
                 if (projectVersion.isRepositoryDirty()) {
                     logger.warn("Git working tree is not clean " + projectVersion.getRepositoryPath());
                 }
@@ -145,9 +145,9 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
                 File parentPomFile = new File(pomFile.getParentFile(), parent.getRelativePath());
                 GAV parentProjectGav = GAV.of(parent);
                 if (parentPomFile.exists() && isProjectPom(parentPomFile)) {
-                    if (model.getVersion() != null){
+                    if (model.getVersion() != null) {
                         logger.warn("Do not set version tag in multi module project in " + pomFile);
-                        if (!model.getVersion().equals(parent.getVersion())){
+                        if (!model.getVersion().equals(parent.getVersion())) {
                             throw new IllegalStateException("project version has to match parent version");
                         }
                     }
@@ -198,16 +198,16 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
             } else {
                 providedTag = mavenSession.getUserProperties().getProperty(PROJECT_TAG_PROPERTY_KEY);
                 if (providedTag == null) {
-                    providedTag=  System.getenv(PROJECT_TAG_ENVIRONMENT_VARIABLE_NAME);
+                    providedTag = System.getenv(PROJECT_TAG_ENVIRONMENT_VARIABLE_NAME);
                 }
 
                 providedBranch = mavenSession.getUserProperties().getProperty(PROJECT_BRANCH_PROPERTY_KEY);
-                if(providedBranch == null) {
+                if (providedBranch == null) {
                     providedBranch = System.getenv(PROJECT_BRANCH_ENVIRONMENT_VARIABLE_NAME);
                 }
 
-                if (providedTag != null && providedBranch != null ) {
-                    logger.warn("provided branch [" +  providedBranch  + "] is ignored " +
+                if (providedTag != null && providedBranch != null) {
+                    logger.warn("provided branch [" + providedBranch + "] is ignored " +
                             "due to provided tag [" + providedTag + "] !");
                     providedBranch = null;
                 }
@@ -253,8 +253,8 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
             final Status status = getStatus(repository);
 
             Optional<String> headBranch = getHeadBranch(repository);
-            if(providedBranch != null){
-                if(!providedBranch.isEmpty()){
+            if (providedBranch != null) {
+                if (!providedBranch.isEmpty()) {
                     headBranch = Optional.of(providedBranch);
                 } else {
                     headBranch = Optional.empty();
@@ -262,8 +262,8 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
             }
 
             List<String> headTags = getHeadTags(repository);
-            if(providedTag != null){
-                if(!providedTag.isEmpty()){
+            if (providedTag != null) {
+                if (!providedTag.isEmpty()) {
                     headTags = Collections.singletonList(providedTag);
                 } else {
                     headTags = Collections.emptyList();
@@ -286,26 +286,26 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
                     }
                 }
             } else
-            // tag versioning
-            if(!headTags.isEmpty()){
-                for (VersionFormatDescription versionFormatDescription : configuration.getTagVersionDescriptions()) {
-                    @SuppressWarnings("SimplifyStreamApiCallChains") Optional<String> headVersionTag = headTags.stream().sequential()
-                            .filter(tag -> tag.matches(versionFormatDescription.pattern))
-                            .sorted((versionLeft, versionRight) -> {
-                                DefaultArtifactVersion tagVersionLeft = new DefaultArtifactVersion(removePrefix(versionLeft, versionFormatDescription.prefix));
-                                DefaultArtifactVersion tagVersionRight = new DefaultArtifactVersion(removePrefix(versionRight, versionFormatDescription.prefix));
-                                // -1 revert sorting, latest version first
-                                return tagVersionLeft.compareTo(tagVersionRight) * -1;
-                            })
-                            .findFirst();
-                    if (headVersionTag.isPresent()) {
-                        projectVersionFormatDescription = versionFormatDescription;
-                        projectCommitRefType = "tag";
-                        projectCommitRefName = headVersionTag.get();
-                        break;
+                // tag versioning
+                if (!headTags.isEmpty()) {
+                    for (VersionFormatDescription versionFormatDescription : configuration.getTagVersionDescriptions()) {
+                        Optional<String> headVersionTag = headTags.stream().sequential()
+                                .filter(tag -> tag.matches(versionFormatDescription.pattern))
+                                .sorted((versionLeft, versionRight) -> {
+                                    DefaultArtifactVersion tagVersionLeft = new DefaultArtifactVersion(removePrefix(versionLeft, versionFormatDescription.prefix));
+                                    DefaultArtifactVersion tagVersionRight = new DefaultArtifactVersion(removePrefix(versionRight, versionFormatDescription.prefix));
+                                    // -1 revert sorting, latest version first
+                                    return tagVersionLeft.compareTo(tagVersionRight) * -1;
+                                })
+                                .findFirst();
+                        if (headVersionTag.isPresent()) {
+                            projectVersionFormatDescription = versionFormatDescription;
+                            projectCommitRefType = "tag";
+                            projectCommitRefName = headVersionTag.get();
+                            break;
+                        }
                     }
                 }
-            }
 
             Map<String, String> projectVersionDataMap = buildCommonVersionDataMap(gav);
             projectVersionDataMap.put("commit", headCommit);
