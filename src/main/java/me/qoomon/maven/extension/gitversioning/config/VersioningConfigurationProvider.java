@@ -55,7 +55,7 @@ public class VersioningConfigurationProvider {
                 Configuration configurationModel = loadConfiguration(configFile);
                 branchVersionDescriptions.addAll(0, configurationModel.branches);
                 tagVersionDescriptions.addAll(0, configurationModel.tags);
-                if(configurationModel.commitVersionFormat != null){
+                if (configurationModel.commitVersionFormat != null) {
                     commitVersionDescription = new VersionFormatDescription(".*", "", configurationModel.commitVersionFormat);
                 }
             } else {
