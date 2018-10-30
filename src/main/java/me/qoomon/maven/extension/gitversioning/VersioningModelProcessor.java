@@ -141,16 +141,18 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
 
             final Parent parent = model.getParent();
             if (parent != null) {
+                if (model.getVersion() != null) {
+                    logger.warn("Do not set version tag in a multi module project module: " + pomFile);
+                }
+
                 // check if parent is part of project
                 File parentPomFile = new File(pomFile.getParentFile(), parent.getRelativePath());
                 GAV parentProjectGav = GAV.of(parent);
                 if (parentPomFile.exists() && isProjectPom(parentPomFile)) {
-                    if (model.getVersion() != null) {
-                        logger.warn("Do not set version tag in multi module project in " + pomFile);
-                        if (!model.getVersion().equals(parent.getVersion())) {
-                            throw new IllegalStateException("project version has to match parent version");
-                        }
+                    if (model.getVersion() != null && !model.getVersion().equals(parent.getVersion())) {
+                        throw new IllegalStateException("project version has to match parent version");
                     }
+
                     // update parent version
                     ProjectVersion parentProjectVersion = deduceProjectVersion(parentProjectGav, parentPomFile.getParentFile());
                     logger.debug("adjust project parent version to " + parentProjectVersion + " in " + pomFile);
@@ -167,8 +169,10 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
                 }
             }
 
-            // update project version
-            model.setVersion(projectVersion.getVersion());
+            if(model.getVersion() != null) {
+                // update project version
+                model.setVersion(projectVersion.getVersion());
+            }
 
             // add plugin
             addBuildPlugin(model); // has to be removed from model by plugin itself
