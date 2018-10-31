@@ -5,7 +5,6 @@ import me.qoomon.maven.GAV;
 import me.qoomon.maven.extension.gitversioning.config.VersioningConfiguration;
 import me.qoomon.maven.extension.gitversioning.config.VersioningConfigurationProvider;
 import me.qoomon.maven.extension.gitversioning.config.model.VersionFormatDescription;
-import org.apache.commons.lang3.text.StrSubstitutor;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.apache.maven.building.Source;
 import org.apache.maven.execution.MavenSession;
@@ -32,8 +31,6 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import static me.qoomon.maven.extension.gitversioning.SessionScopeUtil.get;
 
 
 /**
@@ -199,7 +196,7 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
         logger.info("");
         logger.info("--- " + BuildProperties.projectArtifactId() + ":" + BuildProperties.projectVersion() + " ---");
 
-        Optional<MavenSession> mavenSessionOptional = get(sessionScope, MavenSession.class);
+        Optional<MavenSession> mavenSessionOptional = SessionScopeUtil.get(sessionScope, MavenSession.class);
         if (!mavenSessionOptional.isPresent()) {
             logger.warn("Skip provisioning. No MavenSession present.");
             disabled = true;
@@ -272,11 +269,11 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
 
         try (Repository repository = repositoryBuilder.build()) {
 
-            final String headCommit = getHeadCommit(repository);
+            final String headCommit = GitUtil.getHeadCommit(repository);
 
-            final Status status = getStatus(repository);
+            final Status status = GitUtil.getStatus(repository);
 
-            Optional<String> headBranch = getHeadBranch(repository);
+            Optional<String> headBranch = GitUtil.getHeadBranch(repository);
             if (providedBranch != null) {
                 if (!providedBranch.isEmpty()) {
                     headBranch = Optional.of(providedBranch);
@@ -285,7 +282,7 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
                 }
             }
 
-            List<String> headTags = getHeadTags(repository);
+            List<String> headTags = GitUtil.getHeadTags(repository);
             if (providedTag != null) {
                 if (!providedTag.isEmpty()) {
                     headTags = Collections.singletonList(providedTag);
@@ -335,7 +332,7 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
             projectVersionDataMap.put("commit.short", headCommit.substring(0, 7));
             projectVersionDataMap.put(projectCommitRefType, removePrefix(projectCommitRefName, projectVersionFormatDescription.prefix));
             projectVersionDataMap.putAll(getRegexGroupValueMap(projectVersionFormatDescription.pattern, projectCommitRefName));
-            String version = StrSubstitutor.replace(projectVersionFormatDescription.versionFormat, projectVersionDataMap);
+            String version = subsituteText(projectVersionFormatDescription.versionFormat, projectVersionDataMap);
             return new GitBasedProjectVersion(escapeVersion(version),
                     headCommit, projectCommitRefName, projectCommitRefType,
                     repository.getDirectory().getParentFile(), !status.isClean());
@@ -347,59 +344,6 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
         versionDataMap.put("version", gav.getVersion());
         versionDataMap.put("version.release", gav.getVersion().replaceFirst("-SNAPSHOT$", ""));
         return versionDataMap;
-    }
-
-    private Status getStatus(Repository repository) {
-        try {
-            return Git.wrap(repository).status().call();
-        } catch (GitAPIException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private Optional<String> getHeadBranch(Repository repository) throws IOException {
-
-        ObjectId head = repository.resolve(Constants.HEAD);
-        if (head == null) {
-            return Optional.of("master");
-        }
-
-        if (ObjectId.isId(repository.getBranch())) {
-            return Optional.empty();
-        }
-
-        return Optional.ofNullable(repository.getBranch());
-    }
-
-    private List<String> getHeadTags(Repository repository) throws IOException {
-
-        ObjectId head = repository.resolve(Constants.HEAD);
-        if (head == null) {
-            return Collections.emptyList();
-        }
-
-        return repository.getTags().values().stream()
-                .map(repository::peel)
-                .filter(ref -> {
-                    ObjectId objectId;
-                    if (ref.getPeeledObjectId() != null) {
-                        objectId = ref.getPeeledObjectId();
-                    } else {
-                        objectId = ref.getObjectId();
-                    }
-                    return objectId.equals(head);
-                })
-                .map(ref -> ref.getName().replaceFirst("^refs/tags/", ""))
-                .collect(Collectors.toList());
-    }
-
-    private String getHeadCommit(Repository repository) throws IOException {
-
-        ObjectId head = repository.resolve(Constants.HEAD);
-        if (head == null) {
-            return "0000000000000000000000000000000000000000";
-        }
-        return head.getName();
     }
 
     /**
@@ -434,6 +378,20 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
 
     private static String escapeVersion(String version) {
         return version.replace("/", "-");
+    }
+
+    private static String subsituteText(String text, Map<String, String> substitutionMap) {
+        String result = text;
+
+        final Pattern placeholderPattern = Pattern.compile("\\$\\{(.+?)}");
+        final Matcher placeholderMatcher = placeholderPattern.matcher(text);
+        while (placeholderMatcher.find()) {
+            String substitutionKey = placeholderMatcher.group(1);
+            String substitutionValue = substitutionMap.get(substitutionKey);
+            result = result.replaceAll("\\$\\{" + substitutionKey + "}", substitutionValue);
+        }
+
+        return result;
     }
 
     class GitBasedProjectVersion {
