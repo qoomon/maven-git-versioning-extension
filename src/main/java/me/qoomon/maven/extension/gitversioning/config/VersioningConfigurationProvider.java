@@ -1,11 +1,11 @@
 package me.qoomon.maven.extension.gitversioning.config;
 
-import java.io.File;
-import java.util.LinkedList;
-import java.util.List;
-
-import javax.inject.Inject;
-
+import com.google.common.collect.Lists;
+import me.qoomon.maven.BuildProperties;
+import me.qoomon.maven.extension.gitversioning.ExtensionUtil;
+import me.qoomon.maven.extension.gitversioning.SessionScopeUtil;
+import me.qoomon.maven.extension.gitversioning.config.model.Configuration;
+import me.qoomon.maven.extension.gitversioning.config.model.VersionFormatDescription;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.session.scope.internal.SessionScope;
 import org.codehaus.plexus.component.annotations.Component;
@@ -13,13 +13,10 @@ import org.codehaus.plexus.logging.Logger;
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 
-import com.google.common.collect.Lists;
-
-import me.qoomon.maven.BuildProperties;
-import me.qoomon.maven.extension.gitversioning.ExtensionUtil;
-import me.qoomon.maven.extension.gitversioning.SessionScopeUtil;
-import me.qoomon.maven.extension.gitversioning.config.model.Configuration;
-import me.qoomon.maven.extension.gitversioning.config.model.VersionFormatDescription;
+import javax.inject.Inject;
+import java.io.File;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Created by qoomon on 30/11/2016.

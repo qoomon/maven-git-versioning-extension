@@ -1,12 +1,12 @@
 package me.qoomon.maven.extension.gitversioning.config.model;
 
-import java.util.LinkedList;
-import java.util.List;
-
 import org.simpleframework.xml.Element;
 import org.simpleframework.xml.ElementList;
 import org.simpleframework.xml.Path;
 import org.simpleframework.xml.Root;
+
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Created by qoomon on 26/11/2016.
@@ -21,7 +21,7 @@ public class Configuration {
     public List<VersionFormatDescription> tags = new LinkedList<>();
 
     @Path("commit")
-    @Element(name="versionFormat")
+    @Element(name = "versionFormat")
     public String commitVersionFormat;
 
 }

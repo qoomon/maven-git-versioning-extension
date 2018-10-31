@@ -1,9 +1,9 @@
 package me.qoomon.maven.extension.gitversioning.config;
 
+import me.qoomon.maven.extension.gitversioning.config.model.VersionFormatDescription;
+
 import java.util.List;
 import java.util.Objects;
-
-import me.qoomon.maven.extension.gitversioning.config.model.VersionFormatDescription;
 
 /**
  * Created by qoomon on 30/11/2016.
@@ -17,7 +17,7 @@ public class VersioningConfiguration {
     public VersioningConfiguration(List<VersionFormatDescription> branchVersionDescriptions,
                                    List<VersionFormatDescription> tagVersionDescriptions,
                                    VersionFormatDescription commitVersionDescription) {
-        this.branchVersionDescriptions = Objects.requireNonNull(branchVersionDescriptions) ;
+        this.branchVersionDescriptions = Objects.requireNonNull(branchVersionDescriptions);
         this.tagVersionDescriptions = Objects.requireNonNull(tagVersionDescriptions);
         this.commitVersionDescription = Objects.requireNonNull(commitVersionDescription);
     }
