@@ -19,7 +19,8 @@ public final class BuildProperties {
         }
         return properties;
     }
-    public static String value(String key){
+
+    public static String value(String key) {
         return PROPERTIES.getProperty(key);
     }
 
@@ -32,6 +33,6 @@ public final class BuildProperties {
     }
 
     public static String projectVersion() {
-       return PROPERTIES.getProperty("project.version");
+        return PROPERTIES.getProperty("project.version");
     }
 }

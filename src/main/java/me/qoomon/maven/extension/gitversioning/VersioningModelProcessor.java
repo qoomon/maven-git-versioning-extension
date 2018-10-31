@@ -91,81 +91,104 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
         return provisionModel(super.read(input, options), options);
     }
 
-    private Model provisionModel(Model model, Map<String, ?> options) throws IOException {
+    private Model provisionModel(Model projectModel, Map<String, ?> options) throws IOException {
         try {
             // ---------------- initialize ----------------
+
             if (!initialized) {
                 initialize();
                 initialized = true;
             }
 
             if (disabled) {
-                return model;
+                logger.debug("skip - extension disabled");
+                return projectModel;
             }
 
-            // ---------------- provisioning ----------------
-
-            Source pomSource = (Source) options.get(ModelProcessor.SOURCE);
-            File pomFile = new File(pomSource != null ? pomSource.getLocation() : "");
-            if (!isProjectPom(pomFile)) {
-                // skip unrelated models
-                logger.debug("skip unrelated model - source " + pomFile);
-                return model;
+            final Source pomSource = (Source) options.get(ModelProcessor.SOURCE);
+            if (pomSource == null) {
+                logger.debug("skip - unknown pom source");
+                return projectModel;
             }
 
-            GAV projectGav = GAV.of(model);
+            final File projectPomFile = new File(pomSource.getLocation());
+            if (!isProjectPom(projectPomFile)) {
+                logger.debug("skip - unrelated pom location - " + projectPomFile);
+                return projectModel;
+            }
 
-            ProjectVersion projectVersion = deduceGitProjectVersion(projectGav, pomFile.getParentFile());
 
-            // prevent unnecessary logging
+            final Model virtualProjectModel = projectModel.clone();
+
+
+            // ---------------- handle project git based version ----------------
+
+            final GAV projectGav = GAV.of(projectModel);
+            if (projectGav.getVersion() == null) {
+                logger.warn("skip - invalid model - 'version' is missing - " + projectPomFile);
+                return projectModel;
+            }
+
+            final GitBasedProjectVersion projectGitBasedVersion = determineGitBasedProjectVersion(projectGav, projectPomFile.getParentFile());
+
+            // log only once per git repository
+            if (loggerProjectRepositoryDirectorySet.add(projectGitBasedVersion.getRepositoryPath())) {
+                if (projectGitBasedVersion.isRepositoryDirty()) {
+                    logger.warn("Git working tree is not clean " + projectGitBasedVersion.getRepositoryPath());
+                }
+            }
+
+            // log only once per GAV
             if (loggerProjectModuleSet.add(projectGav)) {
                 logger.info(projectGav.getArtifactId() + ":" + projectGav.getVersion()
-                        + " - " + projectVersion.getCommitRefType() + ": " + projectVersion.getCommitRefName()
-                        + " -> version: " + projectVersion.getVersion());
+                        + " - " + projectGitBasedVersion.getCommitRefType() + ": " + projectGitBasedVersion.getCommitRefName()
+                        + " -> version: " + projectGitBasedVersion.getVersion());
             }
 
-            // prevent unnecessary logging
-            if (loggerProjectRepositoryDirectorySet.add(projectVersion.getRepositoryPath())) {
-                if (projectVersion.isRepositoryDirty()) {
-                    logger.warn("Git working tree is not clean " + projectVersion.getRepositoryPath());
-                }
+            if (projectModel.getVersion() != null) {
+                logger.debug("set project version to " + projectGitBasedVersion + " in " + projectPomFile);
+                virtualProjectModel.setVersion(projectGitBasedVersion.getVersion());
             }
 
-            final Parent parent = model.getParent();
+            logger.debug("add project properties");
+            virtualProjectModel.addProperty("project.commit", projectGitBasedVersion.getCommit());
+            virtualProjectModel.addProperty("project.tag", projectGitBasedVersion.getCommitRefType().equals("tag") ? projectGitBasedVersion.getCommitRefName() : "");
+            virtualProjectModel.addProperty("project.branch", projectGitBasedVersion.getCommitRefType().equals("branch") ? projectGitBasedVersion.getCommitRefName() : "");
+
+
+            // ---------------- handle parent git based version ----------------
+
+            final Parent parent = projectModel.getParent();
             if (parent != null) {
-                if (model.getVersion() != null) {
-                    logger.warn("Do not set version tag in a multi module project module: " + pomFile);
+
+                GAV parentGav = GAV.of(parent);
+                if (parentGav.getVersion() == null) {
+                    logger.warn("skip - invalid model - parent 'version' is missing - " + projectPomFile);
+                    return projectModel;
                 }
 
-                // check if parent is part of project
-                File parentPomFile = new File(pomFile.getParentFile(), parent.getRelativePath());
-                GAV parentProjectGav = GAV.of(parent);
-                if (parentPomFile.exists() && isProjectPom(parentPomFile)) {
-                    if (model.getVersion() != null && !model.getVersion().equals(parent.getVersion())) {
-                        throw new IllegalStateException("project version has to match parent version");
+                File parentPomFile = new File(projectPomFile.getParentFile(), parent.getRelativePath());
+                if (isProjectPom(parentPomFile)) {
+
+                    if (projectModel.getVersion() != null) {
+                        logger.warn("Do not set version tag in a multi module project module: " + projectPomFile);
+                        if (!projectModel.getVersion().equals(parent.getVersion())) {
+                            throw new IllegalStateException("'version' has to be equal to parent 'version'");
+                        }
                     }
 
-                    // update parent version
-                    ProjectVersion parentProjectVersion = deduceGitProjectVersion(parentProjectGav, parentPomFile.getParentFile());
-                    logger.debug("adjust project parent version to " + parentProjectVersion + " in " + pomFile);
-                    parent.setVersion(parentProjectVersion.getVersion());
+                    final GitBasedProjectVersion parentGitBasedVersion = determineGitBasedProjectVersion(parentGav, parentPomFile.getParentFile());
+
+                    logger.debug("set parent version to " + parentGitBasedVersion + " in " + projectPomFile);
+                    virtualProjectModel.getParent().setVersion(parentGitBasedVersion.getVersion());
                 }
             }
 
-            if(model.getVersion() != null) {
-                // update project version
-                model.setVersion(projectVersion.getVersion());
-            }
+            // ---------------- add plugin ----------------
 
-            // add project properties
-            model.addProperty("project.commit", projectVersion.getCommit());
-            model.addProperty("project.tag", projectVersion.getCommitRefType().equals("tag") ? projectVersion.getCommitRefName() : "");
-            model.addProperty("project.branch", projectVersion.getCommitRefType().equals("branch") ? projectVersion.getCommitRefName() : "");
+            addBuildPlugin(virtualProjectModel); // has to be removed from model by plugin itself
 
-            // add plugin
-            addBuildPlugin(model); // has to be removed from model by plugin itself
-
-            return model;
+            return virtualProjectModel;
         } catch (Exception e) {
             throw new IOException("Branch Versioning Model Processor", e);
         }
@@ -209,9 +232,18 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
         }
     }
 
+    /**
+     * checks if <code>pomFile</code> is part of a project
+     *
+     * @param pomFile the pom file
+     * @return true if <code>pomFile</code> is part of a project
+     */
     private boolean isProjectPom(File pomFile) {
-        // only project pom files ends in .xml, pom files from dependencies from repository ends in .pom
-        return pomFile.isFile() && pomFile.getName().endsWith(".xml");
+        return pomFile != null
+                && pomFile.exists()
+                && pomFile.isFile()
+                // only project pom files ends in .xml, pom files from dependencies from repository ends in .pom
+                && pomFile.getName().endsWith(".xml");
     }
 
 
@@ -233,7 +265,7 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
     }
 
 
-    private ProjectVersion deduceGitProjectVersion(GAV gav, File gitDir) throws IOException {
+    private GitBasedProjectVersion determineGitBasedProjectVersion(GAV gav, File gitDir) throws IOException {
 
         FileRepositoryBuilder repositoryBuilder = new FileRepositoryBuilder().findGitDir(gitDir);
         logger.debug(gav + "git directory " + repositoryBuilder.getGitDir());
@@ -281,15 +313,14 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
                 // tag versioning
                 if (!headTags.isEmpty()) {
                     for (VersionFormatDescription versionFormatDescription : configuration.getTagVersionDescriptions()) {
+                        // -1 revert sorting, latest version first
                         Optional<String> headVersionTag = headTags.stream().sequential()
                                 .filter(tag -> tag.matches(versionFormatDescription.pattern))
-                                .sorted((versionLeft, versionRight) -> {
+                                .max((versionLeft, versionRight) -> {
                                     DefaultArtifactVersion tagVersionLeft = new DefaultArtifactVersion(removePrefix(versionLeft, versionFormatDescription.prefix));
                                     DefaultArtifactVersion tagVersionRight = new DefaultArtifactVersion(removePrefix(versionRight, versionFormatDescription.prefix));
-                                    // -1 revert sorting, latest version first
-                                    return tagVersionLeft.compareTo(tagVersionRight) * -1;
-                                })
-                                .findFirst();
+                                    return tagVersionLeft.compareTo(tagVersionRight);
+                                });
                         if (headVersionTag.isPresent()) {
                             projectVersionFormatDescription = versionFormatDescription;
                             projectCommitRefType = "tag";
@@ -305,7 +336,7 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
             projectVersionDataMap.put(projectCommitRefType, removePrefix(projectCommitRefName, projectVersionFormatDescription.prefix));
             projectVersionDataMap.putAll(getRegexGroupValueMap(projectVersionFormatDescription.pattern, projectCommitRefName));
             String version = StrSubstitutor.replace(projectVersionFormatDescription.versionFormat, projectVersionDataMap);
-            return new ProjectVersion(escapeVersion(version),
+            return new GitBasedProjectVersion(escapeVersion(version),
                     headCommit, projectCommitRefName, projectCommitRefType,
                     repository.getDirectory().getParentFile(), !status.isClean());
         }
@@ -405,7 +436,7 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
         return version.replace("/", "-");
     }
 
-    class ProjectVersion {
+    class GitBasedProjectVersion {
 
         private final String version;
         private final String commit;
@@ -414,9 +445,9 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
         private final File repositoryPath;
         private final boolean repositoryDirty;
 
-        ProjectVersion(String version,
-                       String commit, String commitRefName, String commitRefType,
-                       File repositoryPath, boolean repositoryDirty) {
+        GitBasedProjectVersion(String version,
+                               String commit, String commitRefName, String commitRefType,
+                               File repositoryPath, boolean repositoryDirty) {
             this.version = version;
 
             this.commit = commit;

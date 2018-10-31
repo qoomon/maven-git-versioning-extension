@@ -1,11 +1,10 @@
 package me.qoomon.maven.extension.gitversioning;
 
-import java.util.Optional;
-
-import org.apache.maven.session.scope.internal.SessionScope;
-
 import com.google.inject.Key;
 import com.google.inject.OutOfScopeException;
+import org.apache.maven.session.scope.internal.SessionScope;
+
+import java.util.Optional;
 
 /**
  * Created by qoomon on 30/11/2016.

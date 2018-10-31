@@ -20,11 +20,6 @@ public class GAV {
      * @param version    the version of the maven object
      */
     public GAV(String groupId, String artifactId, String version) {
-
-        if (groupId == null) throw new IllegalArgumentException("'groupId' is missing");
-        if (artifactId == null) throw new IllegalArgumentException("'artifactId' is missing");
-        if (version == null) throw new IllegalArgumentException("'version' is missing");
-
         this.groupId = groupId;
         this.artifactId = artifactId;
         this.version = version;

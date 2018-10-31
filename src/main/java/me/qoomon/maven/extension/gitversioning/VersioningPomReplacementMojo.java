@@ -69,7 +69,7 @@ public class VersioningPomReplacementMojo extends AbstractMojo {
      */
     public void temporaryOverridePomFileFromModel(MavenProject project) throws IOException {
 
-        File tmpPomFile = new File(project.getBuild().getDirectory(), "git_pom.xml");
+        File tmpPomFile = new File(project.getBuild().getDirectory(), "pom.virtual.xml");
         tmpPomFile.getParentFile().mkdirs();
 
         ModelUtil.writeModel(project.getOriginalModel(), tmpPomFile);

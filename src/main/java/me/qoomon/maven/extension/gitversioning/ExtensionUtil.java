@@ -1,8 +1,8 @@
 package me.qoomon.maven.extension.gitversioning;
 
-import java.io.File;
-
 import org.apache.maven.execution.MavenExecutionRequest;
+
+import java.io.File;
 
 /**
  * Created by qoomon on 06/12/2016.
