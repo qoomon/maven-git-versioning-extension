@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class GitUtil {
+public final class GitUtil {
 
     public static Status getStatus(Repository repository) {
         try {
