@@ -10,7 +10,7 @@ import java.io.*;
 /**
  * Created by qoomon on 18/11/2016.
  */
-public class ModelUtil {
+public final class ModelUtil {
 
     /**
      * Read model from pom file
