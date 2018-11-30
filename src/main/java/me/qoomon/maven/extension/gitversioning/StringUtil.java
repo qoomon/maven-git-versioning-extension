@@ -32,6 +32,8 @@ public final class StringUtil {
     }
 
     /**
+     * @param regex pattern
+     * @param text to parse
      * @return a map of group-index and group-name to matching value
      */
     public static Map<String, String> getRegexGroupValueMap(String regex, String text) {
