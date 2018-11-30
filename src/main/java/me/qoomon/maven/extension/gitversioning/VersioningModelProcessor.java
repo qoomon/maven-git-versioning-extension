@@ -115,10 +115,18 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
                 return projectModel;
             }
 
+            if(projectPomFile.getName().equals("pom.virtual.xml")){
+                logger.debug("skip - virtual pom - " + projectPomFile);
+                return projectModel;
+            }
+
 
             // ---------------- process project model ----------------------------
 
             final Model virtualProjectModel = projectModel.clone();
+
+
+            // ---------------- handle project git based version ----------------
 
             final GAV projectGav = GAV.of(projectModel);
             if (projectGav.getVersion() == null) {
@@ -295,11 +303,12 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
             projectVersionDataMap.put("commit.short", headCommit.substring(0, 7));
             projectVersionDataMap.put(projectCommitRefType, removePrefix(projectCommitRefName, projectVersionFormatDescription.prefix));
             projectVersionDataMap.putAll(getRegexGroupValueMap(projectVersionFormatDescription.pattern, projectCommitRefName));
-            String versionGit = substituteText(projectVersionFormatDescription.versionFormat, projectVersionDataMap);
+
+            String versionGit = escapeVersion(substituteText(projectVersionFormatDescription.versionFormat, projectVersionDataMap));
             return new GAVGit(
                     gav.getGroupId(),
                     gav.getArtifactId(),
-                    escapeVersion(versionGit),
+                    versionGit,
                     headCommit,
                     projectCommitRefName,
                     projectCommitRefType

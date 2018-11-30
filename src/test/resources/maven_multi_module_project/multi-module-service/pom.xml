@@ -28,7 +28,7 @@
     </dependencies>
 
     <build>
-        <finalName>${project.version}-${project.branch}-WhatEverYouLikey</finalName>
+        <finalName>${project.version}-${project.branch}-WhatEverYouLike</finalName>
     </build>
 
 </project>
