@@ -79,9 +79,9 @@ public class VersioningConfigurationProvider {
         }
 
         if (providedBranch != null && providedTag != null) {
-            logger.warn("provided branch [" + providedBranch + "] is ignored " +
-                    "due to provided tag [" + providedTag + "] !");
-            providedBranch = null;
+            logger.warn("provided tag [" + providedTag + "] is ignored " +
+                    "due to provided branch [" + providedBranch + "] !");
+            providedTag = null;
         }
 
         return new VersioningConfiguration(enabledExtension, branchVersionDescriptions, tagVersionDescriptions, commitVersionDescription, providedBranch, providedTag);
