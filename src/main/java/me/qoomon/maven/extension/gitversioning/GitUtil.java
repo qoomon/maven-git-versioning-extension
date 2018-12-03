@@ -10,7 +10,6 @@ import org.eclipse.jgit.lib.Repository;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 public final class GitUtil {
@@ -23,18 +22,18 @@ public final class GitUtil {
         }
     }
 
-    public static Optional<String> getHeadBranch(Repository repository) throws IOException {
+    public static String getHeadBranch(Repository repository) throws IOException {
 
         ObjectId head = repository.resolve(Constants.HEAD);
         if (head == null) {
-            return Optional.of(Constants.MASTER);
+            return Constants.MASTER;
         }
 
         if (ObjectId.isId(repository.getBranch())) {
-            return Optional.empty();
+            return null;
         }
 
-        return Optional.ofNullable(repository.getBranch());
+        return repository.getBranch();
     }
 
     public static List<String> getHeadTags(Repository repository) throws IOException {

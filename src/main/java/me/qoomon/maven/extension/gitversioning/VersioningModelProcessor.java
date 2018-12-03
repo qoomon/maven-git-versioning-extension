@@ -26,6 +26,8 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.util.*;
 
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static me.qoomon.maven.extension.gitversioning.StringUtil.*;
 
 
@@ -38,6 +40,9 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
     private final Logger logger;
     // for preventing unnecessary logging
     private final Set<String> loggingBouncer = new HashSet<>();
+
+    private final Map<File, GitRepoData> gitRepoDataCache = new HashMap<>();
+    private final Map<GAV, GAVGit> gitVersionCache = new HashMap<>();
 
     private final SessionScope sessionScope;
     private final VersioningConfigurationProvider configurationProvider;
@@ -115,7 +120,7 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
                 return projectModel;
             }
 
-            if(projectPomFile.getName().equals("pom.virtual.xml")){
+            if (projectPomFile.getName().equals("pom.virtual.xml")) {
                 logger.debug("skip - virtual pom - " + projectPomFile);
                 return projectModel;
             }
@@ -224,96 +229,116 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
     }
 
     private GAVGit determineGitBasedProjectVersion(GAV gav, File gitDir) throws IOException {
-
-        FileRepositoryBuilder repositoryBuilder = new FileRepositoryBuilder().findGitDir(gitDir);
-        logger.debug(gav + "git directory " + repositoryBuilder.getGitDir());
-
-        try (Repository repository = repositoryBuilder.build()) {
-
-            final Status status = GitUtil.getStatus(repository);
-            if (!status.isClean()) {
-                // log only once per git repository
-                if (loggingBouncer.add(repository.getDirectory().getPath())) {
-                    logger.warn("Git working tree is not clean " + repository.getDirectory());
-                }
-            }
-
-            final String headCommit = GitUtil.getHeadCommit(repository);
-
-            Optional<String> headBranch = GitUtil.getHeadBranch(repository);
-            final String providedBranch = configuration.getProvidedBranch();
-            if (providedBranch != null) {
-                if (!providedBranch.isEmpty()) {
-                    headBranch = Optional.of(providedBranch);
-                } else {
-                    headBranch = Optional.empty();
-                }
-            }
-
-            List<String> headTags = GitUtil.getHeadTags(repository);
-            final String providedTag = configuration.getProvidedTag();
-            if (providedTag != null) {
-                if (!providedTag.isEmpty()) {
-                    headTags = Collections.singletonList(providedTag);
-                } else {
-                    headTags = Collections.emptyList();
-                }
-            }
+        GAVGit gitBasedProjectVersion = gitVersionCache.get(gav);
+        if (gitBasedProjectVersion == null) {
+            GitRepoData gitRepoData = getGitRepoData(gitDir);
 
             // default versioning
             VersionFormatDescription projectVersionFormatDescription = configuration.getCommitVersionDescription();
             String projectCommitRefType = "commit";
-            String projectCommitRefName = headCommit;
+            String projectCommitRefName = gitRepoData.getCommit();
 
             // branch versioning
-            if (headBranch.isPresent() && providedTag == null) {
+            if (gitRepoData.getBranch() != null) {
                 for (VersionFormatDescription versionFormatDescription : configuration.getBranchVersionDescriptions()) {
-                    if (headBranch.get().matches(versionFormatDescription.pattern)) {
+                    if (gitRepoData.getBranch().matches(versionFormatDescription.pattern)) {
                         projectVersionFormatDescription = versionFormatDescription;
                         projectCommitRefType = "branch";
-                        projectCommitRefName = headBranch.get();
+                        projectCommitRefName = gitRepoData.getBranch();
                         break;
                     }
                 }
-            } else
-                // tag versioning
-                if (!headTags.isEmpty()) {
-                    for (VersionFormatDescription versionFormatDescription : configuration.getTagVersionDescriptions()) {
-                        // -1 revert sorting, latest version first
-                        Optional<String> headVersionTag = headTags.stream().sequential()
-                                .filter(tag -> tag.matches(versionFormatDescription.pattern))
-                                .max((tagLeft, tagRight) -> {
-                                    String versionLeft = removePrefix(tagLeft, versionFormatDescription.prefix);
-                                    String versionRight = removePrefix(tagRight, versionFormatDescription.prefix);
-                                    DefaultArtifactVersion tagVersionLeft = new DefaultArtifactVersion(versionLeft);
-                                    DefaultArtifactVersion tagVersionRight = new DefaultArtifactVersion(versionRight);
-                                    return tagVersionLeft.compareTo(tagVersionRight);
-                                });
-                        if (headVersionTag.isPresent()) {
-                            projectVersionFormatDescription = versionFormatDescription;
-                            projectCommitRefType = "tag";
-                            projectCommitRefName = headVersionTag.get();
-                            break;
-                        }
+            }
+            // tag versioning
+            else if (!gitRepoData.getTags().isEmpty()) {
+                for (VersionFormatDescription versionFormatDescription : configuration.getTagVersionDescriptions()) {
+                    // -1 revert sorting, latest version first
+                    Optional<String> headVersionTag = gitRepoData.getTags().stream().sequential()
+                            .filter(tag -> tag.matches(versionFormatDescription.pattern))
+                            .max((tagLeft, tagRight) -> {
+                                String versionLeft = removePrefix(tagLeft, versionFormatDescription.prefix);
+                                String versionRight = removePrefix(tagRight, versionFormatDescription.prefix);
+                                DefaultArtifactVersion tagVersionLeft = new DefaultArtifactVersion(versionLeft);
+                                DefaultArtifactVersion tagVersionRight = new DefaultArtifactVersion(versionRight);
+                                return tagVersionLeft.compareTo(tagVersionRight);
+                            });
+                    if (headVersionTag.isPresent()) {
+                        projectVersionFormatDescription = versionFormatDescription;
+                        projectCommitRefType = "tag";
+                        projectCommitRefName = headVersionTag.get();
+                        break;
                     }
                 }
+            }
 
             Map<String, String> projectVersionDataMap = buildCommonVersionDataMap(gav);
-            projectVersionDataMap.put("commit", headCommit);
-            projectVersionDataMap.put("commit.short", headCommit.substring(0, 7));
+            projectVersionDataMap.put("commit", gitRepoData.getCommit());
+            projectVersionDataMap.put("commit.short", gitRepoData.getCommit().substring(0, 7));
             projectVersionDataMap.put(projectCommitRefType, removePrefix(projectCommitRefName, projectVersionFormatDescription.prefix));
             projectVersionDataMap.putAll(getRegexGroupValueMap(projectVersionFormatDescription.pattern, projectCommitRefName));
 
             String versionGit = escapeVersion(substituteText(projectVersionFormatDescription.versionFormat, projectVersionDataMap));
-            return new GAVGit(
+
+            gitBasedProjectVersion = new GAVGit(
                     gav.getGroupId(),
                     gav.getArtifactId(),
                     versionGit,
-                    headCommit,
-                    projectCommitRefName,
-                    projectCommitRefType
+                    gitRepoData.getCommit(),
+                    projectCommitRefType,
+                    projectCommitRefName
             );
+            gitVersionCache.put(gav, gitBasedProjectVersion);
         }
+        return gitBasedProjectVersion;
+
+    }
+
+    private GitRepoData getGitRepoData(File gitDir) throws IOException {
+        GitRepoData gitRepoData;
+        FileRepositoryBuilder repositoryBuilder = new FileRepositoryBuilder().findGitDir(gitDir);
+        gitDir = repositoryBuilder.getGitDir();
+        gitRepoData = gitRepoDataCache.get(gitDir);
+        if (gitRepoData == null) {
+            logger.debug("git directory " + repositoryBuilder.getGitDir());
+            try (Repository repository = repositoryBuilder.build()) {
+
+                final Status status = GitUtil.getStatus(repository);
+                if (!status.isClean()) {
+                    logger.warn("Git working tree is not clean " + repository.getDirectory());
+                }
+
+                final String headCommit = GitUtil.getHeadCommit(repository);
+                String headBranch = GitUtil.getHeadBranch(repository);
+                List<String> headTags = GitUtil.getHeadTags(repository);
+
+                final String providedBranch = configuration.getProvidedBranch();
+                final String providedTag = configuration.getProvidedTag();
+
+                if (providedBranch != null) {
+                    if (providedBranch.isEmpty()) {
+                        headBranch = null;
+                    } else {
+                        headBranch = providedBranch;
+                        headTags = emptyList();
+                    }
+                } else if (providedTag != null) {
+                    if (providedTag.isEmpty()) {
+                        headTags = emptyList();
+                    } else {
+                        headBranch = null;
+                        headTags = singletonList(providedTag);
+                    }
+                }
+
+                if (headBranch != null) {
+                    headTags = emptyList();
+                }
+
+                gitRepoData = new GitRepoData(headCommit, headBranch, headTags);
+                gitRepoDataCache.put(gitDir, gitRepoData);
+            }
+        }
+        return gitRepoData;
     }
 
     private static Map<String, String> buildCommonVersionDataMap(GAV gav) {
@@ -325,5 +350,31 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
 
     private static String escapeVersion(String version) {
         return version.replace("/", "-");
+    }
+
+    private static class GitRepoData {
+
+        private final String commit;
+        private final String branch;
+        private final List<String> tags;
+
+        GitRepoData(String commit, String branch, List<String> tags) {
+
+            this.commit = commit;
+            this.branch = branch;
+            this.tags = tags;
+        }
+
+        public String getCommit() {
+            return commit;
+        }
+
+        public String getBranch() {
+            return branch;
+        }
+
+        public List<String> getTags() {
+            return tags;
+        }
     }
 }
