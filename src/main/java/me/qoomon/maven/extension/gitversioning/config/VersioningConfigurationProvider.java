@@ -78,7 +78,13 @@ public class VersioningConfigurationProvider {
             providedTag = System.getenv(PROJECT_TAG_ENVIRONMENT_VARIABLE_NAME);
         }
 
-        if (providedBranch != null && providedTag != null) {
+        // override branch if only tag is provided
+        if (providedBranch == null && providedTag != null) {
+            providedBranch = "";
+        }
+
+        if (providedBranch != null && !providedBranch.isEmpty()
+                && providedTag != null && !providedTag.isEmpty()) {
             logger.warn("provided tag [" + providedTag + "] is ignored " +
                     "due to provided branch [" + providedBranch + "] !");
             providedTag = null;

@@ -231,42 +231,44 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
     private GAVGit determineGitBasedProjectVersion(GAV gav, File gitDir) throws IOException {
         GAVGit gitBasedProjectVersion = gitVersionCache.get(gav);
         if (gitBasedProjectVersion == null) {
-            GitRepoData gitRepoData = getGitRepoData(gitDir);
+            final GitRepoData gitRepoData = getGitRepoData(gitDir);
 
             // default versioning
-            VersionFormatDescription projectVersionFormatDescription = configuration.getCommitVersionDescription();
             String projectCommitRefType = "commit";
             String projectCommitRefName = gitRepoData.getCommit();
+            VersionFormatDescription projectVersionFormatDescription = configuration.getCommitVersionDescription();
 
             // branch versioning
-            if (gitRepoData.getBranch() != null) {
+            String gitRepoBranch = gitRepoData.getBranch();
+            if (gitRepoBranch != null) {
                 for (VersionFormatDescription versionFormatDescription : configuration.getBranchVersionDescriptions()) {
-                    if (gitRepoData.getBranch().matches(versionFormatDescription.pattern)) {
-                        projectVersionFormatDescription = versionFormatDescription;
+                    if (gitRepoBranch.matches(versionFormatDescription.pattern)) {
                         projectCommitRefType = "branch";
-                        projectCommitRefName = gitRepoData.getBranch();
+                        projectCommitRefName = gitRepoBranch;
+                        projectVersionFormatDescription = versionFormatDescription;
                         break;
                     }
                 }
-            }
-            // tag versioning
-            else if (!gitRepoData.getTags().isEmpty()) {
-                for (VersionFormatDescription versionFormatDescription : configuration.getTagVersionDescriptions()) {
-                    // -1 revert sorting, latest version first
-                    Optional<String> headVersionTag = gitRepoData.getTags().stream().sequential()
-                            .filter(tag -> tag.matches(versionFormatDescription.pattern))
-                            .max((tagLeft, tagRight) -> {
-                                String versionLeft = removePrefix(tagLeft, versionFormatDescription.prefix);
-                                String versionRight = removePrefix(tagRight, versionFormatDescription.prefix);
-                                DefaultArtifactVersion tagVersionLeft = new DefaultArtifactVersion(versionLeft);
-                                DefaultArtifactVersion tagVersionRight = new DefaultArtifactVersion(versionRight);
-                                return tagVersionLeft.compareTo(tagVersionRight);
-                            });
-                    if (headVersionTag.isPresent()) {
-                        projectVersionFormatDescription = versionFormatDescription;
-                        projectCommitRefType = "tag";
-                        projectCommitRefName = headVersionTag.get();
-                        break;
+            } else {
+                // tag versioning
+                List<String> gitRepoTags = gitRepoData.getTags();
+                if (!gitRepoTags.isEmpty()) {
+                    for (VersionFormatDescription versionFormatDescription : configuration.getTagVersionDescriptions()) {
+                        String gitRepoVersionTag = gitRepoTags.stream().sequential()
+                                .filter(tag -> tag.matches(versionFormatDescription.pattern))
+                                .max((tagLeft, tagRight) -> {
+                                    String versionLeft = removePrefix(tagLeft, versionFormatDescription.prefix);
+                                    String versionRight = removePrefix(tagRight, versionFormatDescription.prefix);
+                                    DefaultArtifactVersion tagVersionLeft = new DefaultArtifactVersion(versionLeft);
+                                    DefaultArtifactVersion tagVersionRight = new DefaultArtifactVersion(versionRight);
+                                    return tagVersionLeft.compareTo(tagVersionRight);
+                                }).orElse(null);
+                        if (gitRepoVersionTag != null) {
+                            projectCommitRefType = "tag";
+                            projectCommitRefName = gitRepoVersionTag;
+                            projectVersionFormatDescription = versionFormatDescription;
+                            break;
+                        }
                     }
                 }
             }
@@ -308,30 +310,17 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
                 }
 
                 final String headCommit = GitUtil.getHeadCommit(repository);
+
                 String headBranch = GitUtil.getHeadBranch(repository);
-                List<String> headTags = GitUtil.getHeadTags(repository);
-
                 final String providedBranch = configuration.getProvidedBranch();
-                final String providedTag = configuration.getProvidedTag();
-
                 if (providedBranch != null) {
-                    if (providedBranch.isEmpty()) {
-                        headBranch = null;
-                    } else {
-                        headBranch = providedBranch;
-                        headTags = emptyList();
-                    }
-                } else if (providedTag != null) {
-                    if (providedTag.isEmpty()) {
-                        headTags = emptyList();
-                    } else {
-                        headBranch = null;
-                        headTags = singletonList(providedTag);
-                    }
+                    headBranch = providedBranch.isEmpty() ? null : providedBranch;
                 }
 
-                if (headBranch != null) {
-                    headTags = emptyList();
+                List<String> headTags = GitUtil.getHeadTags(repository);
+                final String providedTag = configuration.getProvidedTag();
+                if (providedTag != null) {
+                    headTags = providedTag.isEmpty() ? emptyList() : singletonList(providedTag);
                 }
 
                 gitRepoData = new GitRepoData(headCommit, headBranch, headTags);
