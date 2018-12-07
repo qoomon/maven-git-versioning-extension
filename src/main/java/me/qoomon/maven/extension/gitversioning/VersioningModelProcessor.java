@@ -287,7 +287,7 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
                     versionGit,
                     gitRepoData.getCommit(),
                     projectCommitRefType,
-                    projectCommitRefName
+                    removePrefix(projectCommitRefName, projectVersionFormatDescription.prefix)
             );
             gitVersionCache.put(gav, gitBasedProjectVersion);
         }
