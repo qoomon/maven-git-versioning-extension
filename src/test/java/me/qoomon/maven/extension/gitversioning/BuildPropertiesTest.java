@@ -1,6 +1,7 @@
-package me.qoomon.maven;
+package me.qoomon.maven.extension.gitversioning;
 
 
+import me.qoomon.maven.extension.gitversioning.BuildProperties;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;

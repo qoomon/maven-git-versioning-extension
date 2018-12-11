@@ -2,7 +2,6 @@ package me.qoomon.maven.extension.gitversioning;
 
 import com.google.inject.Key;
 import com.google.inject.OutOfScopeException;
-import me.qoomon.maven.BuildProperties;
 import me.qoomon.maven.extension.gitversioning.config.VersioningConfiguration;
 import me.qoomon.maven.extension.gitversioning.config.VersioningConfigurationProvider;
 import me.qoomon.maven.extension.gitversioning.config.model.VersionFormatDescription;
