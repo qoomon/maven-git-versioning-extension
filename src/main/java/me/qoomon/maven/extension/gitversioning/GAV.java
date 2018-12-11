@@ -2,7 +2,6 @@ package me.qoomon.maven.extension.gitversioning;
 
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;
-import org.apache.maven.project.MavenProject;
 
 /**
  * Maven artifact identifier consisting of groupId / artifactId / getVersion.
@@ -44,12 +43,13 @@ public class GAV {
         String artifactId = model.getArtifactId();
         String version = model.getVersion();
 
-        if (model.getParent() != null) {
+        Parent parent = model.getParent();
+        if (parent != null) {
             if (groupId == null) {
-                groupId = model.getParent().getGroupId();
+                groupId = parent.getGroupId();
             }
             if (version == null) {
-                version = model.getParent().getVersion();
+                version = parent.getVersion();
             }
         }
 
@@ -62,23 +62,6 @@ public class GAV {
                 parent.getArtifactId(),
                 parent.getVersion()
         );
-    }
-
-    public static GAV of(MavenProject project) {
-
-        String groupId = project.getGroupId();
-        String artifactId = project.getArtifactId();
-        String version = project.getVersion();
-
-        if (project.getParent() != null) {
-            if (groupId == null) {
-                groupId = project.getParent().getGroupId();
-            }
-            if (version == null) {
-                version = project.getParent().getVersion();
-            }
-        }
-        return new GAV(groupId, artifactId, version);
     }
 
     @Override

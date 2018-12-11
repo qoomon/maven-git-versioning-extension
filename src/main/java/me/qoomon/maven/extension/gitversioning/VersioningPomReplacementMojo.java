@@ -39,7 +39,7 @@ public class VersioningPomReplacementMojo extends AbstractMojo {
     @Override
     public synchronized void execute() throws MojoExecutionException {
         try {
-            GAV gav = GAV.of(currentProject);
+            GAV gav = GAV.of(currentProject.getModel());
 
             getLog().debug(gav + "remove plugin");
             currentProject.getOriginalModel().getBuild().removePlugin(asPlugin());
