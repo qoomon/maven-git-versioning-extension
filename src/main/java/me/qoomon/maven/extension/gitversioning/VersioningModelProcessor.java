@@ -125,13 +125,7 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
                 return projectModel;
             }
 
-
             // ---------------- process project model ----------------------------
-
-            final Model virtualProjectModel = projectModel.clone();
-
-
-            // ---------------- handle project git based version ----------------
 
             final GAV projectGav = GAV.of(projectModel);
             if (projectGav.getVersion() == null) {
@@ -148,6 +142,7 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
                         + " -> version: " + projectGitBasedVersion.getVersion());
             }
 
+            final Model virtualProjectModel = projectModel.clone();
             if (projectModel.getVersion() != null) {
                 logger.debug("set project version to " + projectGitBasedVersion + " in " + projectPomFile);
                 virtualProjectModel.setVersion(projectGitBasedVersion.getVersion());
