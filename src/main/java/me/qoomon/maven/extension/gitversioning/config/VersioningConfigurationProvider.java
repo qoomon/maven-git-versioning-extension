@@ -62,11 +62,11 @@ public class VersioningConfigurationProvider {
             logger.info("No configuration file found. Apply default configuration.");
         }
 
-        String disableExtension = session.getUserProperties().getProperty(GIT_VERSIONING_PROPERTY_KEY);
-        if (disableExtension == null) {
-            disableExtension = System.getenv(GIT_VERSIONING_ENVIRONMENT_VARIABLE_NAME);
+        String extensionToggle = session.getUserProperties().getProperty(GIT_VERSIONING_PROPERTY_KEY);
+        if (extensionToggle == null) {
+            extensionToggle = System.getenv(GIT_VERSIONING_ENVIRONMENT_VARIABLE_NAME);
         }
-        boolean enabledExtension = disableExtension == null || disableExtension.equals("true");
+        boolean enabledExtension = extensionToggle == null || extensionToggle.equals("true");
 
         String providedBranch = session.getUserProperties().getProperty(PROJECT_BRANCH_PROPERTY_KEY);
         if (providedBranch == null) {
