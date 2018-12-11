@@ -1,7 +1,9 @@
 package me.qoomon.maven.extension.gitversioning;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -24,8 +26,8 @@ public final class StringUtil {
     public static String removePrefix(String string, String prefix) {
 
         String prefixRegex = prefix;
-        if(!prefix.startsWith("$")){
-            prefixRegex = "$" + Pattern.quote(prefix);
+        if (!prefix.startsWith("^")) {
+            prefixRegex = "" + Pattern.quote(prefix);
         }
 
         return string.replaceFirst(prefixRegex, "");
@@ -33,10 +35,10 @@ public final class StringUtil {
 
     /**
      * @param regex pattern
-     * @param text to parse
+     * @param text  to parse
      * @return a map of group-index and group-name to matching value
      */
-    public static Map<String, String> getRegexGroupValueMap(String regex, String text) {
+    public static Map<String, String> valueGroupMap(String regex, String text) {
         Map<String, String> result = new HashMap<>();
         Pattern groupPattern = Pattern.compile(regex);
         Matcher groupMatcher = groupPattern.matcher(text);
@@ -46,16 +48,21 @@ public final class StringUtil {
                 result.put(String.valueOf(i), groupMatcher.group(i));
             }
 
-            // determine group names
-            Pattern groupNamePattern = Pattern.compile("\\(\\?<(?<name>[a-zA-Z][a-zA-Z0-9]*)>");
-            Matcher groupNameMatcher = groupNamePattern.matcher(groupPattern.toString());
-
-            // add group name to value Entries
-            while (groupNameMatcher.find()) {
-                String groupName = groupNameMatcher.group("name");
-                result.put(groupName, groupMatcher.group(groupName));
-            }
+            patternGroupNames(groupPattern).forEach(groupName -> result.put(groupName, groupMatcher.group(groupName)));
         }
         return result;
+    }
+
+    private static Set<String> patternGroupNames(Pattern groupPattern) {
+        Set<String> groupNames = new HashSet<>();
+        Pattern groupNamePattern = Pattern.compile("\\(\\?<(?<name>[a-zA-Z][a-zA-Z0-9]*)>");
+        Matcher groupNameMatcher = groupNamePattern.matcher(groupPattern.toString());
+
+        // add group name to value Entries
+        while (groupNameMatcher.find()) {
+            String groupName = groupNameMatcher.group("name");
+            groupNames.add(groupName);
+        }
+        return groupNames;
     }
 }
