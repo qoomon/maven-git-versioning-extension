@@ -20,19 +20,19 @@ public final class BuildProperties {
         return properties;
     }
 
-    public static String value(String key) {
+    public static String property(String key) {
         return PROPERTIES.getProperty(key);
     }
 
     public static String projectGroupId() {
-        return PROPERTIES.getProperty("project.groupId");
+        return property("project.groupId");
     }
 
     public static String projectArtifactId() {
-        return PROPERTIES.getProperty("project.artifactId");
+        return property("project.artifactId");
     }
 
     public static String projectVersion() {
-        return PROPERTIES.getProperty("project.version");
+        return property("project.version");
     }
 }
