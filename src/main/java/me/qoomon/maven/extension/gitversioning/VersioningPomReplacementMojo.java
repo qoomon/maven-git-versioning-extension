@@ -64,14 +64,14 @@ public class VersioningPomReplacementMojo extends AbstractMojo {
      * @param project maven project
      * @throws IOException if pom model write fails
      */
-    public void temporaryOverridePomFileFromModel(MavenProject project) throws IOException {
+    private void temporaryOverridePomFileFromModel(MavenProject project) throws IOException {
 
         File tmpPomFile = new File(project.getBuild().getDirectory(), "pom.virtual.xml");
         tmpPomFile.getParentFile().mkdirs();
 
         ModelUtil.writeModel(project.getOriginalModel(), tmpPomFile);
 
-        getLog().debug(project.getArtifact() + " temporary override pom file with " + tmpPomFile);
+        getLog().debug(project.getArtifact() + " replace project pom file with " + tmpPomFile);
 
         project.setPomFile(tmpPomFile);
     }
