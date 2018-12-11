@@ -1,4 +1,4 @@
-package me.qoomon.maven;
+package me.qoomon.maven.extension.gitversioning;
 
 import java.io.IOException;
 import java.io.InputStream;

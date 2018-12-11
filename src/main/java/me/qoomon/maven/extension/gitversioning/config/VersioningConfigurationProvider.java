@@ -2,7 +2,7 @@ package me.qoomon.maven.extension.gitversioning.config;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Key;
-import me.qoomon.maven.BuildProperties;
+import me.qoomon.maven.extension.gitversioning.BuildProperties;
 import me.qoomon.maven.extension.gitversioning.config.model.Configuration;
 import me.qoomon.maven.extension.gitversioning.config.model.VersionFormatDescription;
 import org.apache.maven.execution.MavenExecutionRequest;
