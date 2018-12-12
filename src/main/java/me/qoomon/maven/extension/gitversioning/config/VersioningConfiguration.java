@@ -16,16 +16,19 @@ public class VersioningConfiguration {
     private final VersionFormatDescription commitVersionDescription;
     private final String providedBranch;
     private final String providedTag;
+    private final String providedCommit;
 
     public VersioningConfiguration(boolean enabled, List<VersionFormatDescription> branchVersionDescriptions,
                                    List<VersionFormatDescription> tagVersionDescriptions,
-                                   VersionFormatDescription commitVersionDescription, String providedBranch, String providedTag) {
+                                   VersionFormatDescription commitVersionDescription,
+                                   String providedBranch, String providedTag, String providedCommit) {
         this.enabled = enabled;
         this.branchVersionDescriptions = Objects.requireNonNull(branchVersionDescriptions);
         this.tagVersionDescriptions = Objects.requireNonNull(tagVersionDescriptions);
         this.commitVersionDescription = Objects.requireNonNull(commitVersionDescription);
         this.providedBranch = providedBranch;
         this.providedTag = providedTag;
+        this.providedCommit = providedCommit;
     }
 
     public List<VersionFormatDescription> getBranchVersionDescriptions() {
@@ -50,5 +53,9 @@ public class VersioningConfiguration {
 
     public String getProvidedTag() {
         return providedTag;
+    }
+
+    public String getProvidedCommit() {
+        return providedCommit;
     }
 }
