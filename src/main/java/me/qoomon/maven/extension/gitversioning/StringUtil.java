@@ -27,7 +27,7 @@ public final class StringUtil {
 
         String prefixRegex = prefix;
         if (!prefix.startsWith("^")) {
-            prefixRegex = "" + Pattern.quote(prefix);
+            prefixRegex = "^" + Pattern.quote(prefix);
         }
 
         return string.replaceFirst(prefixRegex, "");
