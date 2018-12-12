@@ -11,7 +11,7 @@ install:
   
 script:
   - mvn install -V -B
-  - mvn failsafe:integration-test -V -B
+  - mvn failsafe:integration-test failsafe:verify -V -B
   
 after_script:
 # nothing
