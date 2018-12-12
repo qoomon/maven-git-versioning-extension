@@ -269,7 +269,7 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
 
             Map<String, String> projectVersionDataMap = buildCommonVersionDataMap(gav);
             projectVersionDataMap.put("commit", gitRepoData.getCommit());
-            projectVersionDataMap.put("commit.short", gitRepoData.getCommit().substring(0, 7));
+            projectVersionDataMap.put("commit.short", gitRepoData.getCommit().length() <= 7 ? gitRepoData.getCommit() : gitRepoData.getCommit().substring(0, 7));
             projectVersionDataMap.put(projectCommitRefType, removePrefix(projectCommitRefName, projectVersionFormatDescription.prefix));
             projectVersionDataMap.putAll(valueGroupMap(projectVersionFormatDescription.pattern, projectCommitRefName));
 
@@ -303,7 +303,11 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
                     logger.warn("Git working tree is not clean " + repository.getDirectory());
                 }
 
-                final String headCommit = GitUtil.getHeadCommit(repository);
+                String headCommit = GitUtil.getHeadCommit(repository);
+                final String providedCommit = configuration.getProvidedCommit();
+                if (providedCommit != null ) {
+                    headCommit = providedCommit;
+                }
 
                 String headBranch = GitUtil.getHeadBranch(repository);
                 final String providedBranch = configuration.getProvidedBranch();

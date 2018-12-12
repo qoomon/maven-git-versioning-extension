@@ -35,6 +35,9 @@ public class VersioningConfigurationProvider {
     private static final String PROJECT_TAG_PROPERTY_KEY = "project.tag";
     private static final String PROJECT_TAG_ENVIRONMENT_VARIABLE_NAME = "MAVEN_PROJECT_TAG";
 
+    private static final String PROJECT_COMMIT_PROPERTY_KEY = "project.commit";
+    private static final String PROJECT_COMMIT_ENVIRONMENT_VARIABLE_NAME = "MAVEN_PROJECT_COMMIT";
+
     private SessionScope sessionScope;
 
     @Inject
@@ -90,7 +93,15 @@ public class VersioningConfigurationProvider {
             providedTag = null;
         }
 
-        return new VersioningConfiguration(enabledExtension, branchVersionDescriptions, tagVersionDescriptions, commitVersionDescription, providedBranch, providedTag);
+        String providedCommit = session.getUserProperties().getProperty(PROJECT_COMMIT_PROPERTY_KEY);
+        if (providedCommit == null) {
+            providedCommit = System.getenv(PROJECT_COMMIT_ENVIRONMENT_VARIABLE_NAME);
+        }
+        if(providedCommit != null && providedCommit.isEmpty()){
+            providedCommit = null;
+        }
+
+        return new VersioningConfiguration(enabledExtension, branchVersionDescriptions, tagVersionDescriptions, commitVersionDescription, providedBranch, providedTag, providedCommit);
     }
 
     private static VersionFormatDescription defaultBranchVersionFormat() {
