@@ -119,8 +119,8 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
                 return projectModel;
             }
 
-            if (projectPomFile.getName().equals("pom.virtual.xml")) {
-                logger.debug("skip - virtual pom - " + projectPomFile);
+            if (projectPomFile.getName().equals(VersioningPomReplacementMojo.GIT_VERSIONED_POM_FILE_NAME)) {
+                logger.debug("skip - git versioned pom - " + projectPomFile);
                 return projectModel;
             }
 
