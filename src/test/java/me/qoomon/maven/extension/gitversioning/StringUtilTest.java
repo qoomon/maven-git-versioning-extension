@@ -25,7 +25,7 @@ class StringUtilTest {
     }
 
     @Test
-    void removePrefix_removeString() {
+    void removePrefix_removeStringFromStart() {
         // Given
         String givenText = "fairytale";
 
@@ -34,6 +34,18 @@ class StringUtilTest {
 
         // Then
         assertThat(outputText).isEqualTo("tale");
+    }
+
+    @Test
+    void removePrefix_keepStringInMiddle() {
+        // Given
+        String givenText = "fairytale";
+
+        // When
+        String outputText = StringUtil.removePrefix(givenText, "airy");
+
+        // Then
+        assertThat(outputText).isEqualTo("fairytale");
     }
 
     @Test
