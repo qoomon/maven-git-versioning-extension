@@ -11,7 +11,6 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
 import java.io.File;
-import java.io.IOException;
 
 /**
  * Temporarily replace original pom files with pom files generated from in memory project models.
@@ -27,6 +26,7 @@ import java.io.IOException;
 public class VersioningPomReplacementMojo extends AbstractMojo {
 
     static final String GOAL = "pom-replacement";
+    static final String GIT_VERSIONED_POM_FILE_NAME = ".git-versioned.pom.xml";
 
     @Parameter(defaultValue = "${project}", readonly = true, required = true)
     private MavenProject currentProject;
@@ -34,15 +34,18 @@ public class VersioningPomReplacementMojo extends AbstractMojo {
     @Parameter(defaultValue = "${session}", readonly = true, required = true)
     private MavenSession mavenSession;
 
+
     @Override
     public synchronized void execute() throws MojoExecutionException {
         try {
             GAV gav = GAV.of(currentProject.getModel());
-
             getLog().debug(gav + "remove plugin");
             currentProject.getOriginalModel().getBuild().removePlugin(asPlugin());
 
-            temporaryOverridePomFileFromModel(currentProject);
+            File gitVersionedPomFile = new File(currentProject.getBasedir(), GIT_VERSIONED_POM_FILE_NAME);
+            getLog().debug(currentProject.getArtifact() + " replace project pom file with " + gitVersionedPomFile);
+            ModelUtil.writeModel(currentProject.getOriginalModel(), gitVersionedPomFile);
+            currentProject.setPomFile(gitVersionedPomFile);
         } catch (Exception e) {
             throw new MojoExecutionException("Git Versioning Pom Replacement Mojo", e);
         }
@@ -55,23 +58,4 @@ public class VersioningPomReplacementMojo extends AbstractMojo {
         plugin.setVersion(BuildProperties.projectVersion());
         return plugin;
     }
-
-    /**
-     * Attach temporary POM files to the projects so install and deployed files contains new getVersion.
-     *
-     * @param project maven project
-     * @throws IOException if pom model write fails
-     */
-    private void temporaryOverridePomFileFromModel(MavenProject project) throws IOException {
-
-        File tmpPomFile = new File(project.getBuild().getDirectory(), "pom.virtual.xml");
-        tmpPomFile.getParentFile().mkdirs();
-
-        ModelUtil.writeModel(project.getOriginalModel(), tmpPomFile);
-
-        getLog().debug(project.getArtifact() + " replace project pom file with " + tmpPomFile);
-
-        project.setPomFile(tmpPomFile);
-    }
-
 }
