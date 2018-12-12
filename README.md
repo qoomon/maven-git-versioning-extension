@@ -211,3 +211,11 @@ or for maven plugin (without tag support)
 ```shell
 maven <Goal> -Dproject.branch=${GIT_BRANCH#origin/}
 ```
+
+## Build
+```bash
+  - mvn install -V -B
+  # run integration tests after install, 
+  # integration tests will run with LATEST version of extension installed
+  - mvn failsafe:integration-test -V -B
+```
