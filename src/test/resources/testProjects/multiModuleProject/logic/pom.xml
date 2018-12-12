@@ -5,30 +5,18 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>test</groupId>
-        <artifactId>multi-module</artifactId>
+        <groupId>multi-module-project</groupId>
+        <artifactId>main</artifactId>
         <version>4.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>multi-module-service</artifactId>
-
-    <properties>
-
-    </properties>
+    <artifactId>logic</artifactId>
 
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>multi-module-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>multi-module-db</artifactId>
+            <artifactId>api</artifactId>
         </dependency>
     </dependencies>
-
-    <build>
-        <finalName>${project.version}-${project.branch}-WhatEverYouLike</finalName>
-    </build>
 
 </project>

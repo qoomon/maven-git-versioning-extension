@@ -5,15 +5,11 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>test</groupId>
-        <artifactId>multi-module</artifactId>
+        <groupId>multi-module-project</groupId>
+        <artifactId>main</artifactId>
         <version>4.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>multi-module-db</artifactId>
-
-    <properties>
-
-    </properties>
+    <artifactId>api</artifactId>
 
 </project>
