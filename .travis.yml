@@ -4,18 +4,15 @@ jdk:
   - oraclejdk8
   
 before_install:
-  # install jpm4j
-  # - curl -sL https://github.com/jpm4j/jpm4j.installers/raw/master/dist/biz.aQute.jpm.run.jar >jpm.jar && java -jar jpm.jar -u init && export PATH=$PATH:~/jpm/bin
-  # - jpm install com.codacy:codacy-coverage-reporter:assembly
+# nothing
 
 install: 
   - mvn validate -V
   
 script:
   - mvn install -V -B
-  - mvn failsafe:integration-test
+  - mvn failsafe:integration-test -V -B
   
 after_script:
-  # - codacy-coverage-reporter -l Java -r ./target/site/jacoco/jacoco.xml --prefix ./src/main/java/
-  # - mvn coveralls:report -Dcoveralls.repoToken=$COVERALLS_REPO_TOKEN
+# nothing
  
