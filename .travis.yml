@@ -12,7 +12,8 @@ install:
   - mvn validate -V
   
 script:
-  - mvn verify -V -B
+  - mvn install -V -B
+  - mvn failsafe:integration-test
   
 after_script:
   # - codacy-coverage-reporter -l Java -r ./target/site/jacoco/jacoco.xml --prefix ./src/main/java/

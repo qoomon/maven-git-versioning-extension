@@ -1,16 +1,8 @@
 <configuration>
     <branches>
         <branch>
-            <pattern>develop</pattern>
-            <versionFormat>${version.release}</versionFormat>
-        </branch>
-        <branch>
             <pattern>master</pattern>
             <versionFormat>${version.release}</versionFormat>
-        </branch>
-        <branch>
-            <pattern>GHFH_23423_tests_VB</pattern>
-            <versionFormat>${version.release}-custom_branch</versionFormat>
         </branch>
         <branch>
             <pattern>release/.*</pattern>
@@ -19,6 +11,7 @@
         </branch>
         <branch>
             <pattern><![CDATA[feature/(?<feature>.*)]]></pattern>
+            <prefix>feature/</prefix>
             <versionFormat>${feature}-SNAPSHOT</versionFormat>
         </branch>
     </branches>
