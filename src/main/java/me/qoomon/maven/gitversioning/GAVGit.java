@@ -1,4 +1,4 @@
-package me.qoomon.maven.extension.gitversioning;
+package me.qoomon.maven.gitversioning;
 
 
 public class GAVGit extends GAV {

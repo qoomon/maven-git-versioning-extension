@@ -1,4 +1,4 @@
-package me.qoomon.maven.extension.gitversioning;
+package me.qoomon.maven.gitversioning;
 
 import java.util.HashMap;
 import java.util.HashSet;

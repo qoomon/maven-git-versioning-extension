@@ -1,4 +1,4 @@
-package me.qoomon.maven.extension.gitversioning;
+package me.qoomon.maven.gitversioning;
 
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;

@@ -1,4 +1,4 @@
-package me.qoomon.maven.extension.gitversioning;
+package me.qoomon.maven.gitversioning;
 
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Plugin;

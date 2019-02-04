@@ -1,4 +1,4 @@
-package me.qoomon.maven.extension.gitversioning;
+package me.qoomon.maven.gitversioning;
 
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.Status;
