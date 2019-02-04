@@ -1,10 +1,10 @@
-package me.qoomon.maven.extension.gitversioning;
+package me.qoomon.maven.gitversioning;
 
 import com.google.inject.Key;
 import com.google.inject.OutOfScopeException;
-import me.qoomon.maven.extension.gitversioning.config.VersioningConfiguration;
-import me.qoomon.maven.extension.gitversioning.config.VersioningConfigurationProvider;
-import me.qoomon.maven.extension.gitversioning.config.model.VersionFormatDescription;
+import me.qoomon.maven.gitversioning.config.VersioningConfiguration;
+import me.qoomon.maven.gitversioning.config.VersioningConfigurationProvider;
+import me.qoomon.maven.gitversioning.config.model.VersionFormatDescription;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.apache.maven.building.Source;
 import org.apache.maven.execution.MavenSession;
@@ -27,7 +27,6 @@ import java.util.*;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
-import static me.qoomon.maven.extension.gitversioning.StringUtil.*;
 
 
 /**
@@ -251,8 +250,8 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
                         String gitRepoVersionTag = gitRepoTags.stream().sequential()
                                 .filter(tag -> tag.matches(versionFormatDescription.pattern))
                                 .max((tagLeft, tagRight) -> {
-                                    String versionLeft = removePrefix(tagLeft, versionFormatDescription.prefix);
-                                    String versionRight = removePrefix(tagRight, versionFormatDescription.prefix);
+                                    String versionLeft = StringUtil.removePrefix(tagLeft, versionFormatDescription.prefix);
+                                    String versionRight = StringUtil.removePrefix(tagRight, versionFormatDescription.prefix);
                                     DefaultArtifactVersion tagVersionLeft = new DefaultArtifactVersion(versionLeft);
                                     DefaultArtifactVersion tagVersionRight = new DefaultArtifactVersion(versionRight);
                                     return tagVersionLeft.compareTo(tagVersionRight);
@@ -270,10 +269,10 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
             Map<String, String> projectVersionDataMap = buildCommonVersionDataMap(gav);
             projectVersionDataMap.put("commit", gitRepoData.getCommit());
             projectVersionDataMap.put("commit.short", gitRepoData.getCommit().length() <= 7 ? gitRepoData.getCommit() : gitRepoData.getCommit().substring(0, 7));
-            projectVersionDataMap.put(projectCommitRefType, removePrefix(projectCommitRefName, projectVersionFormatDescription.prefix));
-            projectVersionDataMap.putAll(valueGroupMap(projectVersionFormatDescription.pattern, projectCommitRefName));
+            projectVersionDataMap.put(projectCommitRefType, StringUtil.removePrefix(projectCommitRefName, projectVersionFormatDescription.prefix));
+            projectVersionDataMap.putAll(StringUtil.valueGroupMap(projectVersionFormatDescription.pattern, projectCommitRefName));
 
-            String versionGit = escapeVersion(substituteText(projectVersionFormatDescription.versionFormat, projectVersionDataMap));
+            String versionGit = escapeVersion(StringUtil.substituteText(projectVersionFormatDescription.versionFormat, projectVersionDataMap));
 
             gitBasedProjectVersion = new GAVGit(
                     gav.getGroupId(),
@@ -281,7 +280,7 @@ public class VersioningModelProcessor extends DefaultModelProcessor {
                     versionGit,
                     gitRepoData.getCommit(),
                     projectCommitRefType,
-                    removePrefix(projectCommitRefName, projectVersionFormatDescription.prefix)
+                    StringUtil.removePrefix(projectCommitRefName, projectVersionFormatDescription.prefix)
             );
             gitVersionCache.put(gav, gitBasedProjectVersion);
         }

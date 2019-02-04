@@ -1,10 +1,10 @@
-package me.qoomon.maven.extension.gitversioning.config;
+package me.qoomon.maven.gitversioning.config;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Key;
-import me.qoomon.maven.extension.gitversioning.BuildProperties;
-import me.qoomon.maven.extension.gitversioning.config.model.Configuration;
-import me.qoomon.maven.extension.gitversioning.config.model.VersionFormatDescription;
+import me.qoomon.maven.gitversioning.BuildProperties;
+import me.qoomon.maven.gitversioning.config.model.Configuration;
+import me.qoomon.maven.gitversioning.config.model.VersionFormatDescription;
 import org.apache.maven.execution.MavenExecutionRequest;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.session.scope.internal.SessionScope;
