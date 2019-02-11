@@ -1,4 +1,4 @@
-package me.qoomon.maven.gitversioning;
+package me.qoomon.gitversioning;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -17,20 +17,12 @@ public final class StringUtil {
         while (placeholderMatcher.find()) {
             String substitutionKey = placeholderMatcher.group(1);
             String substitutionValue = substitutionMap.get(substitutionKey);
-            result = result.replaceAll("\\$\\{" + substitutionKey + "}", substitutionValue);
+            if(substitutionValue != null) {
+                result = result.replaceAll("\\$\\{" + substitutionKey + "}", substitutionValue);
+            }
         }
 
         return result;
-    }
-
-    public static String removePrefix(String string, String prefix) {
-
-        String prefixRegex = prefix;
-        if (!prefix.startsWith("^")) {
-            prefixRegex = "^" + Pattern.quote(prefix);
-        }
-
-        return string.replaceFirst(prefixRegex, "");
     }
 
     /**

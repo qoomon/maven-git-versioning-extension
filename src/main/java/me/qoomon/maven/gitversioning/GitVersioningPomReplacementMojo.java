@@ -17,13 +17,13 @@ import java.io.File;
  * <p>
  * !!! DO NOT ADD THIS PLUGIN MANUALLY TO POM !!!
  * <p>
- * utilized by {@link VersioningModelProcessor}
+ * utilized by {@link GitVersioningModelProcessor}
  */
-@Mojo(name = VersioningPomReplacementMojo.GOAL,
+@Mojo(name = GitVersioningPomReplacementMojo.GOAL,
         defaultPhase = LifecyclePhase.PREPARE_PACKAGE,
         instantiationStrategy = InstantiationStrategy.SINGLETON,
         threadSafe = true)
-public class VersioningPomReplacementMojo extends AbstractMojo {
+public class GitVersioningPomReplacementMojo extends AbstractMojo {
 
     static final String GOAL = "pom-replacement";
     static final String GIT_VERSIONED_POM_FILE_NAME = ".git-versioned.pom.xml";

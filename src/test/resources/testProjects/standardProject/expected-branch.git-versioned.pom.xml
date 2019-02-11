@@ -6,9 +6,12 @@
   <artifactId>main</artifactId>
   <version>test-SNAPSHOT</version>
   <properties>
-    <project.branch>test</project.branch>
-    <project.commit>a02162d634f5f5721d0d66d87291c8e5e5d7446c</project.commit>
-    <project.tag></project.tag>
+    <git.1>test</git.1>
+    <git.0>feature/test</git.0>
+    <git.branch>feature/test</git.branch>
+    <git.ref>feature/test</git.ref>
+    <git.feature>test</git.feature>
+    <git.commit>7178e3e2ac94a68551d2fa757468124d7a33f6d2</git.commit>
   </properties>
   <build />
 </project>
