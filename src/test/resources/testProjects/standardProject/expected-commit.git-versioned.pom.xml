@@ -6,9 +6,7 @@
   <artifactId>main</artifactId>
   <version>a02162d634f5f5721d0d66d87291c8e5e5d7446c</version>
   <properties>
-    <project.branch></project.branch>
     <project.commit>a02162d634f5f5721d0d66d87291c8e5e5d7446c</project.commit>
-    <project.tag></project.tag>
   </properties>
   <build />
 </project>
