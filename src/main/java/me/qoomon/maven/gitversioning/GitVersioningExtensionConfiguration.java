@@ -10,16 +10,16 @@ import java.util.List;
 /**
  * Created by qoomon on 26/11/2016.
  */
-@Root(name="gitVersioning")
+@Root(name = "gitVersioning")
 public class GitVersioningExtensionConfiguration {
 
     @Element(required = false)
     public CommitVersionDescription commit;
 
-    @ElementList(inline= true, type = VersionDescription.class, entry = "branch")
+    @ElementList(inline = true, type = VersionDescription.class, entry = "branch", required = false)
     public List<VersionDescription> branches = new ArrayList<>();
 
-    @ElementList(inline= true, type = VersionDescription.class, entry = "tag" )
+    @ElementList(inline = true, type = VersionDescription.class, entry = "tag", required = false)
     public List<VersionDescription> tags = new ArrayList<>();
 
     public static class VersionDescription {
@@ -35,6 +35,4 @@ public class GitVersioningExtensionConfiguration {
         @Element
         public String versionFormat;
     }
-
-
 }
