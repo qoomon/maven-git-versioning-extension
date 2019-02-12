@@ -10,7 +10,7 @@ import java.io.*;
 /**
  * Created by qoomon on 18/11/2016.
  */
-public final class ModelUtil {
+final class ModelUtil {
 
     /**
      * Read model from pom file
@@ -19,7 +19,7 @@ public final class ModelUtil {
      * @return Model
      * @throws IOException IOException
      */
-    public static Model readModel(File pomFile) throws IOException {
+    static Model readModel(File pomFile) throws IOException {
         try (InputStream inputStream = new FileInputStream(pomFile)) {
             return new MavenXpp3Reader().read(inputStream);
         } catch (XmlPullParserException e) {
@@ -34,7 +34,7 @@ public final class ModelUtil {
      * @param model   model
      * @throws IOException IOException
      */
-    public static void writeModel(File pomFile, Model model) throws IOException {
+    static void writeModel(File pomFile, Model model) throws IOException {
         try (FileWriter fileWriter = new FileWriter(pomFile)) {
             new MavenXpp3Writer().write(fileWriter, model);
         }
