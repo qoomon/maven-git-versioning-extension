@@ -28,7 +28,6 @@ import static java.util.Collections.singletonList;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static me.qoomon.UncheckedExceptions.unchecked;
-import static me.qoomon.gitversioning.GitConstants.NO_COMMIT;
 
 
 /**
@@ -178,6 +177,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                 File parentPomFile = new File(projectPomFile.getParentFile(), parent.getRelativePath());
                 if (isProjectPom(parentPomFile)) {
                     if (projectModel.getVersion() != null) {
+                        virtualProjectModel.setVersion(null);
                         logger.warn("Do not set version tag in a multi module project module: " + projectPomFile);
                         if (!projectModel.getVersion().equals(parent.getVersion())) {
                             throw new IllegalStateException("'version' has to be equal to parent 'version'");

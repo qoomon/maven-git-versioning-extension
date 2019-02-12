@@ -30,11 +30,11 @@ public final class ModelUtil {
     /**
      * Writes model to pom file
      *
-     * @param model   model
      * @param pomFile pomFile
+     * @param model   model
      * @throws IOException IOException
      */
-    public static void writeModel(Model model, File pomFile) throws IOException {
+    public static void writeModel(File pomFile, Model model) throws IOException {
         try (FileWriter fileWriter = new FileWriter(pomFile)) {
             new MavenXpp3Writer().write(fileWriter, model);
         }
