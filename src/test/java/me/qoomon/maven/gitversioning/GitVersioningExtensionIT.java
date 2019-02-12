@@ -53,7 +53,6 @@ public class GitVersioningExtensionIT {
         // When
         Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath());
         verifier.executeGoal("verify");
-        verifier.resetStreams();
 
         // Then
         verifier.verifyErrorFreeLog();
@@ -93,11 +92,10 @@ public class GitVersioningExtensionIT {
         // When
         Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath());
         verifier.executeGoal("verify");
-        verifier.resetStreams();
 
         // Then
         verifier.verifyErrorFreeLog();
-        String expectedVersion = givenBranch + "-gitVersioning";
+        String expectedVersion = givenBranch.replace("/", "-") + "-gitVersioning";
         verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
         Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONED_POM_FILE_NAME).toFile());
         assertThat(gitVersionedPomModel).satisfies(it -> assertSoftly(softly -> {
@@ -134,7 +132,7 @@ public class GitVersioningExtensionIT {
         // When
         Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath());
         verifier.executeGoal("verify");
-        verifier.resetStreams();
+        verifier.displayStreamBuffers();
 
         // Then
         verifier.verifyErrorFreeLog();

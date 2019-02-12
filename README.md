@@ -174,7 +174,7 @@ fi
 ```
 
 ## Build
-```bash
+```shell
   - mvn install
   # run integration tests after install, 
   # integration tests will run with LATEST version of extension installed

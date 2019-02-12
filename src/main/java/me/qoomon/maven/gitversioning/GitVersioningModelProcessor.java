@@ -45,6 +45,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     private MavenSession mavenSession;  // can not be injected cause it is not always available
 
     private GitVersionDetails gitVersionDetails;
+    private String normalizedGitVersion;
 
     private boolean initialized = false;
 
@@ -110,8 +111,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             }
 
             // ---------------- process project model ----------------------------
-
-            final GAV projectGav = GAV.of(projectModel);
+            GAV projectGav = GAV.of(projectModel);
             if (projectGav.getVersion() == null) {
                 logger.warn("skip - invalid model - 'version' is missing - " + projectPomFile);
                 return projectModel;
@@ -144,17 +144,18 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                                 .map(it -> new VersionDescription(it.pattern, it.versionFormat))
                                 .collect(toList()),
                         projectModel.getVersion());
+
+                normalizedGitVersion = gitVersionDetails.getVersion().replace("/", "-");
             }
 
-            if (loggingBouncer.add(projectGav.toString())) {
-                logger.info(projectGav.getArtifactId() + ":" + projectGav.getVersion()
-                        + " - " + gitVersionDetails.getCommitRefType() + ": " + gitVersionDetails.getCommitRefName()
-                        + " -> version: " + gitVersionDetails.getVersion());
+            if (loggingBouncer.add(projectModel.getArtifactId())) {
+                logger.info(projectGav.getArtifactId() + " - git versioning " + projectGav.getVersion() + " -> " + normalizedGitVersion
+                        + " (" + gitVersionDetails.getCommitRefType() + ":" + gitVersionDetails.getCommitRefName() + ")");
             }
 
             final Model virtualProjectModel = projectModel.clone();
             if (projectModel.getVersion() != null) {
-                virtualProjectModel.setVersion(gitVersionDetails.getVersion());
+                virtualProjectModel.setVersion(normalizedGitVersion);
             }
 
             virtualProjectModel.addProperty("git.commit", gitVersionDetails.getCommit());
@@ -168,8 +169,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             final Parent parent = projectModel.getParent();
             if (parent != null) {
 
-                GAV parentGav = GAV.of(parent);
-                if (parentGav.getVersion() == null) {
+                if (parent.getVersion() == null) {
                     logger.warn("skip - invalid model - parent 'version' is missing - " + projectPomFile);
                     return projectModel;
                 }
@@ -184,7 +184,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                         }
                     }
 
-                    virtualProjectModel.getParent().setVersion(gitVersionDetails.getVersion());
+                    virtualProjectModel.getParent().setVersion(normalizedGitVersion);
                 }
             }
 
@@ -213,8 +213,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     }
 
     private void addBuildPlugin(Model model) {
-        GAV projectGav = GAV.of(model);
-        logger.debug(projectGav + " temporary add build plugin");
+        logger.debug(model.getArtifactId() + " temporary add build plugin");
 
         Plugin projectPlugin = GitVersioningPomReplacementMojo.asPlugin();
 

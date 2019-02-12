@@ -38,8 +38,7 @@ public class GitVersioningPomReplacementMojo extends AbstractMojo {
     @Override
     public synchronized void execute() throws MojoExecutionException {
         try {
-            GAV gav = GAV.of(currentProject.getModel());
-            getLog().debug(gav + "remove plugin");
+            getLog().debug(currentProject.getModel().getArtifactId() + "remove plugin");
             currentProject.getOriginalModel().getBuild().removePlugin(asPlugin());
 
             File gitVersionedPomFile = new File(currentProject.getBasedir(), GIT_VERSIONED_POM_FILE_NAME);

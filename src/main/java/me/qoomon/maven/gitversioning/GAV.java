@@ -56,14 +56,6 @@ public class GAV {
         return new GAV(groupId, artifactId, version);
     }
 
-    public static GAV of(Parent parent) {
-        return new GAV(
-                parent.getGroupId(),
-                parent.getArtifactId(),
-                parent.getVersion()
-        );
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o)
