@@ -73,24 +73,6 @@ class GAVTest {
     }
 
     @Test
-    void of_parent() {
-        // Given
-        Parent parent = new Parent();
-        parent.setGroupId("parentGroup");
-        parent.setArtifactId("parentArtifact");
-        parent.setVersion("parentVersion");
-
-        // When
-        GAV gav = GAV.of(parent);
-
-        // Then
-        assertThat(gav).isNotNull();
-        assertThat(gav.getGroupId()).isEqualTo("parentGroup");
-        assertThat(gav.getArtifactId()).isEqualTo("parentArtifact");
-        assertThat(gav.getVersion()).isEqualTo("parentVersion");
-    }
-
-    @Test
     void toStringTest() {
         // Given
         GAV gav = new GAV("group", "artifact", "version");
