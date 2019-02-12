@@ -63,6 +63,7 @@ public final class GitVersioning {
             }
         }
         Map<String, String> refFields = valueGroupMap(versionDescription.getPattern(), gitRefName);
+        refFields.remove("0");
 
         Map<String, String> projectVersionDataMap = new HashMap<>();
         projectVersionDataMap.put("version", currentVersion);

@@ -44,7 +44,7 @@ public class GitVersioningPomReplacementMojo extends AbstractMojo {
 
             File gitVersionedPomFile = new File(currentProject.getBasedir(), GIT_VERSIONED_POM_FILE_NAME);
             getLog().debug(currentProject.getArtifact() + " replace project pom file with " + gitVersionedPomFile);
-            ModelUtil.writeModel(currentProject.getOriginalModel(), gitVersionedPomFile);
+            ModelUtil.writeModel(gitVersionedPomFile, currentProject.getOriginalModel());
             currentProject.setPomFile(gitVersionedPomFile);
         } catch (Exception e) {
             throw new MojoExecutionException("Git Versioning Pom Replacement Mojo", e);
