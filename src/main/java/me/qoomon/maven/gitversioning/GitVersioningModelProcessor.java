@@ -45,7 +45,6 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     private MavenSession mavenSession;  // can not be injected cause it is not always available
 
     private GitVersionDetails gitVersionDetails;
-    private String normalizedGitVersion;
 
     private boolean initialized = false;
 
@@ -144,18 +143,16 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                                 .map(it -> new VersionDescription(it.pattern, it.versionFormat))
                                 .collect(toList()),
                         projectModel.getVersion());
-
-                normalizedGitVersion = gitVersionDetails.getVersion().replace("/", "-");
             }
 
             if (loggingBouncer.add(projectModel.getArtifactId())) {
-                logger.info(projectGav.getArtifactId() + " - git versioning " + projectGav.getVersion() + " -> " + normalizedGitVersion
+                logger.info(projectGav.getArtifactId() + " - git versioning " + projectGav.getVersion() + " -> " + gitVersionDetails.getVersion()
                         + " (" + gitVersionDetails.getCommitRefType() + ":" + gitVersionDetails.getCommitRefName() + ")");
             }
 
             final Model virtualProjectModel = projectModel.clone();
             if (projectModel.getVersion() != null) {
-                virtualProjectModel.setVersion(normalizedGitVersion);
+                virtualProjectModel.setVersion(gitVersionDetails.getVersion());
             }
 
             virtualProjectModel.addProperty("git.commit", gitVersionDetails.getCommit());
@@ -184,7 +181,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                         }
                     }
 
-                    virtualProjectModel.getParent().setVersion(normalizedGitVersion);
+                    virtualProjectModel.getParent().setVersion(gitVersionDetails.getVersion());
                 }
             }
 
