@@ -73,7 +73,8 @@ public final class GitVersioning {
         projectVersionDataMap.put(gitRefType, gitRefName);
         projectVersionDataMap.putAll(refFields);
 
-        String gitVersion = substituteText(versionDescription.getVersionFormat(), projectVersionDataMap);
+        String gitVersion = substituteText(versionDescription.getVersionFormat(), projectVersionDataMap)
+                .replace("/", "-");
 
         return new GitVersionDetails(
                 repoSituation.isClean(),
