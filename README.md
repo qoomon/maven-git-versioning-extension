@@ -196,7 +196,7 @@ fi
 ## 4.0.0
 * Major Refactoring, Simplification
 * Also available as [Gradle Plugin](https://github.com/qoomon/gradle-git-versioning-plugin) 
-* New Provided Project Properties**
+* **New Provided Project Properties**
   * `git.ref` value of branch of tag name, always set
 
 ### Breaking Changes
