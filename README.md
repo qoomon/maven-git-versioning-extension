@@ -5,7 +5,7 @@
 
 [![Build Status](https://travis-ci.org/qoomon/maven-git-versioning-extension.svg?branch=master)](https://travis-ci.org/qoomon/maven-git-versioning-extension)
 
-[Changelog](#changelog)
+[![Changelog](https://badgen.net/badge/changelog/%E2%98%85/blue)](#changelog)
 
 ℹ Also available as [Gradle Plugin](https://github.com/qoomon/gradle-git-versioning-plugin)
 
