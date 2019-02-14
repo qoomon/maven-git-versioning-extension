@@ -195,9 +195,10 @@ fi
 
 ## 4.0.0
 * Major Refactoring, Simplification
-* Alignment to Gradle Plugin
+* Also available as [Gradle Plugin](https://github.com/qoomon/gradle-git-versioning-plugin) 
 * New Provided Project Properties**
   * `git.ref` value of branch of tag name, always set
+
 ### Breaking Changes
 * **Restructured XML Config**
   * renamed root tag `<configuration>` -> `<gitVersioning>`
