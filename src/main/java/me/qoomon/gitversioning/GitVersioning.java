@@ -67,6 +67,7 @@ public final class GitVersioning {
 
         Map<String, String> projectVersionDataMap = new HashMap<>();
         projectVersionDataMap.put("version", currentVersion);
+        projectVersionDataMap.put("version.release", currentVersion.replaceFirst("-SNAPSHOT$",""));
         projectVersionDataMap.put("commit", repoSituation.getHeadCommit());
         projectVersionDataMap.put("commit.short", repoSituation.getHeadCommit().substring(0, 7));
         projectVersionDataMap.put("ref", gitRefName);
