@@ -142,7 +142,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                         config.tags.stream()
                                 .map(it -> new VersionDescription(it.pattern, it.versionFormat))
                                 .collect(toList()),
-                        projectModel.getVersion());
+                        projectGav.getVersion());
             }
 
             if (loggingBouncer.add(projectModel.getArtifactId())) {

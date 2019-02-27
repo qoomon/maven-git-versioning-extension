@@ -197,7 +197,6 @@ public class GitVersioningExtensionIT {
             setArtifactId("logic");
         }});
 
-
         writeExtensionsFile(projectDir);
         writeExtensionConfigFile(projectDir, extensionConfig);
 
