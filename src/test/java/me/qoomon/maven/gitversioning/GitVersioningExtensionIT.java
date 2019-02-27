@@ -17,6 +17,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import static me.qoomon.gitversioning.GitConstants.NO_COMMIT;
 import static me.qoomon.maven.gitversioning.GitVersioningPomReplacementMojo.GIT_VERSIONED_POM_FILE_NAME;
@@ -53,11 +54,12 @@ public class GitVersioningExtensionIT {
         // When
         Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath());
         verifier.executeGoal("verify");
+        String log = getLog(verifier);
 
         // Then
-        verifier.verifyErrorFreeLog();
+        assertThat(log).doesNotContain("[ERROR]");
         String expectedVersion = NO_COMMIT;
-        verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
+        assertThat(log).contains("Building " + pomModel.getArtifactId() + " " + expectedVersion);
         Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONED_POM_FILE_NAME).toFile());
         assertThat(gitVersionedPomModel).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.getModelVersion()).isEqualTo(pomModel.getModelVersion());
@@ -92,11 +94,12 @@ public class GitVersioningExtensionIT {
         // When
         Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath());
         verifier.executeGoal("verify");
+        String log = getLog(verifier);
 
         // Then
-        verifier.verifyErrorFreeLog();
+        assertThat(log).doesNotContain("[ERROR]");
         String expectedVersion = givenBranch.replace("/", "-") + "-gitVersioning";
-        verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
+        assertThat(log).contains("Building " + pomModel.getArtifactId() + " " + expectedVersion);
         Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONED_POM_FILE_NAME).toFile());
         assertThat(gitVersionedPomModel).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.getModelVersion()).isEqualTo(pomModel.getModelVersion());
@@ -132,12 +135,12 @@ public class GitVersioningExtensionIT {
         // When
         Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath());
         verifier.executeGoal("verify");
-        verifier.displayStreamBuffers();
+        String log = getLog(verifier);
 
         // Then
-        verifier.verifyErrorFreeLog();
+        assertThat(log).doesNotContain("[ERROR]");
         String expectedVersion = givenTag + "-gitVersioning";
-        verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
+        assertThat(log).contains("Building " + pomModel.getArtifactId() + " " + expectedVersion);
         Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONED_POM_FILE_NAME).toFile());
         assertThat(gitVersionedPomModel).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.getModelVersion()).isEqualTo(pomModel.getModelVersion());
@@ -173,6 +176,8 @@ public class GitVersioningExtensionIT {
             }});
         }});
         writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
+        writeExtensionsFile(projectDir);
+        writeExtensionConfigFile(projectDir, extensionConfig);
 
         Path apiProjectDir = Files.createDirectories(projectDir.resolve("api"));
         Model apiPomModel = writeModel(apiProjectDir.resolve("pom.xml").toFile(), new Model() {{
@@ -197,18 +202,15 @@ public class GitVersioningExtensionIT {
             setArtifactId("logic");
         }});
 
-        writeExtensionsFile(projectDir);
-        writeExtensionConfigFile(projectDir, extensionConfig);
-
         // When
         Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath());
         verifier.executeGoal("verify");
-        verifier.resetStreams();
+        String log = getLog(verifier);
 
         // Then
-        verifier.verifyErrorFreeLog();
+        assertThat(log).doesNotContain("[ERROR]");
         String expectedVersion = NO_COMMIT;
-        verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
+        assertThat(log).contains("Building " + pomModel.getArtifactId() + " " + expectedVersion);
         Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONED_POM_FILE_NAME).toFile());
         assertThat(gitVersionedPomModel).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.getModelVersion()).isEqualTo(pomModel.getModelVersion());
@@ -244,6 +246,10 @@ public class GitVersioningExtensionIT {
                     MapEntry.entry("git.ref", NO_COMMIT)
             );
         }));
+    }
+
+    private String getLog(Verifier verifier) throws IOException {
+        return new String(Files.readAllBytes(Paths.get(verifier.getBasedir(), verifier.getLogFileName())));
     }
 
     private File writeExtensionsFile(Path projectDir) throws IOException {
