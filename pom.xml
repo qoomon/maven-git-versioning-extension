@@ -7,7 +7,7 @@
 
     <groupId>me.qoomon</groupId>
     <artifactId>maven-git-versioning-extension</artifactId>
-    <version>4.0.2</version>
+    <version>4.0.3</version>
     <packaging>maven-plugin</packaging>
 
     <name>Maven Git Versioning Extension</name>

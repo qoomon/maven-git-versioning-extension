@@ -110,7 +110,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             return projectModel;
         }
 
-        if (projectModel.getPomFile().getName().equals(GitVersioningPomReplacementMojo.GIT_VERSIONED_POM_FILE_NAME)) {
+        if (projectModel.getPomFile().getName().equals(GitVersioningPomReplacementMojo.GIT_VERSIONING_POM_PATH)) {
             logger.debug("skip - git versioned pom - " + projectModel.getPomFile());
             return projectModel;
         }
@@ -127,7 +127,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
         Model virtualProjectModel = this.virtualProjectModelCache.get(projectModel.getArtifactId());
         if (virtualProjectModel == null) {
-            logger.info(projectGav.getArtifactId() + " - git versioning " + projectGav.getVersion() + " -> " + gitVersionDetails.getVersion()
+            logger.info(projectGav.getArtifactId() + " - surrogate project version " + projectGav.getVersion() + " by " + gitVersionDetails.getVersion()
                     + " (" + gitVersionDetails.getCommitRefType() + ":" + gitVersionDetails.getCommitRefName() + ")");
 
             virtualProjectModel = projectModel.clone();
