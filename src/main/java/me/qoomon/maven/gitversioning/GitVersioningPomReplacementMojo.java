@@ -27,6 +27,7 @@ public class GitVersioningPomReplacementMojo extends AbstractMojo {
 
     static final String GOAL = "pom-replacement";
     static final String GIT_VERSIONED_POM_FILE_NAME = ".git-versioned.pom.xml";
+    static final String GIT_VERSIONED_POM_FILE_FOLDER = "target/git-versioning-extension";
 
     @Parameter(defaultValue = "${project}", readonly = true, required = true)
     private MavenProject currentProject;
@@ -40,8 +41,8 @@ public class GitVersioningPomReplacementMojo extends AbstractMojo {
         try {
             getLog().debug(currentProject.getModel().getArtifactId() + "remove plugin");
             currentProject.getOriginalModel().getBuild().removePlugin(asPlugin());
-
-            File gitVersionedPomFile = new File(currentProject.getBasedir(), GIT_VERSIONED_POM_FILE_NAME);
+            File gitVersionedPomFile = new File(currentProject.getBasedir(), GIT_VERSIONED_POM_FILE_FOLDER + "/" + GIT_VERSIONED_POM_FILE_NAME);
+            gitVersionedPomFile.getParentFile().mkdirs();
             getLog().debug(currentProject.getArtifact() + " replace project pom file with " + gitVersionedPomFile);
             ModelUtil.writeModel(gitVersionedPomFile, currentProject.getOriginalModel());
             currentProject.setPomFile(gitVersionedPomFile);
