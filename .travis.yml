@@ -3,16 +3,11 @@ language: java
 jdk:
   - oraclejdk8
   
-before_install:
-# nothing
-
-install: 
-  - mvn validate -V
-  
+env:
+  - MAVEN_OPTS=-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+    
 script:
+  - mvn validate -V -B
   - mvn install -V -B
   - mvn failsafe:integration-test failsafe:verify -V -B
-  
-after_script:
-# nothing
  
