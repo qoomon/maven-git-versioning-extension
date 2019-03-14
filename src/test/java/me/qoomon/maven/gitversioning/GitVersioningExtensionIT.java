@@ -226,7 +226,7 @@ public class GitVersioningExtensionIT {
             );
         }));
 
-        Model apiGitVersionedPomModel = readModel(apiProjectDir.resolve(GIT_VERSIONING_POM_PATH).toFile());
+        Model apiGitVersionedPomModel = readModel(apiProjectDir.resolve(MAVEN_BUILD_DIRECTORY + GIT_VERSIONING_POM_PATH).toFile());
         assertThat(apiGitVersionedPomModel).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.getModelVersion()).isEqualTo(apiPomModel.getModelVersion());
             softly.assertThat(it.getGroupId()).isEqualTo(apiPomModel.getGroupId());
