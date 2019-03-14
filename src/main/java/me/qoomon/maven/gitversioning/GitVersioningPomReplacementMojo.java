@@ -26,7 +26,7 @@ import java.io.File;
 public class GitVersioningPomReplacementMojo extends AbstractMojo {
 
     static final String GOAL = "pom-replacement";
-    static final String GIT_VERSIONED_POM_FILE_NAME = "git-versioned.pom.xml";
+    static final String GIT_VERSIONED_POM_FILE_NAME = "pom.xml";
 
     @Parameter(defaultValue = "${project}", readonly = true, required = true)
     private MavenProject currentProject;
