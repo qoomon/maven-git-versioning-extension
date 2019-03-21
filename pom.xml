@@ -7,7 +7,7 @@
 
     <groupId>me.qoomon</groupId>
     <artifactId>maven-git-versioning-extension</artifactId>
-    <version>4.0.3</version>
+    <version>4.0.4</version>
     <packaging>maven-plugin</packaging>
 
     <name>Maven Git Versioning Extension</name>
@@ -54,9 +54,9 @@
         </dependency>
 
         <dependency>
-            <groupId>org.simpleframework</groupId>
-            <artifactId>simple-xml</artifactId>
-            <version>2.7.1</version>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-xml</artifactId>
+            <version>2.9.8</version>
         </dependency>
 
         <dependency>
@@ -229,7 +229,7 @@
             </build>
             <distributionManagement>
                 <!--Deploy to Nexus Command-->
-                <!--GPG_TTY=$(tty) mvn deploy -P release-->
+                <!--GPG_TTY=$(tty) mvn clean deploy -P release-->
                 <repository>
                     <id>sonatype-nexus-staging</id>
                     <name>Nexus Release Repository</name>
