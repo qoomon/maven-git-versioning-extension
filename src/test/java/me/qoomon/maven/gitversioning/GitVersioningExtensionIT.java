@@ -1,5 +1,6 @@
 package me.qoomon.maven.gitversioning;
 
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import me.qoomon.maven.gitversioning.GitVersioningExtensionConfiguration.VersionDescription;
 import org.apache.maven.it.Verifier;
 import org.apache.maven.model.Dependency;
@@ -11,7 +12,6 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.simpleframework.xml.core.Persister;
 
 import java.io.File;
 import java.io.IOException;
@@ -91,7 +91,7 @@ public class GitVersioningExtensionIT {
         VersionDescription branchVersionDescription = new VersionDescription();
         branchVersionDescription.pattern = ".*";
         branchVersionDescription.versionFormat = "${branch}-gitVersioning";
-        extensionConfig.branches.add(branchVersionDescription);
+        extensionConfig.branch.add(branchVersionDescription);
         writeExtensionConfigFile(projectDir, extensionConfig);
 
         // When
@@ -132,7 +132,7 @@ public class GitVersioningExtensionIT {
         VersionDescription tagVersionDescription = new VersionDescription();
         tagVersionDescription.pattern = ".*";
         tagVersionDescription.versionFormat = "${tag}-gitVersioning";
-        extensionConfig.tags.add(tagVersionDescription);
+        extensionConfig.tag.add(tagVersionDescription);
         writeExtensionConfigFile(projectDir, extensionConfig);
 
         // When
@@ -269,9 +269,9 @@ public class GitVersioningExtensionIT {
 
     private File writeExtensionConfigFile(Path projectDir, GitVersioningExtensionConfiguration config) throws Exception {
         Path mvnDotDir = Files.createDirectories(projectDir.resolve(".mvn"));
-        Path configFile = mvnDotDir.resolve("maven-git-versioning-extension.xml");
-        new Persister().write(config, configFile.toFile());
-        return configFile.toFile();
+        File configFile = mvnDotDir.resolve("maven-git-versioning-extension.xml").toFile();
+        new XmlMapper().writeValue(configFile, config);
+        return configFile;
     }
 
     private Model writeModel(File pomFile, Model pomModel) throws IOException {

@@ -1,38 +1,31 @@
 package me.qoomon.maven.gitversioning;
 
-import org.simpleframework.xml.Element;
-import org.simpleframework.xml.ElementList;
-import org.simpleframework.xml.Root;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by qoomon on 26/11/2016.
- */
-@Root(name = "gitVersioning")
+
+@JacksonXmlRootElement(localName = "gitVersioning")
 public class GitVersioningExtensionConfiguration {
 
-    @Element(required = false)
     public CommitVersionDescription commit;
 
-    @ElementList(inline = true, type = VersionDescription.class, entry = "branch", required = false)
-    public List<VersionDescription> branches = new ArrayList<>();
+    @JacksonXmlElementWrapper(useWrapping = false)
+    public List<VersionDescription> branch = new ArrayList<>();
 
-    @ElementList(inline = true, type = VersionDescription.class, entry = "tag", required = false)
-    public List<VersionDescription> tags = new ArrayList<>();
+    @JacksonXmlElementWrapper(useWrapping = false)
+    public List<VersionDescription> tag = new ArrayList<>();
 
     public static class VersionDescription {
 
-        @Element
         public String pattern;
-        @Element
         public String versionFormat;
     }
 
     public static class CommitVersionDescription {
 
-        @Element
         public String versionFormat;
     }
 }

@@ -1,5 +1,6 @@
 package me.qoomon.maven.gitversioning;
 
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.google.inject.Key;
 import com.google.inject.OutOfScopeException;
 import me.qoomon.gitversioning.*;
@@ -11,14 +12,9 @@ import org.apache.maven.model.building.ModelProcessor;
 import org.apache.maven.session.scope.internal.SessionScope;
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.logging.Logger;
-import org.simpleframework.xml.Serializer;
-import org.simpleframework.xml.core.Persister;
 
 import javax.inject.Inject;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
+import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -198,10 +194,10 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                 ofNullable(config.commit)
                         .map(it -> new VersionDescription(null, it.versionFormat))
                         .orElse(new VersionDescription()),
-                config.branches.stream()
+                config.branch.stream()
                         .map(it -> new VersionDescription(it.pattern, it.versionFormat))
                         .collect(toList()),
-                config.tags.stream()
+                config.tag.stream()
                         .map(it -> new VersionDescription(it.pattern, it.versionFormat))
                         .collect(toList()),
                 GAV.of(projectModel).getVersion());
@@ -283,7 +279,6 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             return new GitVersioningExtensionConfiguration();
         }
         logger.debug("load config from " + configFile);
-        Serializer serializer = new Persister();
-        return unchecked(() -> serializer.read(GitVersioningExtensionConfiguration.class, configFile));
+        return unchecked(() -> new XmlMapper().readValue(configFile, GitVersioningExtensionConfiguration.class));
     }
 }
