@@ -269,7 +269,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     private String getOption(final String name) {
         String value = mavenSession.getUserProperties().getProperty(name);
         if (value == null) {
-            value = System.getenv("VERSIONING_" + name.replaceAll("[A-Z]", "_$0").toUpperCase());
+            value = System.getenv("VERSIONING_" + name.replaceAll("\\.", "_").toUpperCase());
         }
         return value;
     }
