@@ -9,6 +9,10 @@
     <version>0.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
+    <properties>
+        <foo>${basedir}/src/main/fuxx</foo>
+    </properties>
+
     <modules>
         <module>api</module>
         <module>logic</module>
@@ -28,5 +32,12 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <distributionManagement>
+        <repository>
+            <id>absolute directory</id>
+            <url>file:${maven.multiModuleProjectDirectory}/.m2</url>
+        </repository>
+    </distributionManagement>
 
 </project>

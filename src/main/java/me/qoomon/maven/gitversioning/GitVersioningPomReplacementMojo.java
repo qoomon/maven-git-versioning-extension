@@ -1,6 +1,7 @@
 package me.qoomon.maven.gitversioning;
 
 import org.apache.maven.execution.MavenSession;
+import org.apache.maven.model.Model;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -12,6 +13,8 @@ import org.apache.maven.project.MavenProject;
 
 import java.io.File;
 import java.nio.file.Files;
+
+import static me.qoomon.maven.gitversioning.MavenUtil.*;
 
 /**
  * Temporarily replace original pom files with pom files generated from in memory project models.
@@ -39,14 +42,23 @@ public class GitVersioningPomReplacementMojo extends AbstractMojo {
     @Override
     public synchronized void execute() throws MojoExecutionException {
         try {
+            getLog().info("Generating git versioned POM of project " + GAV.of(currentProject.getOriginalModel()) + "...");
+
             getLog().debug(currentProject.getModel().getArtifactId() + "remove this plugin from model");
             currentProject.getOriginalModel().getBuild().removePlugin(asPlugin());
 
+            Model pomFileModel = readModel(currentProject.getFile());
+            if (pomFileModel.getVersion() != null) {
+                pomFileModel.setVersion(currentProject.getVersion());
+            }
+
+            if (pomFileModel.getParent() != null && isProjectPom(currentProject.getParent().getFile())) {
+                pomFileModel.getParent().setVersion(currentProject.getVersion());
+            }
+
             File gitVersionedPomFile = new File(currentProject.getBuild().getDirectory(), GIT_VERSIONING_POM_PATH);
             Files.createDirectories(gitVersionedPomFile.getParentFile().toPath());
-            ModelUtil.writeModel(gitVersionedPomFile, currentProject.getOriginalModel());
-
-            getLog().info(currentProject.getArtifact().getArtifactId() + " - surrogate project pom file by " + gitVersionedPomFile);
+            writeModel(gitVersionedPomFile, pomFileModel);
             currentProject.setPomFile(gitVersionedPomFile);
         } catch (Exception e) {
             throw new MojoExecutionException("Git Versioning Pom Replacement Mojo", e);

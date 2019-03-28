@@ -1,7 +1,7 @@
 <gitVersioning>
     <branch>
         <pattern>master</pattern>
-        <versionFormat>${version}</versionFormat>
+        <versionFormat>${version.release}</versionFormat>
     </branch>
     <branch>
         <pattern>feature/(.*)</pattern>

@@ -10,7 +10,7 @@ import java.io.*;
 /**
  * Created by qoomon on 18/11/2016.
  */
-final class ModelUtil {
+final class MavenUtil {
 
     /**
      * Read model from pom file
@@ -38,6 +38,20 @@ final class ModelUtil {
         try (FileWriter fileWriter = new FileWriter(pomFile)) {
             new MavenXpp3Writer().write(fileWriter, model);
         }
+    }
+
+    /**
+     * checks if <code>pomFile</code> is part of a project
+     *
+     * @param pomFile the pom file
+     * @return true if <code>pomFile</code> is part of a project
+     */
+    static boolean isProjectPom(File pomFile) {
+        return pomFile != null
+                && pomFile.exists()
+                && pomFile.isFile()
+                // only project pom files ends in .xml, pom files from dependencies from repositories ends in .pom
+                && pomFile.getName().endsWith(".xml");
     }
 
 }

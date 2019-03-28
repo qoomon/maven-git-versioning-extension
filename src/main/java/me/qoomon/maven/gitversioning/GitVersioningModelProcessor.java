@@ -23,6 +23,9 @@ import static java.util.Collections.singletonList;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static me.qoomon.UncheckedExceptions.unchecked;
+import static me.qoomon.maven.gitversioning.GitVersioningPomReplacementMojo.GIT_VERSIONING_POM_PATH;
+import static me.qoomon.maven.gitversioning.MavenUtil.isProjectPom;
+import static me.qoomon.maven.gitversioning.MavenUtil.readModel;
 
 
 /**
@@ -106,7 +109,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             return projectModel;
         }
 
-        if (projectModel.getPomFile().getName().equals(GitVersioningPomReplacementMojo.GIT_VERSIONING_POM_PATH)) {
+        if (projectModel.getPomFile().getName().equals(GIT_VERSIONING_POM_PATH)) {
             logger.debug("skip - git versioned pom - " + projectModel.getPomFile());
             return projectModel;
         }
@@ -123,7 +126,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
         Model virtualProjectModel = this.virtualProjectModelCache.get(projectModel.getArtifactId());
         if (virtualProjectModel == null) {
-            logger.info(projectGav.getArtifactId() + " - surrogate project version " + projectGav.getVersion() + " by " + gitVersionDetails.getVersion()
+            logger.info(projectGav.getArtifactId() + " - set project version to" + gitVersionDetails.getVersion()
                     + " (" + gitVersionDetails.getCommitRefType() + ":" + gitVersionDetails.getCommitRefName() + ")");
 
             virtualProjectModel = projectModel.clone();
@@ -225,7 +228,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             File parentPomFile = getParentPom(projectModel);
             if (isProjectPom(parentPomFile)) {
                 try {
-                    Model parentProjectModel = ModelUtil.readModel(parentPomFile);
+                    Model parentProjectModel = readModel(parentPomFile);
                     parentProjectModel.setPomFile(parentPomFile);
                     return findMvnDir(parentProjectModel);
                 } catch (IOException e) {
@@ -236,19 +239,6 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         return null;
     }
 
-    /**
-     * checks if <code>pomFile</code> is part of a project
-     *
-     * @param pomFile the pom file
-     * @return true if <code>pomFile</code> is part of a project
-     */
-    private static boolean isProjectPom(File pomFile) {
-        return pomFile != null
-                && pomFile.exists()
-                && pomFile.isFile()
-                // only project pom files ends in .xml, pom files from dependencies from repositories ends in .pom
-                && pomFile.getName().endsWith(".xml");
-    }
 
     private void addBuildPlugin(Model model) {
         logger.debug(model.getArtifactId() + " temporary add build plugin");
