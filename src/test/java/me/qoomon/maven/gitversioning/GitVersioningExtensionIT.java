@@ -21,7 +21,7 @@ import java.nio.file.Paths;
 
 import static me.qoomon.gitversioning.GitConstants.NO_COMMIT;
 import static me.qoomon.maven.gitversioning.GitVersioningPomReplacementMojo.GIT_VERSIONING_POM_PATH;
-import static me.qoomon.maven.gitversioning.ModelUtil.readModel;
+import static me.qoomon.maven.gitversioning.MavenUtil.readModel;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
@@ -275,7 +275,7 @@ public class GitVersioningExtensionIT {
     }
 
     private Model writeModel(File pomFile, Model pomModel) throws IOException {
-        ModelUtil.writeModel(pomFile, pomModel);
+        writeModel(pomFile, pomModel);
         return pomModel;
     }
 }
