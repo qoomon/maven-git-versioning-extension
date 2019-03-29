@@ -1,13 +1,12 @@
 package me.qoomon.maven.gitversioning;
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import me.qoomon.maven.gitversioning.GitVersioningExtensionConfiguration.VersionDescription;
+import me.qoomon.maven.gitversioning.Configuration.VersionDescription;
 import org.apache.maven.it.Verifier;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.DependencyManagement;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;
-import org.assertj.core.data.MapEntry;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.junit.jupiter.api.Test;
@@ -20,14 +19,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import static me.qoomon.gitversioning.GitConstants.NO_COMMIT;
-import static me.qoomon.maven.gitversioning.GitVersioningPomReplacementMojo.GIT_VERSIONING_POM_PATH;
 import static me.qoomon.maven.gitversioning.MavenUtil.readModel;
+import static me.qoomon.maven.gitversioning.VersioningMojo.GIT_VERSIONING_POM_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
 public class GitVersioningExtensionIT {
-
-    static String MAVEN_BUILD_DIRECTORY = "target/";
 
     @TempDir
     Path projectDir;
@@ -41,7 +38,7 @@ public class GitVersioningExtensionIT {
         }
     };
 
-    GitVersioningExtensionConfiguration extensionConfig = new GitVersioningExtensionConfiguration();
+    Configuration extensionConfig = new Configuration();
 
 
     @Test
@@ -58,20 +55,21 @@ public class GitVersioningExtensionIT {
         verifier.executeGoal("verify");
         String log = getLog(verifier);
 
+
         // Then
         assertThat(log).doesNotContain("[ERROR]");
         String expectedVersion = NO_COMMIT;
         assertThat(log).contains("Building " + pomModel.getArtifactId() + " " + expectedVersion);
 
-        Model gitVersionedPomModel = readModel(projectDir.resolve(MAVEN_BUILD_DIRECTORY + GIT_VERSIONING_POM_PATH).toFile());
+        Model gitVersionedPomModel = readModel(projectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile());
         assertThat(gitVersionedPomModel).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.getModelVersion()).isEqualTo(pomModel.getModelVersion());
             softly.assertThat(it.getGroupId()).isEqualTo(pomModel.getGroupId());
             softly.assertThat(it.getArtifactId()).isEqualTo(pomModel.getArtifactId());
             softly.assertThat(it.getVersion()).isEqualTo(expectedVersion);
-            softly.assertThat(it.getProperties()).containsOnly(
-                    MapEntry.entry("git.commit", NO_COMMIT),
-                    MapEntry.entry("git.ref", NO_COMMIT)
+            softly.assertThat(it.getProperties()).doesNotContainKeys(
+                    "git.commit",
+                    "git.ref"
             );
         }));
     }
@@ -103,16 +101,16 @@ public class GitVersioningExtensionIT {
         assertThat(log).doesNotContain("[ERROR]");
         String expectedVersion = givenBranch.replace("/", "-") + "-gitVersioning";
         assertThat(log).contains("Building " + pomModel.getArtifactId() + " " + expectedVersion);
-        Model gitVersionedPomModel = readModel(projectDir.resolve(MAVEN_BUILD_DIRECTORY + GIT_VERSIONING_POM_PATH).toFile());
+        Model gitVersionedPomModel = readModel(projectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile());
         assertThat(gitVersionedPomModel).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.getModelVersion()).isEqualTo(pomModel.getModelVersion());
             softly.assertThat(it.getGroupId()).isEqualTo(pomModel.getGroupId());
             softly.assertThat(it.getArtifactId()).isEqualTo(pomModel.getArtifactId());
             softly.assertThat(it.getVersion()).isEqualTo(expectedVersion);
-            softly.assertThat(it.getProperties()).containsOnly(
-                    MapEntry.entry("git.commit", givenCommit.name()),
-                    MapEntry.entry("git.ref", givenBranch),
-                    MapEntry.entry("git.branch", givenBranch)
+            softly.assertThat(it.getProperties()).doesNotContainKeys(
+                    "git.commit",
+                    "git.ref",
+                    "git.branch"
             );
         }));
     }
@@ -144,16 +142,16 @@ public class GitVersioningExtensionIT {
         assertThat(log).doesNotContain("[ERROR]");
         String expectedVersion = givenTag + "-gitVersioning";
         assertThat(log).contains("Building " + pomModel.getArtifactId() + " " + expectedVersion);
-        Model gitVersionedPomModel = readModel(projectDir.resolve(MAVEN_BUILD_DIRECTORY + GIT_VERSIONING_POM_PATH).toFile());
+        Model gitVersionedPomModel = readModel(projectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile());
         assertThat(gitVersionedPomModel).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.getModelVersion()).isEqualTo(pomModel.getModelVersion());
             softly.assertThat(it.getGroupId()).isEqualTo(pomModel.getGroupId());
             softly.assertThat(it.getArtifactId()).isEqualTo(pomModel.getArtifactId());
             softly.assertThat(it.getVersion()).isEqualTo(expectedVersion);
-            softly.assertThat(it.getProperties()).containsOnly(
-                    MapEntry.entry("git.commit", givenCommit.name()),
-                    MapEntry.entry("git.ref", givenTag),
-                    MapEntry.entry("git.tag", givenTag)
+            softly.assertThat(it.getProperties()).doesNotContainKeys(
+                    "git.commit",
+                    "git.ref",
+                    "git.tag"
             );
         }));
     }
@@ -214,39 +212,39 @@ public class GitVersioningExtensionIT {
         assertThat(log).doesNotContain("[ERROR]");
         String expectedVersion = NO_COMMIT;
         assertThat(log).contains("Building " + pomModel.getArtifactId() + " " + expectedVersion);
-        Model gitVersionedPomModel = readModel(projectDir.resolve(MAVEN_BUILD_DIRECTORY + GIT_VERSIONING_POM_PATH).toFile());
+        Model gitVersionedPomModel = readModel(projectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile());
         assertThat(gitVersionedPomModel).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.getModelVersion()).isEqualTo(pomModel.getModelVersion());
             softly.assertThat(it.getGroupId()).isEqualTo(pomModel.getGroupId());
             softly.assertThat(it.getArtifactId()).isEqualTo(pomModel.getArtifactId());
             softly.assertThat(it.getVersion()).isEqualTo(expectedVersion);
-            softly.assertThat(it.getProperties()).containsOnly(
-                    MapEntry.entry("git.commit", NO_COMMIT),
-                    MapEntry.entry("git.ref", NO_COMMIT)
+            softly.assertThat(it.getProperties()).doesNotContainKeys(
+                    "git.commit",
+                    "git.ref"
             );
         }));
 
-        Model apiGitVersionedPomModel = readModel(apiProjectDir.resolve(MAVEN_BUILD_DIRECTORY + GIT_VERSIONING_POM_PATH).toFile());
+        Model apiGitVersionedPomModel = readModel(apiProjectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile());
         assertThat(apiGitVersionedPomModel).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.getModelVersion()).isEqualTo(apiPomModel.getModelVersion());
             softly.assertThat(it.getGroupId()).isEqualTo(apiPomModel.getGroupId());
             softly.assertThat(it.getArtifactId()).isEqualTo(apiPomModel.getArtifactId());
-            softly.assertThat(it.getVersion()).isEqualTo(null);
-            softly.assertThat(it.getProperties()).containsOnly(
-                    MapEntry.entry("git.commit", NO_COMMIT),
-                    MapEntry.entry("git.ref", NO_COMMIT)
+            softly.assertThat(it.getVersion()).isEqualTo(NO_COMMIT);
+            softly.assertThat(it.getProperties()).doesNotContainKeys(
+                    "git.commit",
+                    "git.ref"
             );
         }));
 
-        Model apiGitVersionedPomModelLogic = readModel(logicProjectDir.resolve(MAVEN_BUILD_DIRECTORY + GIT_VERSIONING_POM_PATH).toFile());
+        Model apiGitVersionedPomModelLogic = readModel(logicProjectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile());
         assertThat(apiGitVersionedPomModelLogic).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.getModelVersion()).isEqualTo(logicPomModel.getModelVersion());
             softly.assertThat(it.getGroupId()).isEqualTo(logicPomModel.getGroupId());
             softly.assertThat(it.getArtifactId()).isEqualTo(logicPomModel.getArtifactId());
             softly.assertThat(it.getVersion()).isEqualTo(null);
-            softly.assertThat(it.getProperties()).containsOnly(
-                    MapEntry.entry("git.commit", NO_COMMIT),
-                    MapEntry.entry("git.ref", NO_COMMIT)
+            softly.assertThat(it.getProperties()).doesNotContainKeys(
+                    "git.commit",
+                    "git.ref"
             );
         }));
     }
@@ -267,7 +265,7 @@ public class GitVersioningExtensionIT {
                 "</extensions>").getBytes()).toFile();
     }
 
-    private File writeExtensionConfigFile(Path projectDir, GitVersioningExtensionConfiguration config) throws Exception {
+    private File writeExtensionConfigFile(Path projectDir, Configuration config) throws Exception {
         Path mvnDotDir = Files.createDirectories(projectDir.resolve(".mvn"));
         File configFile = mvnDotDir.resolve("maven-git-versioning-extension.xml").toFile();
         new XmlMapper().writeValue(configFile, config);
@@ -275,7 +273,7 @@ public class GitVersioningExtensionIT {
     }
 
     private Model writeModel(File pomFile, Model pomModel) throws IOException {
-        writeModel(pomFile, pomModel);
+        MavenUtil.writeModel(pomFile, pomModel);
         return pomModel;
     }
 }

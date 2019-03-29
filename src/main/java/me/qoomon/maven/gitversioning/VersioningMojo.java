@@ -1,6 +1,5 @@
 package me.qoomon.maven.gitversioning;
 
-import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.plugin.AbstractMojo;
@@ -21,23 +20,19 @@ import static me.qoomon.maven.gitversioning.MavenUtil.*;
  * <p>
  * !!! DO NOT ADD THIS PLUGIN MANUALLY TO POM !!!
  * <p>
- * utilized by {@link GitVersioningModelProcessor}
+ * utilized by {@link ModelProcessor}
  */
-@Mojo(name = GitVersioningPomReplacementMojo.GOAL,
-        defaultPhase = LifecyclePhase.PREPARE_PACKAGE,
-        instantiationStrategy = InstantiationStrategy.SINGLETON,
-        threadSafe = true)
-public class GitVersioningPomReplacementMojo extends AbstractMojo {
 
-    static final String GOAL = "pom-surrogate";
-    static final String GIT_VERSIONING_POM_PATH = "git-versioning/pom.xml";
+@Mojo(name = VersioningMojo.GOAL,
+        defaultPhase = LifecyclePhase.PROCESS_RESOURCES,
+        threadSafe = true)
+public class VersioningMojo extends AbstractMojo {
+
+    static final String GOAL = "git-versioning";
+    static final String GIT_VERSIONING_POM_NAME = ".git-versioned-pom.xml";
 
     @Parameter(defaultValue = "${project}", readonly = true, required = true)
     private MavenProject currentProject;
-
-    @Parameter(defaultValue = "${session}", readonly = true, required = true)
-    private MavenSession mavenSession;
-
 
     @Override
     public synchronized void execute() throws MojoExecutionException {
@@ -45,20 +40,22 @@ public class GitVersioningPomReplacementMojo extends AbstractMojo {
             getLog().info("Generating git versioned POM of project " + GAV.of(currentProject.getOriginalModel()) + "...");
 
             getLog().debug(currentProject.getModel().getArtifactId() + "remove this plugin from model");
-            currentProject.getOriginalModel().getBuild().removePlugin(asPlugin());
+            currentProject.getOriginalModel().getBuild().removePlugin(VersioningMojo.asPlugin());
 
+            // read model from pom file because we dont want to apply any changes mady by plugins, except the version
             Model pomFileModel = readModel(currentProject.getFile());
             if (pomFileModel.getVersion() != null) {
                 pomFileModel.setVersion(currentProject.getVersion());
             }
-
             if (pomFileModel.getParent() != null && isProjectPom(currentProject.getParent().getFile())) {
                 pomFileModel.getParent().setVersion(currentProject.getVersion());
             }
 
-            File gitVersionedPomFile = new File(currentProject.getBuild().getDirectory(), GIT_VERSIONING_POM_PATH);
+            // write git-versioned pom file
+            File gitVersionedPomFile = new File(currentProject.getBuild().getDirectory(), GIT_VERSIONING_POM_NAME);
             Files.createDirectories(gitVersionedPomFile.getParentFile().toPath());
             writeModel(gitVersionedPomFile, pomFileModel);
+            // update project pom file
             currentProject.setPomFile(gitVersionedPomFile);
         } catch (Exception e) {
             throw new MojoExecutionException("Git Versioning Pom Replacement Mojo", e);

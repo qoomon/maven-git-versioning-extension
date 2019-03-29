@@ -8,7 +8,7 @@ import java.io.IOException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
-class GitVersioningExtensionConfigurationTest {
+class ConfigurationTest {
 
     @Test
     void xmlUnmarshaller_empty() throws IOException {
@@ -17,8 +17,8 @@ class GitVersioningExtensionConfigurationTest {
                 "</gitVersioning>\n";
 
         // when
-        GitVersioningExtensionConfiguration config = new XmlMapper()
-                .readValue(configXml, GitVersioningExtensionConfiguration.class);
+        Configuration config = new XmlMapper()
+                .readValue(configXml, Configuration.class);
 
         // then
         assertAll(
@@ -39,8 +39,8 @@ class GitVersioningExtensionConfigurationTest {
                 "</gitVersioning>\n";
 
         // when
-        GitVersioningExtensionConfiguration config = new XmlMapper()
-                .readValue(configXml, GitVersioningExtensionConfiguration.class);
+        Configuration config = new XmlMapper()
+                .readValue(configXml, Configuration.class);
 
         // then
         assertAll(
@@ -67,8 +67,8 @@ class GitVersioningExtensionConfigurationTest {
                 "</gitVersioning>\n";
 
         // when
-        GitVersioningExtensionConfiguration config = new XmlMapper()
-                .readValue(configXml, GitVersioningExtensionConfiguration.class);
+        Configuration config = new XmlMapper()
+                .readValue(configXml, Configuration.class);
 
         // then
         assertAll(
@@ -105,8 +105,8 @@ class GitVersioningExtensionConfigurationTest {
                 "</gitVersioning>\n";
 
         // when
-        GitVersioningExtensionConfiguration config = new XmlMapper()
-                .readValue(configXml, GitVersioningExtensionConfiguration.class);
+        Configuration config = new XmlMapper()
+                .readValue(configXml, Configuration.class);
 
         // then
         assertAll(
@@ -154,8 +154,8 @@ class GitVersioningExtensionConfigurationTest {
                 "</gitVersioning>\n";
 
         // when
-        GitVersioningExtensionConfiguration config = new XmlMapper()
-                .readValue(configXml, GitVersioningExtensionConfiguration.class);
+        Configuration config = new XmlMapper()
+                .readValue(configXml, Configuration.class);
 
         // then
         assertAll(

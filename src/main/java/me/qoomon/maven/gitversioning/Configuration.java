@@ -8,7 +8,7 @@ import java.util.List;
 
 
 @JacksonXmlRootElement(localName = "gitVersioning")
-public class GitVersioningExtensionConfiguration {
+public class Configuration {
 
     public CommitVersionDescription commit;
 

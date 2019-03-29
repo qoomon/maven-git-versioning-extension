@@ -8,13 +8,15 @@ import org.apache.maven.building.Source;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.*;
 import org.apache.maven.model.building.DefaultModelProcessor;
-import org.apache.maven.model.building.ModelProcessor;
 import org.apache.maven.session.scope.internal.SessionScope;
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.logging.Logger;
 
 import javax.inject.Inject;
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,16 +25,16 @@ import static java.util.Collections.singletonList;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static me.qoomon.UncheckedExceptions.unchecked;
-import static me.qoomon.maven.gitversioning.GitVersioningPomReplacementMojo.GIT_VERSIONING_POM_PATH;
+import static me.qoomon.maven.gitversioning.VersioningMojo.GIT_VERSIONING_POM_NAME;
 import static me.qoomon.maven.gitversioning.MavenUtil.isProjectPom;
 import static me.qoomon.maven.gitversioning.MavenUtil.readModel;
 
 
 /**
- * Replacement for {@link ModelProcessor} to adapt versions.
+ * Replacement for {@link org.apache.maven.model.building.ModelProcessor} to adapt versions.
  */
-@Component(role = ModelProcessor.class)
-public class GitVersioningModelProcessor extends DefaultModelProcessor {
+@Component(role = org.apache.maven.model.building.ModelProcessor.class)
+public class ModelProcessor extends DefaultModelProcessor {
 
     private final Logger logger;
 
@@ -49,7 +51,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
 
     @Inject
-    public GitVersioningModelProcessor(final Logger logger, final SessionScope sessionScope) {
+    public ModelProcessor(final Logger logger, final SessionScope sessionScope) {
         this.logger = logger;
         this.sessionScope = sessionScope;
     }
@@ -92,7 +94,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                 return projectModel;
             }
 
-            final Source pomSource = (Source) options.get(ModelProcessor.SOURCE);
+            final Source pomSource = (Source) options.get(org.apache.maven.model.building.ModelProcessor.SOURCE);
             if (pomSource != null) {
                 projectModel.setPomFile(new File(pomSource.getLocation()));
             }
@@ -109,7 +111,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             return projectModel;
         }
 
-        if (projectModel.getPomFile().getName().equals(GIT_VERSIONING_POM_PATH)) {
+        if (projectModel.getPomFile().getName().equals(GIT_VERSIONING_POM_NAME)) {
             logger.debug("skip - git versioned pom - " + projectModel.getPomFile());
             return projectModel;
         }
@@ -126,7 +128,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
         Model virtualProjectModel = this.virtualProjectModelCache.get(projectModel.getArtifactId());
         if (virtualProjectModel == null) {
-            logger.info(projectGav.getArtifactId() + " - set project version to" + gitVersionDetails.getVersion()
+            logger.info(projectGav.getArtifactId() + " - set project version to " + gitVersionDetails.getVersion()
                     + " (" + gitVersionDetails.getCommitRefType() + ":" + gitVersionDetails.getCommitRefName() + ")");
 
             virtualProjectModel = projectModel.clone();
@@ -181,7 +183,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     private GitVersionDetails getGitVersionDetails(Model projectModel) {
         File mvnDir = findMvnDir(projectModel);
         File configFile = new File(mvnDir, BuildProperties.projectArtifactId() + ".xml");
-        GitVersioningExtensionConfiguration config = loadConfig(configFile);
+        Configuration config = loadConfig(configFile);
 
         GitRepoSituation repoSituation = GitUtil.situation(projectModel.getPomFile());
         String providedBranch = getOption("git.branch");
@@ -243,11 +245,11 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     private void addBuildPlugin(Model model) {
         logger.debug(model.getArtifactId() + " temporary add build plugin");
 
-        Plugin projectPlugin = GitVersioningPomReplacementMojo.asPlugin();
+        Plugin projectPlugin = VersioningMojo.asPlugin();
 
         PluginExecution execution = new PluginExecution();
-        execution.setId(GitVersioningPomReplacementMojo.GOAL);
-        execution.getGoals().add(GitVersioningPomReplacementMojo.GOAL);
+        execution.setId(VersioningMojo.GOAL);
+        execution.getGoals().add(VersioningMojo.GOAL);
         projectPlugin.getExecutions().add(execution);
 
         if (model.getBuild() == null) {
@@ -255,6 +257,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         }
         model.getBuild().getPlugins().add(projectPlugin);
     }
+
 
     private String getOption(final String name) {
         String value = mavenSession.getUserProperties().getProperty(name);
@@ -264,11 +267,12 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         return value;
     }
 
-    private GitVersioningExtensionConfiguration loadConfig(File configFile) {
+
+    private Configuration loadConfig(File configFile) {
         if (!configFile.exists()) {
-            return new GitVersioningExtensionConfiguration();
+            return new Configuration();
         }
         logger.debug("load config from " + configFile);
-        return unchecked(() -> new XmlMapper().readValue(configFile, GitVersioningExtensionConfiguration.class));
+        return unchecked(() -> new XmlMapper().readValue(configFile, Configuration.class));
     }
 }
