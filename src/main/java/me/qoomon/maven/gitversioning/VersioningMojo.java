@@ -36,34 +36,34 @@ public class VersioningMojo extends AbstractMojo {
     static final String GIT_VERSIONING_POM_NAME = ".git-versioned-pom.xml";
 
     @Parameter(defaultValue = "${project}", readonly = true, required = true)
-    private MavenProject currentProject;
+    private MavenProject sessionProject;
 
     @Override
     public synchronized void execute() throws MojoExecutionException {
         try {
-            getLog().info("Generating git versioned POM of project " + GAV.of(currentProject.getOriginalModel()) + "...");
+            getLog().info("Generating git versioned POM of project " + GAV.of(sessionProject.getOriginalModel()) + "...");
 
-            getLog().debug(currentProject.getModel().getArtifactId() + "remove this plugin from model");
-            currentProject.getOriginalModel().getBuild().removePlugin(VersioningMojo.asPlugin());
+            getLog().debug(sessionProject.getModel().getArtifactId() + "remove this plugin from model");
+            sessionProject.getOriginalModel().getBuild().removePlugin(VersioningMojo.asPlugin());
 
             // generate git-versioned pom from current pom
-            Document gitVersionedPom = readXml(currentProject.getFile());
+            Document gitVersionedPom = readXml(sessionProject.getFile());
 
             Element versionElement = gitVersionedPom.getChild("/project/version");
             if (versionElement != null) {
-                versionElement.setText(currentProject.getVersion());
+                versionElement.setText(sessionProject.getVersion());
             }
             Element parentVersionElement = gitVersionedPom.getChild("/project/parent/version");
-            if (parentVersionElement != null && isProjectPom(currentProject.getParent().getFile())) {
-                parentVersionElement.setText(currentProject.getVersion());
+            if (parentVersionElement != null && isProjectPom(sessionProject.getParent().getFile())) {
+                parentVersionElement.setText(sessionProject.getVersion());
             }
 
-            File gitVersionedPomFile = new File(currentProject.getBuild().getDirectory(), GIT_VERSIONING_POM_NAME);
+            File gitVersionedPomFile = new File(sessionProject.getBuild().getDirectory(), GIT_VERSIONING_POM_NAME);
             Files.createDirectories(gitVersionedPomFile.getParentFile().toPath());
             writeXml(gitVersionedPomFile,gitVersionedPom);
 
             // replace session pom with git-versioned pom
-            currentProject.setPomFile(gitVersionedPomFile);
+            sessionProject.setPomFile(gitVersionedPomFile);
         } catch (Exception e) {
             throw new MojoExecutionException("Git Versioning Pom Replacement Mojo", e);
         }
