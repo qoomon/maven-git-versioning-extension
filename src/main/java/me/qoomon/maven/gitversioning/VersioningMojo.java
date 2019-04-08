@@ -1,19 +1,23 @@
 package me.qoomon.maven.gitversioning;
 
-import org.apache.maven.model.Model;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugins.annotations.InstantiationStrategy;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 
 import static me.qoomon.maven.gitversioning.MavenUtil.*;
+
+import de.pdark.decentxml.Document;
+import de.pdark.decentxml.Element;
+import de.pdark.decentxml.XMLParser;
+import de.pdark.decentxml.XMLStringSource;
 
 /**
  * Temporarily replace original pom files with pom files generated from in memory project models.
@@ -42,24 +46,38 @@ public class VersioningMojo extends AbstractMojo {
             getLog().debug(currentProject.getModel().getArtifactId() + "remove this plugin from model");
             currentProject.getOriginalModel().getBuild().removePlugin(VersioningMojo.asPlugin());
 
-            // read model from pom file because we dont want to apply any changes mady by plugins, except the version
-            Model pomFileModel = readModel(currentProject.getFile());
-            if (pomFileModel.getVersion() != null) {
-                pomFileModel.setVersion(currentProject.getVersion());
+            // generate git-versioned pom from current pom
+            Document gitVersionedPom = readXml(currentProject.getFile());
+
+            Element versionElement = gitVersionedPom.getChild("/project/version");
+            if (versionElement != null) {
+                versionElement.setText(currentProject.getVersion());
             }
-            if (pomFileModel.getParent() != null && isProjectPom(currentProject.getParent().getFile())) {
-                pomFileModel.getParent().setVersion(currentProject.getVersion());
+            Element parentVersionElement = gitVersionedPom.getChild("/project/parent/version");
+            if (parentVersionElement != null && isProjectPom(currentProject.getParent().getFile())) {
+                parentVersionElement.setText(currentProject.getVersion());
             }
 
-            // write git-versioned pom file
             File gitVersionedPomFile = new File(currentProject.getBuild().getDirectory(), GIT_VERSIONING_POM_NAME);
             Files.createDirectories(gitVersionedPomFile.getParentFile().toPath());
-            writeModel(gitVersionedPomFile, pomFileModel);
-            // update project pom file
+            writeXml(gitVersionedPomFile,gitVersionedPom);
+
+            // replace session pom with git-versioned pom
             currentProject.setPomFile(gitVersionedPomFile);
         } catch (Exception e) {
             throw new MojoExecutionException("Git Versioning Pom Replacement Mojo", e);
         }
+    }
+
+    private static File writeXml(final File file, final Document gitVersionedPom) throws IOException {
+        Files.write(file.toPath(), gitVersionedPom.toXML().getBytes());
+        return file;
+    }
+
+    private static Document readXml(File file) throws IOException {
+        String pomXml = new String(Files.readAllBytes(file.toPath()));
+        XMLParser parser = new XMLParser();
+        return parser.parse(new XMLStringSource(pomXml));
     }
 
     static Plugin asPlugin() {

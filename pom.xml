@@ -60,6 +60,12 @@
         </dependency>
 
         <dependency>
+            <groupId>de.pdark</groupId>
+            <artifactId>decentxml</artifactId>
+            <version>1.4</version>
+        </dependency>
+
+        <dependency>
             <groupId>me.qoomon</groupId>
             <artifactId>unchecked-exceptions</artifactId>
             <version>1.0.0</version>
