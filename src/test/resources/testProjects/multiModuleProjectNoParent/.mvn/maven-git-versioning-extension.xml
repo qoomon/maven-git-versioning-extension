@@ -1,0 +1,18 @@
+<gitVersioning>
+    <branch>
+        <pattern>master</pattern>
+        <versionFormat>${version.release}</versionFormat>
+    </branch>
+    <branch>
+        <pattern>release/(.*)</pattern>
+        <versionFormat>${1}-SNAPSHOT</versionFormat>
+    </branch>
+    <branch>
+        <pattern><![CDATA[feature/(?<feature>.*)]]></pattern>
+        <versionFormat>${feature}-SNAPSHOT</versionFormat>
+    </branch>
+    <tag>
+        <pattern>version/(.*)</pattern>
+        <versionFormat>${1}</versionFormat>
+    </tag>
+</gitVersioning>
