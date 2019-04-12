@@ -11,6 +11,7 @@ import org.apache.maven.model.building.DefaultModelProcessor;
 import org.apache.maven.session.scope.internal.SessionScope;
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.logging.Logger;
+import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -220,12 +221,25 @@ public class ModelProcessor extends DefaultModelProcessor {
         return new File(projectModel.getProjectDirectory(), parentRelativePath.getPath());
     }
 
+    /**
+     * Tries to locate the '.mvn' configuration directory using the following strategy:
+     *
+     * - looks at the project directory of the given model;
+     * - looks at the project directory of the parent model, if any and if it is not a dependency POM;
+     * - tries to search up the hierarchy until the Git root is reached.
+     *
+     * @param projectModel the project model
+     * @return the '.mvn' configuration dir if found, null otherwise
+     */
     private File findMvnDir(Model projectModel) {
+        // try with the project directory
         File mvnDir = new File(projectModel.getProjectDirectory(), ".mvn");
         if (mvnDir.exists()) {
+            logger.info("Using project .mvn dir at: " + mvnDir.toString());
             return mvnDir;
         }
 
+        // try with the project directory of the parent project, if any
         if (projectModel.getParent() != null) {
             File parentPomFile = getParentPom(projectModel);
             if (isProjectPom(parentPomFile)) {
@@ -238,6 +252,25 @@ public class ModelProcessor extends DefaultModelProcessor {
                 }
             }
         }
+
+        // try to find the directory up the hierarchy, until the Git root is reached.
+        FileRepositoryBuilder repositoryBuilder = new FileRepositoryBuilder().findGitDir(projectModel.getProjectDirectory());
+
+        File projectDir = projectModel.getProjectDirectory().getParentFile();
+        File ancestorMvnDir = new File(projectDir, ".mvn");
+
+        while(!ancestorMvnDir.exists() && !projectDir.equals(repositoryBuilder.getGitDir())) {
+            projectDir = projectDir.getParentFile();
+            ancestorMvnDir = new File(projectDir, ".mvn");
+        }
+
+        if (ancestorMvnDir.exists()) {
+            logger.info("Using ancestor .mvn dir at: " + ancestorMvnDir.toString());
+            return ancestorMvnDir;
+        }
+
+        logger.info("No .mvn dir found!");
+
         return null;
     }
 
@@ -269,6 +302,7 @@ public class ModelProcessor extends DefaultModelProcessor {
 
 
     private Configuration loadConfig(File configFile) {
+        logger.debug("Trying to load configuration file: " + configFile);
         if (!configFile.exists()) {
             return new Configuration();
         }
