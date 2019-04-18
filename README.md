@@ -70,6 +70,8 @@ Create `${basedir}/.mvn/maven-git-versioning-extension.xml`.
 </gitVersioning>
 ```
 
+- *optional* `<updatePom>` global enable(`true`)/disable(`false`) version update in original pom file.
+
 - `<branch>` specific version format definition.
     - `<pattern>` An arbitrary regex to match branch names (has to be a **full match pattern** e.g. `feature/.+` )
     - `<versionFormat>` An arbitrary string, see [Version Format & Placeholders](#version-format--placeholders)
@@ -90,8 +92,6 @@ Create `${basedir}/.mvn/maven-git-versioning-extension.xml`.
     - `<versionFormat>` An arbitrary string, see [Version Format & Placeholders](#version-format--placeholders)
     - ⚠ **considered if...**
         * HEAD is detached `git checkout <COMMIT>` and no matching version tag is pointing to HEAD<br>
-
-- *optional* `<updatePom>` global enable(`true`)/disable(`false`) version update in original pom file.
 
 #### Version Format & Placeholders
 
