@@ -4,13 +4,8 @@
 
     <modelVersion>4.0.0</modelVersion>
 
+    <groupId>multi-module-project</groupId>
     <artifactId>logic</artifactId>
-
-    <dependencies>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>api</artifactId>
-        </dependency>
-    </dependencies>
+    <version>0.0.0-SNAPSHOT</version>
 
 </project>
