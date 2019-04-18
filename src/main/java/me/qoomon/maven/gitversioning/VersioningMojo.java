@@ -10,7 +10,10 @@ import org.apache.maven.project.MavenProject;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.CopyOption;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.util.Properties;
 
 import static me.qoomon.maven.gitversioning.MavenUtil.*;
 
@@ -28,42 +31,52 @@ import de.pdark.decentxml.XMLStringSource;
  */
 
 @Mojo(name = VersioningMojo.GOAL,
-        defaultPhase = LifecyclePhase.PROCESS_RESOURCES,
-        threadSafe = true)
+      defaultPhase = LifecyclePhase.PROCESS_RESOURCES,
+      threadSafe = true)
 public class VersioningMojo extends AbstractMojo {
 
     static final String GOAL = "git-versioning";
     static final String GIT_VERSIONING_POM_NAME = ".git-versioned-pom.xml";
 
     @Parameter(defaultValue = "${project}", readonly = true, required = true)
-    private MavenProject sessionProject;
+    private MavenProject project;
 
     @Override
     public synchronized void execute() throws MojoExecutionException {
         try {
-            getLog().info("Generating git versioned POM of project " + GAV.of(sessionProject.getOriginalModel()) + "...");
+            final Properties config = (Properties) project.getProperties().get(getClass().getName());
+            final boolean configUpdatePom = Boolean.valueOf(config.getProperty("updatePom"));
 
-            getLog().debug(sessionProject.getModel().getArtifactId() + "remove this plugin from model");
-            sessionProject.getOriginalModel().getBuild().removePlugin(VersioningMojo.asPlugin());
+            getLog().debug(project.getModel().getArtifactId() + "remove this plugin and config from model");
+            project.getOriginalModel().getProperties().remove(getClass().getName());
+            project.getOriginalModel().getBuild().removePlugin(asPlugin());
 
-            // generate git-versioned pom from current pom
-            Document gitVersionedPom = readXml(sessionProject.getFile());
 
-            Element versionElement = gitVersionedPom.getChild("/project/version");
+            getLog().info("Generating git versioned POM of project " + GAV.of(project.getOriginalModel()));
+
+            File pomFile = project.getFile();
+
+            Document gitVersionedPomDocument = readXml(pomFile);
+            Element versionElement = gitVersionedPomDocument.getChild("/project/version");
             if (versionElement != null) {
-                versionElement.setText(sessionProject.getVersion());
+                versionElement.setText(project.getVersion());
             }
-            Element parentVersionElement = gitVersionedPom.getChild("/project/parent/version");
-            if (parentVersionElement != null && isProjectPom(sessionProject.getParent().getFile())) {
-                parentVersionElement.setText(sessionProject.getVersion());
+            Element parentVersionElement = gitVersionedPomDocument.getChild("/project/parent/version");
+            if (parentVersionElement != null && isProjectPom(project.getParent().getFile())) {
+                parentVersionElement.setText(project.getParent().getVersion());
             }
 
-            File gitVersionedPomFile = new File(sessionProject.getBuild().getDirectory(), GIT_VERSIONING_POM_NAME);
+            File gitVersionedPomFile = new File(project.getBuild().getDirectory(), GIT_VERSIONING_POM_NAME);
             Files.createDirectories(gitVersionedPomFile.getParentFile().toPath());
-            writeXml(gitVersionedPomFile,gitVersionedPom);
+            writeXml(gitVersionedPomFile, gitVersionedPomDocument);
 
-            // replace session pom with git-versioned pom
-            sessionProject.setPomFile(gitVersionedPomFile);
+            // replace pom file with git-versioned pom file within current session
+            project.setPomFile(gitVersionedPomFile);
+
+            if (configUpdatePom) {
+                getLog().info("Updating original POM");
+                Files.copy(gitVersionedPomFile.toPath(), pomFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            }
         } catch (Exception e) {
             throw new MojoExecutionException("Git Versioning Pom Replacement Mojo", e);
         }
