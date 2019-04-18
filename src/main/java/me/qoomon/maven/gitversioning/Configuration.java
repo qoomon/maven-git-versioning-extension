@@ -10,6 +10,8 @@ import java.util.List;
 @JacksonXmlRootElement(localName = "gitVersioning")
 public class Configuration {
 
+    public Boolean updatePom;
+
     public CommitVersionDescription commit;
 
     @JacksonXmlElementWrapper(useWrapping = false)
@@ -22,10 +24,12 @@ public class Configuration {
 
         public String pattern;
         public String versionFormat;
+        public Boolean updatePom;
     }
 
     public static class CommitVersionDescription {
 
         public String versionFormat;
+        public Boolean updatePom;
     }
 }
