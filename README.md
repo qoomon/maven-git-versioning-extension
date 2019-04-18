@@ -73,6 +73,7 @@ Create `${basedir}/.mvn/maven-git-versioning-extension.xml`.
 - `<branch>` specific version format definition.
     - `<pattern>` An arbitrary regex to match branch names (has to be a **full match pattern** e.g. `feature/.+` )
     - `<versionFormat>` An arbitrary string, see [Version Format & Placeholders](#version-format--placeholders)
+    - *optional* `<updatePom>` Enable(`true`) or disable(`false`) version update in original pom fill (will override global `<updatePom>` value)
     - ⚠ **considered if...**
         * HEAD attached to a branch `git checkout <BRANCH>`<br>
         * Or branch name is provided by environment variable or command line parameter
@@ -80,6 +81,7 @@ Create `${basedir}/.mvn/maven-git-versioning-extension.xml`.
 - `<tag>` specific version format definition.
     - `<pattern>` An arbitrary regex to match tag names (has to be a **full match pattern** e.g. `v[0-9].*` )
     - `<versionFormat>` An arbitrary string, see [Version Format & Placeholders](#version-format--placeholders)
+    - *optional* `<updatePom>` Enable(`true`) or disable(`false`) version update in original pom fill (will override global `<updatePom>` value)
     - ⚠ **considered if...**
         * HEAD is detached `git checkout <TAG>`<br>
         * Or tag name is provided by environment variable or command line parameter
@@ -89,6 +91,7 @@ Create `${basedir}/.mvn/maven-git-versioning-extension.xml`.
     - ⚠ **considered if...**
         * HEAD is detached `git checkout <COMMIT>` and no matching version tag is pointing to HEAD<br>
 
+- *optional* `<updatePom>` global enable(`true`)/disable(`false`) version update in original pom file.
 
 #### Version Format & Placeholders
 
@@ -193,6 +196,9 @@ fi
 ```
 
 # Changelog
+
+## 4.1.0
+* Add config option(`<update>`) to update version in original pom file.  see [Configure Extension](#configure-extension)
 
 ## 4.0.0
 * Major Refactoring, Simplification

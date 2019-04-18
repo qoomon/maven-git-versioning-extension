@@ -3,7 +3,9 @@ package me.qoomon.maven.gitversioning;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.google.inject.Key;
 import com.google.inject.OutOfScopeException;
+
 import me.qoomon.gitversioning.*;
+
 import org.apache.maven.building.Source;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.*;
@@ -13,22 +15,26 @@ import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.logging.Logger;
 
 import javax.inject.Inject;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.regex.Pattern;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
+
 import static me.qoomon.UncheckedExceptions.unchecked;
 import static me.qoomon.maven.gitversioning.VersioningMojo.GIT_VERSIONING_POM_NAME;
 import static me.qoomon.maven.gitversioning.MavenUtil.isProjectPom;
 import static me.qoomon.maven.gitversioning.MavenUtil.readModel;
-
 
 /**
  * Replacement for {@link org.apache.maven.model.building.ModelProcessor} to adapt versions.
@@ -44,11 +50,10 @@ public class ModelProcessor extends DefaultModelProcessor {
 
     private MavenSession mavenSession;  // can not be injected cause it is not always available
 
-
+    private Configuration config;
     private GitVersionDetails gitVersionDetails;
 
     private final Map<String, Model> virtualProjectModelCache = new HashMap<>();
-
 
     @Inject
     public ModelProcessor(final Logger logger, final SessionScope sessionScope) {
@@ -122,8 +127,14 @@ public class ModelProcessor extends DefaultModelProcessor {
             return projectModel;
         }
 
+        if (config == null) {
+            File mvnDir = findMvnDir(projectModel);
+            File configFile = new File(mvnDir, BuildProperties.projectArtifactId() + ".xml");
+            config = loadConfig(configFile);
+        }
+
         if (gitVersionDetails == null) {
-            gitVersionDetails = getGitVersionDetails(projectModel);
+            gitVersionDetails = getGitVersionDetails(config, projectModel);
         }
 
         Model virtualProjectModel = this.virtualProjectModelCache.get(projectModel.getArtifactId());
@@ -172,19 +183,15 @@ public class ModelProcessor extends DefaultModelProcessor {
 
             // ---------------- add plugin ---------------------------------------
 
-            addBuildPlugin(virtualProjectModel); // has to be removed from model by plugin itself
+            boolean updatePomOption = getUpdatePomOption(config, gitVersionDetails);
+            addBuildPlugin(virtualProjectModel, updatePomOption);
 
             this.virtualProjectModelCache.put(projectModel.getArtifactId(), virtualProjectModel);
         }
         return virtualProjectModel;
     }
 
-
-    private GitVersionDetails getGitVersionDetails(Model projectModel) {
-        File mvnDir = findMvnDir(projectModel);
-        File configFile = new File(mvnDir, BuildProperties.projectArtifactId() + ".xml");
-        Configuration config = loadConfig(configFile);
-
+    private GitVersionDetails getGitVersionDetails(Configuration config, Model projectModel) {
         GitRepoSituation repoSituation = GitUtil.situation(projectModel.getPomFile());
         String providedBranch = getOption("git.branch");
         if (providedBranch != null) {
@@ -241,23 +248,26 @@ public class ModelProcessor extends DefaultModelProcessor {
         return null;
     }
 
-
-    private void addBuildPlugin(Model model) {
+    private void addBuildPlugin(Model model, boolean updatePomOption) {
         logger.debug(model.getArtifactId() + " temporary add build plugin");
 
-        Plugin projectPlugin = VersioningMojo.asPlugin();
+        Plugin plugin = VersioningMojo.asPlugin();
 
         PluginExecution execution = new PluginExecution();
         execution.setId(VersioningMojo.GOAL);
         execution.getGoals().add(VersioningMojo.GOAL);
-        projectPlugin.getExecutions().add(execution);
+        plugin.getExecutions().add(execution);
 
         if (model.getBuild() == null) {
             model.setBuild(new Build());
         }
-        model.getBuild().getPlugins().add(projectPlugin);
-    }
+        model.getBuild().getPlugins().add(plugin);
 
+        // pass config to plugin
+        Properties pluginConfig = new Properties();
+        pluginConfig.setProperty("updatePom", Boolean.toString(updatePomOption));
+        model.getProperties().put(VersioningMojo.class.getName(), pluginConfig);
+    }
 
     private String getOption(final String name) {
         String value = mavenSession.getUserProperties().getProperty(name);
@@ -267,12 +277,33 @@ public class ModelProcessor extends DefaultModelProcessor {
         return value;
     }
 
-
     private Configuration loadConfig(File configFile) {
         if (!configFile.exists()) {
             return new Configuration();
         }
         logger.debug("load config from " + configFile);
         return unchecked(() -> new XmlMapper().readValue(configFile, Configuration.class));
+    }
+
+    private boolean getUpdatePomOption(final Configuration config, final GitVersionDetails gitVersionDetails) {
+        boolean updatePomOption = config.updatePom != null && config.updatePom;
+        if (gitVersionDetails.getCommitRefType().equals("tag")) {
+            updatePomOption = config.tag.stream()
+                    .filter(it -> Pattern.matches(it.pattern, gitVersionDetails.getCommitRefName()))
+                    .findFirst()
+                    .map(it -> it.updatePom)
+                    .orElse(updatePomOption);
+        } else if (gitVersionDetails.getCommitRefType().equals("branch")) {
+            updatePomOption = config.branch.stream()
+                    .filter(it -> Pattern.matches(it.pattern, gitVersionDetails.getCommitRefName()))
+                    .findFirst()
+                    .map(it -> it.updatePom)
+                    .orElse(updatePomOption);
+        } else if (config.commit != null) {
+            updatePomOption = Optional.ofNullable(config.commit.updatePom)
+                    .orElse(updatePomOption);
+        }
+
+        return updatePomOption;
     }
 }

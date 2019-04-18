@@ -1,7 +1,9 @@
 <gitVersioning>
+    <updatePom>true</updatePom>
     <branch>
         <pattern>master</pattern>
         <versionFormat>${version.release}</versionFormat>
+        <updatePom>true</updatePom>
     </branch>
     <branch>
         <pattern>release/(.*)</pattern>

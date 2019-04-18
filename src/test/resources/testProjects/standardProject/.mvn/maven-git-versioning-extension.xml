@@ -2,6 +2,7 @@
     <branch>
         <pattern>master</pattern>
         <versionFormat>${version.release}</versionFormat>
+        <updatePom>true</updatePom>
     </branch>
     <branch>
         <pattern>feature/(.*)</pattern>
