@@ -1,5 +1,6 @@
 package me.qoomon.maven.gitversioning;
 
+import org.apache.maven.model.Model;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -10,10 +11,9 @@ import org.apache.maven.project.MavenProject;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.Properties;
+import java.util.HashSet;
 
 import static me.qoomon.maven.gitversioning.MavenUtil.*;
 
@@ -37,6 +37,8 @@ public class VersioningMojo extends AbstractMojo {
 
     static final String GOAL = "git-versioning";
     static final String GIT_VERSIONING_POM_NAME = ".git-versioned-pom.xml";
+    static final String propertyKeyPrefix = VersioningMojo.class.getName() + ".";
+    static final String propertyKeyUpdatePom = "updatePom";
 
     @Parameter(defaultValue = "${project}", readonly = true, required = true)
     private MavenProject project;
@@ -44,15 +46,21 @@ public class VersioningMojo extends AbstractMojo {
     @Override
     public synchronized void execute() throws MojoExecutionException {
         try {
-            final Properties config = (Properties) project.getProperties().get(getClass().getName());
-            final boolean configUpdatePom = Boolean.valueOf(config.getProperty("updatePom"));
+            // read plugin properties
+            final boolean configUpdatePom = Boolean.valueOf(
+                    project.getProperties().getProperty(propertyKeyPrefix + propertyKeyUpdatePom));
 
-            getLog().debug(project.getModel().getArtifactId() + "remove this plugin and config from model");
-            project.getOriginalModel().getProperties().remove(getClass().getName());
-            project.getOriginalModel().getBuild().removePlugin(asPlugin());
+            // remove plugin and properties
+            getLog().debug(project.getModel().getArtifactId() + "remove this plugin and plugin properties from model");
+            Model originalModel = project.getOriginalModel();
+            originalModel.getBuild().removePlugin(asPlugin());
+            new HashSet<>(originalModel.getProperties().keySet()).forEach(key -> {
+                if (((String) key).startsWith(propertyKeyPrefix)) {
+                    originalModel.getProperties().remove(key);
+                }
+            });
 
-
-            getLog().info("Generating git versioned POM of project " + GAV.of(project.getOriginalModel()));
+            getLog().info("Generating git versioned POM of project " + GAV.of(originalModel));
 
             File pomFile = project.getFile();
 

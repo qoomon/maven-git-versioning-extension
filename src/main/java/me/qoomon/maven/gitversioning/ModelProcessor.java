@@ -23,7 +23,6 @@ import java.io.Reader;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.regex.Pattern;
 
 import static java.util.Collections.emptyList;
@@ -32,6 +31,7 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 
 import static me.qoomon.UncheckedExceptions.unchecked;
+import static me.qoomon.maven.gitversioning.VersioningMojo.*;
 import static me.qoomon.maven.gitversioning.VersioningMojo.GIT_VERSIONING_POM_NAME;
 import static me.qoomon.maven.gitversioning.MavenUtil.isProjectPom;
 import static me.qoomon.maven.gitversioning.MavenUtil.readModel;
@@ -251,11 +251,11 @@ public class ModelProcessor extends DefaultModelProcessor {
     private void addBuildPlugin(Model model, boolean updatePomOption) {
         logger.debug(model.getArtifactId() + " temporary add build plugin");
 
-        Plugin plugin = VersioningMojo.asPlugin();
+        Plugin plugin = asPlugin();
 
         PluginExecution execution = new PluginExecution();
-        execution.setId(VersioningMojo.GOAL);
-        execution.getGoals().add(VersioningMojo.GOAL);
+        execution.setId(GOAL);
+        execution.getGoals().add(GOAL);
         plugin.getExecutions().add(execution);
 
         if (model.getBuild() == null) {
@@ -263,10 +263,8 @@ public class ModelProcessor extends DefaultModelProcessor {
         }
         model.getBuild().getPlugins().add(plugin);
 
-        // pass config to plugin
-        Properties pluginConfig = new Properties();
-        pluginConfig.setProperty("updatePom", Boolean.toString(updatePomOption));
-        model.getProperties().put(VersioningMojo.class.getName(), pluginConfig);
+        // set plugin properties
+        model.getProperties().setProperty(propertyKeyPrefix + propertyKeyUpdatePom, Boolean.toString(updatePomOption));
     }
 
     private String getOption(final String name) {
