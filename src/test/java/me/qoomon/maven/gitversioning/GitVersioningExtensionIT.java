@@ -249,6 +249,69 @@ public class GitVersioningExtensionIT {
         }));
     }
 
+    @Test
+    void branchVersioning_multiModuleProject_noParent() throws Exception {
+        // Given
+
+        try (Git git = Git.init().setDirectory(projectDir.toFile()).call())
+        {
+            RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+            String givenBranch = "feature/test";
+            git.branchCreate().setName(givenBranch).call();
+            git.checkout().setName(givenBranch).call();
+
+            pomModel.setPackaging("pom");
+            pomModel.addModule("api");
+            pomModel.addModule("logic");
+
+            writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
+            writeExtensionsFile(projectDir);
+
+            VersionDescription branchVersionDescription = new VersionDescription();
+            branchVersionDescription.pattern = ".*";
+            branchVersionDescription.versionFormat = "${branch}-gitVersioning";
+            extensionConfig.branch.add(branchVersionDescription);
+            writeExtensionConfigFile(projectDir, extensionConfig);
+
+            Path apiProjectDir = Files.createDirectories(projectDir.resolve("api"));
+            Model apiPomModel = writeModel(apiProjectDir.resolve("pom.xml").toFile(), new Model() {{
+                setModelVersion(pomModel.getModelVersion());
+                setGroupId(pomModel.getGroupId());
+                setVersion(pomModel.getVersion());
+                setArtifactId("api");
+            }});
+
+            Path logicProjectDir = Files.createDirectories(projectDir.resolve("logic"));
+            Model logicPomModel = writeModel(logicProjectDir.resolve("pom.xml").toFile(), new Model() {{
+                setModelVersion(pomModel.getModelVersion());
+                setGroupId(pomModel.getGroupId());
+                setVersion(pomModel.getVersion());
+                setArtifactId("logic");
+            }});
+
+            // When
+            Verifier verifier = new Verifier(logicProjectDir.toFile().getAbsolutePath());
+            verifier.executeGoal("verify");
+            String log = getLog(verifier);
+
+            // Then
+            assertThat(log).doesNotContain("[ERROR]");
+            String expectedVersion = givenBranch.replace("/", "-") + "-gitVersioning";
+            //        assertThat(log).contains("Building " + logicPomModel.getArtifactId() + " " + expectedVersion);
+            Model gitVersionedLogicPomModel = readModel(logicProjectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile());
+            assertThat(gitVersionedLogicPomModel).satisfies(it -> assertSoftly(softly -> {
+                softly.assertThat(it.getModelVersion()).isEqualTo(logicPomModel.getModelVersion());
+                softly.assertThat(it.getGroupId()).isEqualTo(logicPomModel.getGroupId());
+                softly.assertThat(it.getArtifactId()).isEqualTo(logicPomModel.getArtifactId());
+                softly.assertThat(it.getVersion()).isEqualTo(expectedVersion);
+                softly.assertThat(it.getProperties()).doesNotContainKeys(
+                        "git.commit",
+                        "git.ref"
+                );
+            }));
+        }
+    }
+
     private String getLog(Verifier verifier) throws IOException {
         return new String(Files.readAllBytes(Paths.get(verifier.getBasedir(), verifier.getLogFileName())));
     }

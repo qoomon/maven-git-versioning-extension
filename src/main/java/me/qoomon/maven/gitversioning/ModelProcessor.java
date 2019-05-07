@@ -13,6 +13,8 @@ import org.apache.maven.model.building.DefaultModelProcessor;
 import org.apache.maven.session.scope.internal.SessionScope;
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.logging.Logger;
+import org.eclipse.jgit.lib.RepositoryCache;
+import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
 import javax.inject.Inject;
 
@@ -228,23 +230,49 @@ public class ModelProcessor extends DefaultModelProcessor {
     }
 
     private File findMvnDir(Model projectModel) {
-        File mvnDir = new File(projectModel.getProjectDirectory(), ".mvn");
-        if (mvnDir.exists()) {
-            return mvnDir;
+        {
+            final File mvnDir = new File(projectModel.getProjectDirectory(), ".mvn");
+            if (mvnDir.exists()) {
+                logger.debug("Found .mvn directory in project directory - " + mvnDir.toString());
+                return mvnDir;
+            }
         }
 
-        if (projectModel.getParent() != null) {
-            File parentPomFile = getParentPom(projectModel);
-            if (isProjectPom(parentPomFile)) {
-                try {
-                    Model parentProjectModel = readModel(parentPomFile);
-                    parentProjectModel.setPomFile(parentPomFile);
-                    return findMvnDir(parentProjectModel);
-                } catch (IOException e) {
-                    return null;
+        {
+            // search in parent project directories
+            Parent parentModel = projectModel.getParent();
+            while (parentModel != null) {
+                File parentPomFile = getParentPom(projectModel);
+                if (isProjectPom(parentPomFile)) {
+                    final File mvnDir = new File(parentPomFile.getParent(), ".mvn");
+                    if (mvnDir.exists()) {
+                        logger.debug("Found .mvn directory in parent project hierarchy - " + mvnDir.toString());
+                        return mvnDir;
+                    }
+                    Model parentProjectModel = unchecked(() -> readModel(parentPomFile));
+                    parentModel = parentProjectModel.getParent();
+                } else {
+                    parentModel = null;
                 }
             }
         }
+
+        {
+            // search in git directories
+            File gitDir = new FileRepositoryBuilder().findGitDir(projectModel.getProjectDirectory()).getGitDir();
+            File parentDir = projectModel.getProjectDirectory().getParentFile();
+            while (!parentDir.equals(gitDir)) {
+                File mvnDir = new File(parentDir, ".mvn");
+                if (mvnDir.exists()) {
+                    logger.debug("Found .mvn directory in git directory hierarchy - " + mvnDir.toString());
+                    return mvnDir;
+                }
+                parentDir = parentDir.getParentFile();
+            }
+
+        }
+
+        logger.warn("Could not find .mvn directory!");
         return null;
     }
 
