@@ -240,17 +240,16 @@ public class ModelProcessor extends DefaultModelProcessor {
 
         {
             // search in parent project directories
-            Parent parentModel = projectModel.getParent();
+            Model parentModel = projectModel;
             while (parentModel != null) {
-                File parentPomFile = getParentPom(projectModel);
+                File parentPomFile = getParentPom(parentModel);
                 if (isProjectPom(parentPomFile)) {
                     final File mvnDir = new File(parentPomFile.getParent(), ".mvn");
                     if (mvnDir.exists()) {
                         logger.debug("Found .mvn directory in parent project hierarchy - " + mvnDir.toString());
                         return mvnDir;
                     }
-                    Model parentProjectModel = unchecked(() -> readModel(parentPomFile));
-                    parentModel = parentProjectModel.getParent();
+                    parentModel = unchecked(() -> readModel(parentPomFile));
                 } else {
                     parentModel = null;
                 }
