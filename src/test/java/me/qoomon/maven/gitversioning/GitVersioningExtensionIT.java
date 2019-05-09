@@ -26,19 +26,17 @@ import static me.qoomon.maven.gitversioning.VersioningMojo.GIT_VERSIONING_POM_NA
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
-public class GitVersioningExtensionIT {
+class GitVersioningExtensionIT {
 
     @TempDir
     Path projectDir;
 
-    Model pomModel = new Model() {
-        {
-            setModelVersion("4.0.0");
-            setGroupId("test");
-            setArtifactId("test-artifact");
-            setVersion("0.0.0");
-        }
-    };
+    Model pomModel = new Model() {{
+        setModelVersion("4.0.0");
+        setGroupId("test");
+        setArtifactId("test-artifact");
+        setVersion("0.0.0");
+    }};
 
     Configuration extensionConfig = new Configuration();
 
@@ -54,7 +52,7 @@ public class GitVersioningExtensionIT {
 
 
     @Test
-    public void commitVersioning() throws Exception {
+    void commitVersioning() throws Exception {
         // Given
         Git.init().setDirectory(projectDir.toFile()).call();
 
@@ -65,11 +63,10 @@ public class GitVersioningExtensionIT {
         // When
         Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath());
         verifier.executeGoal("verify");
-        String log = getLog(verifier);
-
 
         // Then
-        assertThat(log).doesNotContain("[ERROR]");
+        String log = getLog(verifier);
+        assertThat(log).doesNotContain("[ERROR]", "[FATAL]");
         String expectedVersion = NO_COMMIT;
         assertThat(log).contains("Building " + pomModel.getArtifactId() + " " + expectedVersion);
 
@@ -107,10 +104,10 @@ public class GitVersioningExtensionIT {
         // When
         Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath());
         verifier.executeGoal("verify");
-        String log = getLog(verifier);
 
         // Then
-        assertThat(log).doesNotContain("[ERROR]");
+        String log = getLog(verifier);
+        assertThat(log).doesNotContain("[ERROR]", "[FATAL]");
         String expectedVersion = givenBranch.replace("/", "-") + "-gitVersioning";
         assertThat(log).contains("Building " + pomModel.getArtifactId() + " " + expectedVersion);
         Model gitVersionedPomModel = readModel(projectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile());
@@ -148,10 +145,10 @@ public class GitVersioningExtensionIT {
         // When
         Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath());
         verifier.executeGoal("verify");
-        String log = getLog(verifier);
 
         // Then
-        assertThat(log).doesNotContain("[ERROR]");
+        String log = getLog(verifier);
+        assertThat(log).doesNotContain("[ERROR]", "[FATAL]");
         String expectedVersion = givenTag + "-gitVersioning";
         assertThat(log).contains("Building " + pomModel.getArtifactId() + " " + expectedVersion);
         Model gitVersionedPomModel = readModel(projectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile());
@@ -218,10 +215,10 @@ public class GitVersioningExtensionIT {
         // When
         Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath());
         verifier.executeGoal("verify");
-        String log = getLog(verifier);
 
         // Then
-        assertThat(log).doesNotContain("[ERROR]");
+        String log = getLog(verifier);
+        assertThat(log).doesNotContain("[ERROR]", "[FATAL]");
         String expectedVersion = NO_COMMIT;
         assertThat(log).contains("Building " + pomModel.getArtifactId() + " " + expectedVersion);
         Model gitVersionedPomModel = readModel(projectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile());
@@ -265,8 +262,7 @@ public class GitVersioningExtensionIT {
     void branchVersioning_multiModuleProject_noParent() throws Exception {
         // Given
 
-        try (Git git = Git.init().setDirectory(projectDir.toFile()).call())
-        {
+        try (Git git = Git.init().setDirectory(projectDir.toFile()).call()) {
             RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
             String givenBranch = "feature/test";
             git.branchCreate().setName(givenBranch).call();
@@ -304,10 +300,10 @@ public class GitVersioningExtensionIT {
             // When
             Verifier verifier = new Verifier(logicProjectDir.toFile().getAbsolutePath());
             verifier.executeGoal("verify");
-            String log = getLog(verifier);
 
             // Then
-            assertThat(log).doesNotContain("[ERROR]");
+            String log = getLog(verifier);
+            assertThat(log).doesNotContain("[ERROR]", "[FATAL]");
             String expectedVersion = givenBranch.replace("/", "-") + "-gitVersioning";
             //        assertThat(log).contains("Building " + logicPomModel.getArtifactId() + " " + expectedVersion);
             Model gitVersionedLogicPomModel = readModel(logicProjectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile());
