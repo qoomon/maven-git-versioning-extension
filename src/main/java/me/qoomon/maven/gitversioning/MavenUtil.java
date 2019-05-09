@@ -21,7 +21,9 @@ final class MavenUtil {
      */
     static Model readModel(File pomFile) throws IOException {
         try (InputStream inputStream = new FileInputStream(pomFile)) {
-            return new MavenXpp3Reader().read(inputStream);
+            Model model = new MavenXpp3Reader().read(inputStream);
+            model.setPomFile(pomFile);
+            return model;
         } catch (XmlPullParserException e) {
             throw new RuntimeException(e);
         }

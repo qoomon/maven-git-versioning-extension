@@ -3,9 +3,7 @@ package me.qoomon.maven.gitversioning;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.google.inject.Key;
 import com.google.inject.OutOfScopeException;
-
 import me.qoomon.gitversioning.*;
-
 import org.apache.maven.building.Source;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.*;
@@ -13,11 +11,9 @@ import org.apache.maven.model.building.DefaultModelProcessor;
 import org.apache.maven.session.scope.internal.SessionScope;
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.logging.Logger;
-import org.eclipse.jgit.lib.RepositoryCache;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
 import javax.inject.Inject;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,12 +27,10 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
-
 import static me.qoomon.UncheckedExceptions.unchecked;
-import static me.qoomon.maven.gitversioning.VersioningMojo.*;
-import static me.qoomon.maven.gitversioning.VersioningMojo.GIT_VERSIONING_POM_NAME;
 import static me.qoomon.maven.gitversioning.MavenUtil.isProjectPom;
 import static me.qoomon.maven.gitversioning.MavenUtil.readModel;
+import static me.qoomon.maven.gitversioning.VersioningMojo.*;
 
 /**
  * Replacement for {@link org.apache.maven.model.building.ModelProcessor} to adapt versions.
@@ -149,6 +143,7 @@ public class ModelProcessor extends DefaultModelProcessor {
             // ---------------- process project -----------------------------------
 
             if (projectModel.getVersion() != null) {
+                logger.debug(" replace project version");
                 virtualProjectModel.setVersion(gitVersionDetails.getVersion());
             }
 
@@ -179,6 +174,7 @@ public class ModelProcessor extends DefaultModelProcessor {
                         }
                     }
 
+                    logger.debug(" replace parent version");
                     virtualProjectModel.getParent().setVersion(gitVersionDetails.getVersion());
                 }
             }
@@ -217,16 +213,23 @@ public class ModelProcessor extends DefaultModelProcessor {
                 GAV.of(projectModel).getVersion());
     }
 
+    private Model getParentModel(Model projectModel) {
+        return unchecked(() -> {
+            File parentFile = getParentPom(projectModel);
+            return parentFile != null ? readModel(parentFile) : null;
+        });
+    }
+
     private File getParentPom(Model projectModel) {
         if (projectModel.getParent() == null) {
             return null;
         }
 
-        File parentRelativePath = new File(projectModel.getParent().getRelativePath());
-        if (parentRelativePath.isDirectory()) {
-            parentRelativePath = new File(parentRelativePath, "pom.xml");
+        File parentPom = new File(projectModel.getProjectDirectory(), projectModel.getParent().getRelativePath());
+        if (parentPom.isDirectory()) {
+            parentPom = new File(parentPom, "pom.xml");
         }
-        return new File(projectModel.getProjectDirectory(), parentRelativePath.getPath());
+        return parentPom;
     }
 
     private File findMvnDir(Model projectModel) {
@@ -240,19 +243,14 @@ public class ModelProcessor extends DefaultModelProcessor {
 
         {
             // search in parent project directories
-            Model parentModel = projectModel;
-            while (parentModel != null) {
-                File parentPomFile = getParentPom(parentModel);
-                if (isProjectPom(parentPomFile)) {
-                    final File mvnDir = new File(parentPomFile.getParent(), ".mvn");
-                    if (mvnDir.exists()) {
-                        logger.debug("Found .mvn directory in parent project hierarchy - " + mvnDir.toString());
-                        return mvnDir;
-                    }
-                    parentModel = unchecked(() -> readModel(parentPomFile));
-                } else {
-                    parentModel = null;
+            Model parentModel = getParentModel(projectModel);
+            while (parentModel != null && isProjectPom(parentModel.getPomFile())) {
+                final File mvnDir = new File(parentModel.getProjectDirectory(), ".mvn");
+                if (mvnDir.exists()) {
+                    logger.debug("Found .mvn directory in parent project hierarchy - " + mvnDir.toString());
+                    return mvnDir;
                 }
+                parentModel = getParentModel(parentModel);
             }
         }
 
