@@ -36,9 +36,7 @@ public final class GitUtil {
         ObjectId rev = unchecked(() -> repository.resolve(revstr));
         return unchecked(() -> repository.getRefDatabase().getRefsByPrefix(R_TAGS)).stream()
                 .map(ref -> unchecked(() -> repository.getRefDatabase().peel(ref)))
-                .filter(ref -> rev.equals(ref.isPeeled()
-                        ? ref.getPeeledObjectId() :
-                        ref.getObjectId()))
+                .filter(ref -> (ref.isPeeled() && ref.getPeeledObjectId() != null ? ref.getPeeledObjectId() : ref.getObjectId()).equals(rev))
                 .map(ref -> ref.getName().replaceFirst("^" + R_TAGS, ""))
                 .collect(toList());
     }
