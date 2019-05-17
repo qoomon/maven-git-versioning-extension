@@ -234,8 +234,6 @@
                 </plugins>
             </build>
             <distributionManagement>
-                <!--Deploy to Nexus Command-->
-                <!--GPG_TTY=$(tty) mvn clean deploy -P release-->
                 <repository>
                     <id>sonatype-nexus-staging</id>
                     <name>Nexus Release Repository</name>
@@ -250,3 +248,6 @@
         </profile>
     </profiles>
 </project>
+
+<!--Deploy to OSS Nexus-->
+<!--GPG_TTY=$(tty) mvn clean deploy -P release-->
