@@ -164,8 +164,8 @@ public class ModelProcessor extends DefaultModelProcessor {
                     return projectModel;
                 }
 
-                File parentPomFile = getParentPom(projectModel);
-                if (isProjectPom(parentPomFile)) {
+                Model parentModel = getParentModel(projectModel);
+                if (parentModel != null && isProjectPom(parentModel.getPomFile())) {
                     if (projectModel.getVersion() != null) {
                         virtualProjectModel.setVersion(null);
                         logger.warn("Do not set version tag in a multi module project module: " + projectModel.getPomFile());
@@ -214,23 +214,34 @@ public class ModelProcessor extends DefaultModelProcessor {
     }
 
     private Model getParentModel(Model projectModel) {
-        return unchecked(() -> {
-            File parentFile = getParentPom(projectModel);
-            return parentFile != null ? readModel(parentFile) : null;
-        });
-    }
-
-    private File getParentPom(Model projectModel) {
         if (projectModel.getParent() == null) {
             return null;
         }
 
-        File parentPom = new File(projectModel.getProjectDirectory(), projectModel.getParent().getRelativePath());
-        if (parentPom.isDirectory()) {
-            parentPom = new File(parentPom, "pom.xml");
+        File parentPomPath = new File(projectModel.getProjectDirectory(), projectModel.getParent().getRelativePath());
+        final File parentPom;
+        if (parentPomPath.isDirectory()) {
+            parentPom = new File(parentPomPath, "pom.xml");
+        } else {
+            parentPom = parentPomPath;
         }
-        return parentPom;
+
+        if(!parentPom.exists()){
+            return null;
+        }
+
+        Model parentModel = unchecked(() -> readModel(parentPom));
+
+        GAV parentModelGav = GAV.of(parentModel);
+        GAV parentGav = GAV.of(projectModel.getParent());
+        if(! parentModelGav.equals(parentGav)){
+            return null;
+        }
+
+        return  parentModel;
     }
+
+
 
     private File findMvnDir(Model projectModel) {
         {
