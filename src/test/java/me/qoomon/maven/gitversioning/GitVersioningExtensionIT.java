@@ -318,10 +318,6 @@ class GitVersioningExtensionIT {
                         "git.ref"
                 );
             }));
-        } finally {
-            // remove .git dir forcibly, since sometimes the jupiter handler fails deleting git files on Windows
-            // see https://www.eclipse.org/lists/jgit-dev/msg01951.html
-            FileUtils.delete(projectDir.resolve(".git").toFile(), FileUtils.RECURSIVE | FileUtils.RETRY);
         }
     }
 
@@ -392,10 +388,6 @@ class GitVersioningExtensionIT {
                         "git.ref"
                 );
             }));
-        } finally {
-            // remove .git dir forcibly, since sometimes the jupiter handler fails deleting git files on Windows
-            // see https://www.eclipse.org/lists/jgit-dev/msg01951.html
-            FileUtils.delete(projectDir.resolve(".git").toFile(), FileUtils.RECURSIVE | FileUtils.RETRY);
         }
     }
 
