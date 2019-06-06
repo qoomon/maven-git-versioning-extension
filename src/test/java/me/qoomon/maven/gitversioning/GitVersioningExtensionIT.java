@@ -174,6 +174,7 @@ class GitVersioningExtensionIT {
         pomModel.setPackaging("pom");
         pomModel.addModule("api");
         pomModel.addModule("logic");
+        pomModel.addModule("duplicate-artifactid-different-groupid");
         pomModel.setDependencyManagement(new DependencyManagement() {{
             addDependency(new Dependency() {{
                 setGroupId("${project.groupId}");
@@ -211,6 +212,16 @@ class GitVersioningExtensionIT {
                 setVersion(pomModel.getVersion());
             }});
             setArtifactId("logic");
+        }});
+        Path duplicateArtifactidProjectDir = Files.createDirectories(projectDir.resolve("duplicate-artifactid-different-groupid"));
+        Model duplicateArtifactidPomModel = writeModel(duplicateArtifactidProjectDir.resolve("pom.xml").toFile(), new Model() {{
+            setModelVersion(pomModel.getModelVersion());
+            setParent(new Parent() {{
+                setGroupId(pomModel.getGroupId());
+                setArtifactId(pomModel.getArtifactId());
+                setVersion(pomModel.getVersion());
+            }});
+            setArtifactId("main");
         }});
 
         // When
@@ -251,6 +262,18 @@ class GitVersioningExtensionIT {
             softly.assertThat(it.getModelVersion()).isEqualTo(logicPomModel.getModelVersion());
             softly.assertThat(it.getGroupId()).isEqualTo(logicPomModel.getGroupId());
             softly.assertThat(it.getArtifactId()).isEqualTo(logicPomModel.getArtifactId());
+            softly.assertThat(it.getVersion()).isEqualTo(null);
+            softly.assertThat(it.getProperties()).doesNotContainKeys(
+                    "git.commit",
+                    "git.ref"
+            );
+        }));
+
+        Model duplicateArtifactidGitVersionedPomModelLogic = readModel(duplicateArtifactidProjectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile());
+        assertThat(duplicateArtifactidGitVersionedPomModelLogic).satisfies(it -> assertSoftly(softly -> {
+            softly.assertThat(it.getModelVersion()).isEqualTo(duplicateArtifactidPomModel.getModelVersion());
+            softly.assertThat(it.getGroupId()).isEqualTo(duplicateArtifactidPomModel.getGroupId());
+            softly.assertThat(it.getArtifactId()).isEqualTo(duplicateArtifactidPomModel.getArtifactId());
             softly.assertThat(it.getVersion()).isEqualTo(null);
             softly.assertThat(it.getProperties()).doesNotContainKeys(
                     "git.commit",
