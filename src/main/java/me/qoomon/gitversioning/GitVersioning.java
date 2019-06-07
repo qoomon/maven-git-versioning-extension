@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 
 import static java.util.Comparator.comparing;
 import static java.util.Objects.requireNonNull;
@@ -30,7 +31,8 @@ public final class GitVersioning {
             final VersionDescription commitVersionDescription,
             final List<VersionDescription> branchVersionDescriptions,
             final List<VersionDescription> tagVersionDescriptions,
-            final String currentVersion) {
+            final String currentVersion,
+            final Properties currentProperties) {
 
         requireNonNull(repoSituation);
         requireNonNull(commitVersionDescription);
@@ -85,14 +87,37 @@ public final class GitVersioning {
         String gitVersion = substituteText(versionDescription.getVersionFormat(), projectVersionDataMap)
                 .replace("/", "-");
 
+        Map<String, String> properties = determineProperties(currentProperties, versionDescription, projectVersionDataMap);
+
         return new GitVersionDetails(
                 repoSituation.isClean(),
                 repoSituation.getHeadCommit(),
                 gitRefType,
                 gitRefName,
                 refFields,
-                gitVersion
-        );
+                gitVersion,
+                properties);
+    }
+
+    private static Map<String, String> determineProperties(Properties currentProperties,
+                                                           VersionDescription versionDescription,
+                                                           Map<String, String> projectVersionDataMap) {
+        Map<String, String> properties = new HashMap<>();
+        if(versionDescription.getProperties() != null) {
+            versionDescription.getProperties().forEach(propertyDescription -> {
+                        String gitRefPropertyValue = currentProperties.getProperty(propertyDescription.getPattern());
+                        if (gitRefPropertyValue != null) {
+                            Map<String, String> projectPropertiesDataMap = new HashMap<>(projectVersionDataMap);
+                            projectPropertiesDataMap.putAll(valueGroupMap(propertyDescription.getValue().getPattern(), gitRefPropertyValue));
+
+                            String gitPropertyVersion = substituteText(propertyDescription.getValue().getFormat(), projectPropertiesDataMap)
+                                    .replace("/", "-");
+
+                            properties.put(propertyDescription.getPattern(), gitPropertyVersion);
+                        }
+                    });
+        }
+        return properties;
     }
 
     private static String formatHeadCommitTimestamp(long headCommitDate){

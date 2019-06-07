@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -155,6 +156,14 @@ public class ModelProcessor extends DefaultModelProcessor {
                 virtualProjectModel.addProperty("git.ref." + entry.getKey(), entry.getValue());
             }
 
+            if(gitVersionDetails.getProperties() != null) {
+                for(Map.Entry<String, String> property: gitVersionDetails.getProperties().entrySet()) {
+                    logger.info(projectGav.getArtifactId() + " - set property " + property.getKey() + " to " + property.getValue()
+                            + " (" + gitVersionDetails.getCommitRefType() + ":" + gitVersionDetails.getCommitRefName() + ")");
+                    virtualProjectModel.addProperty(property.getKey(), property.getValue());
+                }
+            }
+
             // ---------------- process parent -----------------------------------
 
             final Parent parent = projectModel.getParent();
@@ -203,15 +212,23 @@ public class ModelProcessor extends DefaultModelProcessor {
 
         return GitVersioning.determineVersion(repoSituation,
                 ofNullable(config.commit)
-                        .map(it -> new VersionDescription(null, it.versionFormat))
+                        .map(it -> new VersionDescription(null, it.versionFormat, convertPropertyDescription(it.property)))
                         .orElse(new VersionDescription()),
                 config.branch.stream()
-                        .map(it -> new VersionDescription(it.pattern, it.versionFormat))
+                        .map(it -> new VersionDescription(it.pattern, it.versionFormat, convertPropertyDescription(it.property)))
                         .collect(toList()),
                 config.tag.stream()
-                        .map(it -> new VersionDescription(it.pattern, it.versionFormat))
+                        .map(it -> new VersionDescription(it.pattern, it.versionFormat, convertPropertyDescription(it.property)))
                         .collect(toList()),
-                GAV.of(projectModel).getVersion());
+                GAV.of(projectModel).getVersion(),
+                projectModel.getProperties());
+    }
+
+    private List<PropertyDescription> convertPropertyDescription(List<Configuration.PropertyDescription> confPropertyDescription) {
+        return confPropertyDescription
+                .stream()
+                .map(prop -> new PropertyDescription(prop.pattern, new PropertyValueDescription(prop.value.pattern, prop.value.format)))
+                .collect(toList());
     }
 
     private Model getParentModel(Model projectModel) {

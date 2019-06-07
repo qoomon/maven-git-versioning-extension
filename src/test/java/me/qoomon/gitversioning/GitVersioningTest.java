@@ -6,7 +6,8 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
+import java.util.Arrays;
+import java.util.Properties;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -27,7 +28,8 @@ class GitVersioningTest {
                 new VersionDescription(),
                 asList(new VersionDescription(null, "${branch}-branch")),
                 emptyList(),
-                "undefined");
+                "undefined",
+                new Properties());
 
         // then
         assertThat(gitVersionDetails).satisfies(it -> assertSoftly(softly -> {
@@ -36,6 +38,45 @@ class GitVersioningTest {
             softly.assertThat(it.getCommitRefType()).isEqualTo("branch");
             softly.assertThat(it.getCommitRefName()).isEqualTo(repoSituation.getHeadBranch());
             softly.assertThat(it.getVersion()).isEqualTo(repoSituation.getHeadBranch() + "-branch");
+        }));
+    }
+
+    @Test
+    void determineVersionWithProperties_forBranch() {
+
+        // given
+        GitRepoSituation repoSituation = new GitRepoSituation();
+        repoSituation.setHeadBranch("feature/my-feature");
+
+        Properties currentProperties = new Properties();
+        currentProperties.put("my.first.properties", "1.0.x-SNAPSHOT");
+        currentProperties.put("my.second.properties", "2.2.x-SNAPSHOT");
+
+        VersionDescription branchVersionDescription = new VersionDescription("feature/(?<feature>.+)", "${version.release}-${feature}-SNAPSHOT");
+        PropertyValueDescription propertyValueDescription = new PropertyValueDescription("(?<propertyVersion>.+?)(-SNAPSHOT)", "${propertyVersion}-${feature}-SNAPSHOT");
+        PropertyDescription firstPropertyDescription = new PropertyDescription("my.first.properties", propertyValueDescription);
+        PropertyDescription secondPropertyDescription = new PropertyDescription("my.second.properties", propertyValueDescription);
+        branchVersionDescription.setProperties(Arrays.asList(firstPropertyDescription, secondPropertyDescription));
+
+        // when
+        GitVersionDetails gitVersionDetails = GitVersioning.determineVersion(repoSituation,
+                new VersionDescription(),
+                asList(branchVersionDescription),
+                emptyList(),
+                "1.0.x",
+                currentProperties);
+
+        // then
+        assertThat(gitVersionDetails).satisfies(it -> assertSoftly(softly -> {
+            softly.assertThat(it.isClean()).isTrue();
+            softly.assertThat(it.getCommit()).isEqualTo(repoSituation.getHeadCommit());
+            softly.assertThat(it.getCommitRefType()).isEqualTo("branch");
+            softly.assertThat(it.getCommitRefName()).isEqualTo(repoSituation.getHeadBranch());
+            softly.assertThat(it.getVersion()).isEqualTo("1.0.x-my-feature-SNAPSHOT");
+            softly.assertThat(it.getProperties()).isNotNull();
+            softly.assertThat(it.getProperties().size()).isEqualTo(2);
+            softly.assertThat(it.getProperties().get("my.first.properties")).isEqualTo("1.0.x-my-feature-SNAPSHOT");
+            softly.assertThat(it.getProperties().get("my.second.properties")).isEqualTo("2.2.x-my-feature-SNAPSHOT");
         }));
     }
 
@@ -53,7 +94,8 @@ class GitVersioningTest {
                 new VersionDescription(),
                 asList(new VersionDescription(null, "${branch}-branch")),
                 emptyList(),
-                "undefined");
+                "undefined",
+                new Properties());
 
         // then
         assertThat(gitVersionDetails).satisfies(it -> assertSoftly(softly -> {
@@ -77,7 +119,8 @@ class GitVersioningTest {
                 new VersionDescription(null, "${commit}-commit"),
                 emptyList(),
                 emptyList(),
-                "undefined");
+                "undefined",
+                new Properties());
 
         // then
         assertThat(gitVersionDetails).satisfies(it -> assertSoftly(softly -> {
@@ -101,7 +144,8 @@ class GitVersioningTest {
                 new VersionDescription(),
                 emptyList(),
                 asList(new VersionDescription("v.*", "${tag}-tag")),
-                "undefined");
+                "undefined",
+                new Properties());
 
 
         // then
@@ -128,7 +172,8 @@ class GitVersioningTest {
                 new VersionDescription(),
                 asList(new VersionDescription(null, "${commit.timestamp}-branch")),
                 emptyList(),
-                "undefined");
+                "undefined",
+                new Properties());
 
         // then
         assertThat(gitVersionDetails).satisfies(it -> assertSoftly(softly -> {
@@ -154,7 +199,8 @@ class GitVersioningTest {
                 new VersionDescription(),
                 asList(new VersionDescription(null, "${commit.timestamp.datetime}-branch")),
                 emptyList(),
-                "undefined");
+                "undefined",
+                new Properties());
 
         // then
         assertThat(gitVersionDetails).satisfies(it -> assertSoftly(softly -> {
