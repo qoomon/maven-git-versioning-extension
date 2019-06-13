@@ -133,7 +133,8 @@ public class ModelProcessor extends DefaultModelProcessor {
             gitVersionDetails = getGitVersionDetails(config, projectModel);
         }
 
-        Model virtualProjectModel = this.virtualProjectModelCache.get(getCacheKey(projectModel));
+        String projectId = projectModel.getGroupId() + ":" + projectModel.getArtifactId();
+        Model virtualProjectModel = this.virtualProjectModelCache.get(projectId);
         if (virtualProjectModel == null) {
             logger.info(projectGav.getArtifactId() + " - set project version to " + gitVersionDetails.getVersion()
                     + " (" + gitVersionDetails.getCommitRefType() + ":" + gitVersionDetails.getCommitRefName() + ")");
@@ -184,7 +185,7 @@ public class ModelProcessor extends DefaultModelProcessor {
             boolean updatePomOption = getUpdatePomOption(config, gitVersionDetails);
             addBuildPlugin(virtualProjectModel, updatePomOption);
 
-            this.virtualProjectModelCache.put(getCacheKey(projectModel), virtualProjectModel);
+            this.virtualProjectModelCache.put(projectId, virtualProjectModel);
         }
         return virtualProjectModel;
     }
@@ -339,9 +340,5 @@ public class ModelProcessor extends DefaultModelProcessor {
         }
 
         return updatePomOption;
-    }
-
-    private static String getCacheKey(Model projectModel) {
-        return projectModel.getGroupId() + "." + projectModel.getArtifactId();
     }
 }
