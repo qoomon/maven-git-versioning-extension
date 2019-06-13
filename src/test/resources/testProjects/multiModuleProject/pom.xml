@@ -16,6 +16,7 @@
     <modules>
         <module>api</module>
         <module>logic</module>
+        <module>duplicate-artifactid-different-groupid</module>
     </modules>
 
     <dependencyManagement>
