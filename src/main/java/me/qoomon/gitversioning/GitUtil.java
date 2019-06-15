@@ -3,10 +3,12 @@ package me.qoomon.gitversioning;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
 import java.io.File;
+import java.util.Date;
 import java.util.List;
 
 import static java.util.stream.Collectors.toList;
@@ -49,6 +51,15 @@ public final class GitUtil {
         return rev.getName();
     }
 
+    public static Date revDate(Repository repository, String revstr) {
+        ObjectId rev = unchecked(() -> repository.resolve(revstr));
+        if (rev == null) {
+            return null;
+        }
+        PersonIdent authorIdent = unchecked(() -> repository.parseCommit(rev).getAuthorIdent());
+        return authorIdent.getWhen();
+    }
+
     public static GitRepoSituation situation(File directory) {
         FileRepositoryBuilder repositoryBuilder = new FileRepositoryBuilder().findGitDir(directory);
         if (repositoryBuilder.getGitDir() == null) {
@@ -59,8 +70,9 @@ public final class GitUtil {
             boolean headClean = GitUtil.status(repository).isClean();
             String headCommit = GitUtil.revParse(repository, HEAD);
             String headBranch = GitUtil.branch(repository);
+            Date headCommitDate = GitUtil.revDate(repository, HEAD);
             List<String> headTags = GitUtil.tag_pointsAt(repository, HEAD);
-            return new GitRepoSituation(headClean, headCommit, headBranch, headTags);
+            return new GitRepoSituation(headClean, headCommit, headBranch, headTags, headCommitDate);
         }
     }
 }

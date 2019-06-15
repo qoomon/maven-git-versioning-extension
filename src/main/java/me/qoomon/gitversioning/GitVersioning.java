@@ -3,6 +3,9 @@ package me.qoomon.gitversioning;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 
 import javax.annotation.Nonnull;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +17,8 @@ import static me.qoomon.gitversioning.StringUtil.substituteText;
 import static me.qoomon.gitversioning.StringUtil.valueGroupMap;
 
 public final class GitVersioning {
+
+    public static String VERSION_DATE_TIME_FORMAT = "yyyyMMdd.HHmmss";
 
     private GitVersioning() {
     }
@@ -69,6 +74,8 @@ public final class GitVersioning {
         projectVersionDataMap.put("version", currentVersion);
         projectVersionDataMap.put("version.release", currentVersion.replaceFirst("-SNAPSHOT$",""));
         projectVersionDataMap.put("commit", repoSituation.getHeadCommit());
+        projectVersionDataMap.put("timestamp", timestampOrEmpty(repoSituation.getHeadCommitDate()));
+        projectVersionDataMap.put("datetime", dateTimeOrEmpty(repoSituation.getHeadCommitDate()));
         projectVersionDataMap.put("commit.short", repoSituation.getHeadCommit().substring(0, 7));
         projectVersionDataMap.put("ref", gitRefName);
         projectVersionDataMap.put(gitRefType, gitRefName);
@@ -85,5 +92,22 @@ public final class GitVersioning {
                 refFields,
                 gitVersion
         );
+    }
+
+    private static String dateTimeOrEmpty(Date headCommitDate){
+        if (headCommitDate == null){
+            return "";
+        }
+        return DateTimeFormatter
+                .ofPattern(VERSION_DATE_TIME_FORMAT)
+                .withZone(ZoneOffset.UTC)
+                .format(headCommitDate.toInstant());
+    }
+
+    private static String timestampOrEmpty(Date headCommitDate){
+        if (headCommitDate == null){
+            return "";
+        }
+        return Long.toString(headCommitDate.getTime());
     }
 }

@@ -2,6 +2,12 @@ package me.qoomon.gitversioning;
 
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
+
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -105,6 +111,59 @@ class GitVersioningTest {
             softly.assertThat(it.getCommitRefType()).isEqualTo("tag");
             softly.assertThat(it.getCommitRefName()).isEqualTo(repoSituation.getHeadTags().get(0));
             softly.assertThat(it.getVersion()).isEqualTo(repoSituation.getHeadTags().get(0) + "-tag");
+        }));
+    }
+
+    @Test
+    void determineVersion_forBranchWithTimestamp() {
+
+        // given
+        GitRepoSituation repoSituation = new GitRepoSituation();
+        repoSituation.setHeadBranch("develop");
+        Instant instant = ZonedDateTime.of(2019, 4, 23, 10, 12, 45, 0, ZoneOffset.UTC).toInstant();
+        repoSituation.setHeadCommitDate(Date.from(instant));
+
+        // when
+        GitVersionDetails gitVersionDetails = GitVersioning.determineVersion(repoSituation,
+                new VersionDescription(),
+                asList(new VersionDescription(null, "${timestamp}-branch")),
+                emptyList(),
+                "undefined");
+
+        // then
+        assertThat(gitVersionDetails).satisfies(it -> assertSoftly(softly -> {
+            softly.assertThat(it.isClean()).isTrue();
+            softly.assertThat(it.getCommit()).isEqualTo(repoSituation.getHeadCommit());
+            softly.assertThat(it.getCommitRefType()).isEqualTo("branch");
+            softly.assertThat(it.getCommitRefName()).isEqualTo(repoSituation.getHeadBranch());
+            softly.assertThat(it.getVersion()).isEqualTo(instant.toEpochMilli() + "-branch");
+        }));
+    }
+
+    @Test
+    void determineVersion_forBranchWithDateTime() {
+
+        // given
+        GitRepoSituation repoSituation = new GitRepoSituation();
+        repoSituation.setHeadBranch("develop");
+        Instant instant = ZonedDateTime.of(2019, 4, 23, 10, 12, 45, 0, ZoneOffset.UTC).toInstant();
+        repoSituation.setHeadCommitDate(Date.from(instant));
+
+        // when
+        GitVersionDetails gitVersionDetails = GitVersioning.determineVersion(repoSituation,
+                new VersionDescription(),
+                asList(new VersionDescription(null, "${datetime}-branch")),
+                emptyList(),
+                "undefined");
+
+        // then
+        assertThat(gitVersionDetails).satisfies(it -> assertSoftly(softly -> {
+            softly.assertThat(it.isClean()).isTrue();
+            softly.assertThat(it.getCommit()).isEqualTo(repoSituation.getHeadCommit());
+            softly.assertThat(it.getCommitRefType()).isEqualTo("branch");
+            softly.assertThat(it.getCommitRefName()).isEqualTo(repoSituation.getHeadBranch());
+            softly.assertThat(it.getVersion()).isEqualTo(
+                    DateTimeFormatter.ofPattern(GitVersioning.VERSION_DATE_TIME_FORMAT).withZone(ZoneOffset.UTC).format(instant) + "-branch");
         }));
     }
 }
