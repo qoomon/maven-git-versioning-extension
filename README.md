@@ -116,6 +116,14 @@ Create `${basedir}/.mvn/maven-git-versioning-extension.xml`.
     - The short `HEAD` commit hash (7 characters)
     - e.g. '0fc2045'
 
+- `${commit.timestamp}`
+    - The `HEAD` commit timestamp (epoch seconds)
+    - e.g. '1560694278'
+    
+- `${commit.timestamp.datetime}`
+    - The `HEAD` commit timestamp formatted as `yyyyMMdd.HHmmss`
+    - e.g. '20190616.161442'
+
 - `Pattern Groups`
     - Contents of group in the regex pattern can be addressed by `group name` or `group index` e.g.
     - Named Group Example
