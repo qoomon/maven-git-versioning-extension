@@ -67,10 +67,10 @@ public final class GitUtil {
         try (Repository repository = unchecked(repositoryBuilder::build)) {
             boolean headClean = GitUtil.status(repository).isClean();
             String headCommit = GitUtil.revParse(repository, HEAD);
-            String headBranch = GitUtil.branch(repository);
             long headCommitTimestamp = GitUtil.revTimestamp(repository, HEAD);
+            String headBranch = GitUtil.branch(repository);
             List<String> headTags = GitUtil.tag_pointsAt(repository, HEAD);
-            return new GitRepoSituation(headClean, headCommit, headBranch, headTags, headCommitTimestamp);
+            return new GitRepoSituation(headClean, headCommit, headCommitTimestamp, headTags, headBranch);
         }
     }
 }

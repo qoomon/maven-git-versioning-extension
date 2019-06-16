@@ -1,6 +1,5 @@
 package me.qoomon.gitversioning;
 
-import java.util.Date;
 import java.util.List;
 
 import static java.util.Collections.emptyList;
@@ -16,15 +15,15 @@ public class GitRepoSituation {
     private List<String> headTags;
 
     public GitRepoSituation(){
-        this(true, NO_COMMIT, null, emptyList(), 0);
+        this(true, NO_COMMIT, 0, emptyList(), null);
     }
 
-    public GitRepoSituation(boolean clean, String headCommit, String headBranch, List<String> headTags, long headCommitTimestamp) {
+    public GitRepoSituation(boolean clean, String headCommit, long headCommitTimestamp, List<String> headTags, String headBranch) {
         setClean(clean);
         setHeadCommit(headCommit);
+        setHeadCommitTimestamp(headCommitTimestamp);
         setHeadBranch(headBranch);
         setHeadTags(headTags);
-        setHeadCommitTimestamp(headCommitTimestamp);
     }
 
     public boolean isClean() {
@@ -46,6 +45,16 @@ public class GitRepoSituation {
         }
     }
 
+    public long getHeadCommitTimestamp()
+    {
+        return headCommitTimestamp;
+    }
+
+    public void setHeadCommitTimestamp(long headCommitTimestamp)
+    {
+        this.headCommitTimestamp = headCommitTimestamp;
+    }
+
     public String getHeadBranch() {
         return headBranch;
     }
@@ -60,15 +69,5 @@ public class GitRepoSituation {
 
     public void setHeadTags(List<String> headTags) {
         this.headTags = requireNonNull(headTags);
-    }
-
-    public long getHeadCommitTimestamp()
-    {
-        return headCommitTimestamp;
-    }
-
-    public void setHeadCommitTimestamp(long headCommitTimestamp)
-    {
-        this.headCommitTimestamp = headCommitTimestamp;
     }
 }
