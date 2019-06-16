@@ -10,6 +10,7 @@ import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import java.io.File;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 import static java.util.stream.Collectors.toList;
 import static me.qoomon.UncheckedExceptions.unchecked;
@@ -51,13 +52,13 @@ public final class GitUtil {
         return rev.getName();
     }
 
-    public static Date revDate(Repository repository, String revstr) {
+    public static Optional<Date> revDate(Repository repository, String revstr) {
         ObjectId rev = unchecked(() -> repository.resolve(revstr));
         if (rev == null) {
-            return null;
+            return Optional.empty();
         }
         PersonIdent authorIdent = unchecked(() -> repository.parseCommit(rev).getAuthorIdent());
-        return authorIdent.getWhen();
+        return Optional.of(authorIdent.getWhen());
     }
 
     public static GitRepoSituation situation(File directory) {
@@ -70,9 +71,9 @@ public final class GitUtil {
             boolean headClean = GitUtil.status(repository).isClean();
             String headCommit = GitUtil.revParse(repository, HEAD);
             String headBranch = GitUtil.branch(repository);
-            Date headCommitDate = GitUtil.revDate(repository, HEAD);
+            Optional<Date> headCommitDate = GitUtil.revDate(repository, HEAD);
             List<String> headTags = GitUtil.tag_pointsAt(repository, HEAD);
-            return new GitRepoSituation(headClean, headCommit, headBranch, headTags, headCommitDate);
+            return new GitRepoSituation(headClean, headCommit, headBranch, headTags, headCommitDate.orElse(null));
         }
     }
 }
