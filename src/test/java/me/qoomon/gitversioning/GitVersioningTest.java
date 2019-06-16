@@ -152,7 +152,7 @@ class GitVersioningTest {
         // when
         GitVersionDetails gitVersionDetails = GitVersioning.determineVersion(repoSituation,
                 new VersionDescription(),
-                asList(new VersionDescription(null, "${commit.datetime}-branch")),
+                asList(new VersionDescription(null, "${commit.timestamp.datetime}-branch")),
                 emptyList(),
                 "undefined");
 
