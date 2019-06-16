@@ -75,9 +75,9 @@ public final class GitVersioning {
         projectVersionDataMap.put("version", currentVersion);
         projectVersionDataMap.put("version.release", currentVersion.replaceFirst("-SNAPSHOT$",""));
         projectVersionDataMap.put("commit", repoSituation.getHeadCommit());
-        projectVersionDataMap.put("commit.timestamp", Long.toString(repoSituation.getHeadCommitTimestamp()));
-        projectVersionDataMap.put("commit.datetime", formatHeadCommitTimestamp(repoSituation.getHeadCommitTimestamp()));
         projectVersionDataMap.put("commit.short", repoSituation.getHeadCommit().substring(0, 7));
+        projectVersionDataMap.put("commit.timestamp", Long.toString(repoSituation.getHeadCommitTimestamp()));
+        projectVersionDataMap.put("commit.timestamp.datetime", formatHeadCommitTimestamp(repoSituation.getHeadCommitTimestamp()));
         projectVersionDataMap.put("ref", gitRefName);
         projectVersionDataMap.put(gitRefType, gitRefName);
         projectVersionDataMap.putAll(refFields);
