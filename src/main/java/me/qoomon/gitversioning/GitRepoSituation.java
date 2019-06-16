@@ -1,5 +1,6 @@
 package me.qoomon.gitversioning;
 
+import java.util.Date;
 import java.util.List;
 
 import static java.util.Collections.emptyList;
@@ -11,17 +12,19 @@ public class GitRepoSituation {
     private boolean clean;
     private String headCommit;
     private String headBranch;
+    private long headCommitTimestamp;
     private List<String> headTags;
 
     public GitRepoSituation(){
-        this(true, NO_COMMIT, null, emptyList());
+        this(true, NO_COMMIT, null, emptyList(), 0);
     }
 
-    public GitRepoSituation(boolean clean, String headCommit, String headBranch, List<String> headTags) {
+    public GitRepoSituation(boolean clean, String headCommit, String headBranch, List<String> headTags, long headCommitTimestamp) {
         setClean(clean);
         setHeadCommit(headCommit);
         setHeadBranch(headBranch);
         setHeadTags(headTags);
+        setHeadCommitTimestamp(headCommitTimestamp);
     }
 
     public boolean isClean() {
@@ -57,5 +60,15 @@ public class GitRepoSituation {
 
     public void setHeadTags(List<String> headTags) {
         this.headTags = requireNonNull(headTags);
+    }
+
+    public long getHeadCommitTimestamp()
+    {
+        return headCommitTimestamp;
+    }
+
+    public void setHeadCommitTimestamp(long headCommitTimestamp)
+    {
+        this.headCommitTimestamp = headCommitTimestamp;
     }
 }
