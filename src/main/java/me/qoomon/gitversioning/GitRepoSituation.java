@@ -12,19 +12,19 @@ public class GitRepoSituation {
     private boolean clean;
     private String headCommit;
     private String headBranch;
-    private Date headCommitDate;
+    private long headCommitTimestamp;
     private List<String> headTags;
 
     public GitRepoSituation(){
-        this(true, NO_COMMIT, null, emptyList(), null);
+        this(true, NO_COMMIT, null, emptyList(), 0);
     }
 
-    public GitRepoSituation(boolean clean, String headCommit, String headBranch, List<String> headTags, Date headCommitDate) {
+    public GitRepoSituation(boolean clean, String headCommit, String headBranch, List<String> headTags, long headCommitTimestamp) {
         setClean(clean);
         setHeadCommit(headCommit);
         setHeadBranch(headBranch);
         setHeadTags(headTags);
-        setHeadCommitDate(headCommitDate);
+        setHeadCommitTimestamp(headCommitTimestamp);
     }
 
     public boolean isClean() {
@@ -62,13 +62,13 @@ public class GitRepoSituation {
         this.headTags = requireNonNull(headTags);
     }
 
-    public Date getHeadCommitDate()
+    public long getHeadCommitTimestamp()
     {
-        return headCommitDate;
+        return headCommitTimestamp;
     }
 
-    public void setHeadCommitDate(Date headCommitDate)
+    public void setHeadCommitTimestamp(long headCommitTimestamp)
     {
-        this.headCommitDate = headCommitDate;
+        this.headCommitTimestamp = headCommitTimestamp;
     }
 }

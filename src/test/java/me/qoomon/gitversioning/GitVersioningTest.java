@@ -121,12 +121,12 @@ class GitVersioningTest {
         GitRepoSituation repoSituation = new GitRepoSituation();
         repoSituation.setHeadBranch("develop");
         Instant instant = ZonedDateTime.of(2019, 4, 23, 10, 12, 45, 0, ZoneOffset.UTC).toInstant();
-        repoSituation.setHeadCommitDate(Date.from(instant));
+        repoSituation.setHeadCommitTimestamp(instant.getEpochSecond());
 
         // when
         GitVersionDetails gitVersionDetails = GitVersioning.determineVersion(repoSituation,
                 new VersionDescription(),
-                asList(new VersionDescription(null, "${timestamp}-branch")),
+                asList(new VersionDescription(null, "${commit.timestamp}-branch")),
                 emptyList(),
                 "undefined");
 
@@ -136,7 +136,7 @@ class GitVersioningTest {
             softly.assertThat(it.getCommit()).isEqualTo(repoSituation.getHeadCommit());
             softly.assertThat(it.getCommitRefType()).isEqualTo("branch");
             softly.assertThat(it.getCommitRefName()).isEqualTo(repoSituation.getHeadBranch());
-            softly.assertThat(it.getVersion()).isEqualTo(instant.toEpochMilli() + "-branch");
+            softly.assertThat(it.getVersion()).isEqualTo(instant.getEpochSecond() + "-branch");
         }));
     }
 
@@ -147,12 +147,12 @@ class GitVersioningTest {
         GitRepoSituation repoSituation = new GitRepoSituation();
         repoSituation.setHeadBranch("develop");
         Instant instant = ZonedDateTime.of(2019, 4, 23, 10, 12, 45, 0, ZoneOffset.UTC).toInstant();
-        repoSituation.setHeadCommitDate(Date.from(instant));
+        repoSituation.setHeadCommitTimestamp(instant.getEpochSecond());
 
         // when
         GitVersionDetails gitVersionDetails = GitVersioning.determineVersion(repoSituation,
                 new VersionDescription(),
-                asList(new VersionDescription(null, "${datetime}-branch")),
+                asList(new VersionDescription(null, "${commit.datetime}-branch")),
                 emptyList(),
                 "undefined");
 
