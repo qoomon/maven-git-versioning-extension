@@ -32,7 +32,6 @@ public class Configuration {
     public static class CommitVersionDescription {
 
         public String versionFormat;
-        @JacksonXmlElementWrapper(useWrapping = false)
         public List<PropertyDescription> property = new ArrayList<>();
         public Boolean updatePom;
     }
