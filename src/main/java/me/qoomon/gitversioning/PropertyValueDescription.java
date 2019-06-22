@@ -18,8 +18,8 @@ public class PropertyValueDescription {
         return pattern;
     }
 
-    public void setPattern(String pattern) {
-        this.pattern = pattern;
+    public void setPattern(final String pattern) {
+        this.pattern = pattern != null ? pattern : ".*";
     }
 
     public String getFormat() {
@@ -27,6 +27,6 @@ public class PropertyValueDescription {
     }
 
     public void setFormat(String format) {
-        this.format = format;
+        this.format = format != null ? format : "";
     }
 }

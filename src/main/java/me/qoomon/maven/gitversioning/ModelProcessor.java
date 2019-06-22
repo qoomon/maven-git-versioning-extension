@@ -1,6 +1,7 @@
 package me.qoomon.maven.gitversioning;
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.google.common.collect.Maps;
 import com.google.inject.Key;
 import com.google.inject.OutOfScopeException;
 import me.qoomon.gitversioning.*;
@@ -156,12 +157,10 @@ public class ModelProcessor extends DefaultModelProcessor {
                 virtualProjectModel.addProperty("git.ref." + entry.getKey(), entry.getValue());
             }
 
-            if(gitVersionDetails.getProperties() != null) {
-                for(Map.Entry<String, String> property: gitVersionDetails.getProperties().entrySet()) {
-                    logger.info(projectGav.getArtifactId() + " - set property " + property.getKey() + " to " + property.getValue()
-                            + " (" + gitVersionDetails.getCommitRefType() + ":" + gitVersionDetails.getCommitRefName() + ")");
-                    virtualProjectModel.addProperty(property.getKey(), property.getValue());
-                }
+            for (Map.Entry<String, String> property : gitVersionDetails.getProperties().entrySet()) {
+                logger.info(projectGav.getArtifactId() + " - set property " + property.getKey() + " to " + property.getValue()
+                        + " (" + gitVersionDetails.getCommitRefType() + ":" + gitVersionDetails.getCommitRefName() + ")");
+                virtualProjectModel.addProperty(property.getKey(), property.getValue());
             }
 
             // ---------------- process parent -----------------------------------
@@ -221,7 +220,7 @@ public class ModelProcessor extends DefaultModelProcessor {
                         .map(it -> new VersionDescription(it.pattern, it.versionFormat, convertPropertyDescription(it.property)))
                         .collect(toList()),
                 GAV.of(projectModel).getVersion(),
-                projectModel.getProperties());
+                Maps.fromProperties(projectModel.getProperties()));
     }
 
     private List<PropertyDescription> convertPropertyDescription(List<Configuration.PropertyDescription> confPropertyDescription) {
@@ -244,7 +243,7 @@ public class ModelProcessor extends DefaultModelProcessor {
             parentPom = parentPomPath;
         }
 
-        if(!parentPom.exists()){
+        if (!parentPom.exists()) {
             return null;
         }
 
@@ -252,13 +251,12 @@ public class ModelProcessor extends DefaultModelProcessor {
 
         GAV parentModelGav = GAV.of(parentModel);
         GAV parentGav = GAV.of(projectModel.getParent());
-        if(! parentModelGav.equals(parentGav)){
+        if (!parentModelGav.equals(parentGav)) {
             return null;
         }
 
-        return  parentModel;
+        return parentModel;
     }
-
 
 
     private File findMvnDir(Model projectModel) {

@@ -1,33 +1,31 @@
 package me.qoomon.gitversioning;
 
+import java.util.Objects;
+
 public class PropertyDescription {
 
     private String pattern;
 
-    private PropertyValueDescription value;
+    private PropertyValueDescription valueDescription;
 
-    public PropertyDescription() {
-        this(null, null);
-    }
-
-    public PropertyDescription(String pattern, PropertyValueDescription value) {
+    public PropertyDescription(String pattern, PropertyValueDescription valueDescription) {
         setPattern(pattern);
-        setValue(value);
+        setValueDescription(valueDescription);
     }
 
     public String getPattern() {
         return pattern;
     }
 
-    public void setPattern(String pattern) {
-        this.pattern = pattern;
+    public void setPattern(final String pattern) {
+        this.pattern = pattern != null ? pattern : ".*";
     }
 
-    public PropertyValueDescription getValue() {
-        return value;
+    public PropertyValueDescription getValueDescription() {
+        return valueDescription;
     }
 
-    public void setValue(PropertyValueDescription value) {
-        this.value = value;
+    public void setValueDescription(PropertyValueDescription valueDescription) {
+        this.valueDescription = Objects.requireNonNull(valueDescription);
     }
 }

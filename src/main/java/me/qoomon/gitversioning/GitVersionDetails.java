@@ -1,6 +1,7 @@
 package me.qoomon.gitversioning;
 
 import java.util.Map;
+import java.util.Objects;
 
 public class GitVersionDetails {
 
@@ -19,12 +20,12 @@ public class GitVersionDetails {
                              final String version,
                              final Map<String, String> properties) {
         this.clean = clean;
-        this.metaData = metaData;
-        this.version = version;
-        this.properties = properties;
-        this.commit = commit;
-        this.commitRefType = commitRefType;
-        this.commitRefName = commitRefName;
+        this.metaData = Objects.requireNonNull(metaData);
+        this.version = Objects.requireNonNull(version);
+        this.properties = Objects.requireNonNull(properties);
+        this.commit = Objects.requireNonNull(commit);
+        this.commitRefType = Objects.requireNonNull(commitRefType);
+        this.commitRefName = Objects.requireNonNull(commitRefName);
     }
 
     public boolean isClean() {

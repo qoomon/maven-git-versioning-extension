@@ -6,11 +6,7 @@ import javax.annotation.Nonnull;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Properties;
+import java.util.*;
 
 import static java.util.Comparator.comparing;
 import static java.util.Objects.requireNonNull;
@@ -32,7 +28,7 @@ public final class GitVersioning {
             final List<VersionDescription> branchVersionDescriptions,
             final List<VersionDescription> tagVersionDescriptions,
             final String currentVersion,
-            final Properties currentProperties) {
+            final Map<String,String> currentProperties) {
 
         requireNonNull(repoSituation);
         requireNonNull(commitVersionDescription);
@@ -72,21 +68,21 @@ public final class GitVersioning {
         }
         Map<String, String> refFields = valueGroupMap(versionDescription.getPattern(), gitRefName);
 
-        Map<String, String> projectVersionDataMap = new HashMap<>();
-        projectVersionDataMap.put("version", currentVersion);
-        projectVersionDataMap.put("version.release", currentVersion.replaceFirst("-SNAPSHOT$",""));
-        projectVersionDataMap.put("commit", repoSituation.getHeadCommit());
-        projectVersionDataMap.put("commit.short", repoSituation.getHeadCommit().substring(0, 7));
-        projectVersionDataMap.put("commit.timestamp", Long.toString(repoSituation.getHeadCommitTimestamp()));
-        projectVersionDataMap.put("commit.timestamp.datetime", formatHeadCommitTimestamp(repoSituation.getHeadCommitTimestamp()));
-        projectVersionDataMap.put("ref", gitRefName);
-        projectVersionDataMap.put(gitRefType, gitRefName);
-        projectVersionDataMap.putAll(refFields);
+        Map<String, String> versionDataMap = new HashMap<>();
+        versionDataMap.put("version", currentVersion);
+        versionDataMap.put("version.release", currentVersion.replaceFirst("-SNAPSHOT$", ""));
+        versionDataMap.put("commit", repoSituation.getHeadCommit());
+        versionDataMap.put("commit.short", repoSituation.getHeadCommit().substring(0, 7));
+        versionDataMap.put("commit.timestamp", Long.toString(repoSituation.getHeadCommitTimestamp()));
+        versionDataMap.put("commit.timestamp.datetime", formatHeadCommitTimestamp(repoSituation.getHeadCommitTimestamp()));
+        versionDataMap.put("ref", gitRefName);
+        versionDataMap.put(gitRefType, gitRefName);
+        versionDataMap.putAll(refFields);
 
-        String gitVersion = substituteText(versionDescription.getVersionFormat(), projectVersionDataMap)
+        String gitVersion = substituteText(versionDescription.getVersionFormat(), versionDataMap)
                 .replace("/", "-");
 
-        Map<String, String> properties = determineProperties(currentProperties, versionDescription, projectVersionDataMap);
+        Map<String, String> gitProperties = determineProperties(currentProperties, versionDescription.getPropertyDescriptions(), versionDataMap);
 
         return new GitVersionDetails(
                 repoSituation.isClean(),
@@ -95,32 +91,35 @@ public final class GitVersioning {
                 gitRefName,
                 refFields,
                 gitVersion,
-                properties);
+                gitProperties);
     }
 
-    private static Map<String, String> determineProperties(Properties currentProperties,
-                                                           VersionDescription versionDescription,
-                                                           Map<String, String> projectVersionDataMap) {
-        Map<String, String> properties = new HashMap<>();
-        if(versionDescription.getProperties() != null) {
-            versionDescription.getProperties().forEach(propertyDescription -> {
-                        String gitRefPropertyValue = currentProperties.getProperty(propertyDescription.getPattern());
-                        if (gitRefPropertyValue != null) {
-                            Map<String, String> projectPropertiesDataMap = new HashMap<>(projectVersionDataMap);
-                            projectPropertiesDataMap.putAll(valueGroupMap(propertyDescription.getValue().getPattern(), gitRefPropertyValue));
+    private static Map<String, String> determineProperties(Map<String, String> currentProperties,
+                                                           List<PropertyDescription> propertyDescriptions,
+                                                           Map<String, String> versionDataMap) {
 
-                            String gitPropertyVersion = substituteText(propertyDescription.getValue().getFormat(), projectPropertiesDataMap)
-                                    .replace("/", "-");
+        Map<String, String> gitProperties =  new HashMap<>(currentProperties);
 
-                            properties.put(propertyDescription.getPattern(), gitPropertyVersion);
-                        }
-                    });
+        for (Map.Entry<String, String> property : currentProperties.entrySet()) {
+            Optional<PropertyDescription> propertyDescription = propertyDescriptions.stream().filter(it -> property.getKey().matches(it.getPattern())).findFirst();
+            if(propertyDescription.isPresent()){
+                if(property.getValue().matches(propertyDescription.get().getValueDescription().getPattern())){
+                    Map<String, String> propertyFields = valueGroupMap(propertyDescription.get().getValueDescription().getPattern(), property.getValue());
+                    HashMap<String, String> propertyDataMap = new HashMap<>(versionDataMap);
+                    propertyDataMap.putAll(propertyFields);
+
+                    String gitPropertyValue = substituteText(propertyDescription.get().getValueDescription().getFormat(), propertyDataMap);
+
+                    gitProperties.put(property.getKey(), gitPropertyValue);
+                }
+            }
         }
-        return properties;
+
+        return gitProperties;
     }
 
-    private static String formatHeadCommitTimestamp(long headCommitDate){
-        if (headCommitDate == 0){
+    private static String formatHeadCommitTimestamp(long headCommitDate) {
+        if (headCommitDate == 0) {
             return NO_COMMIT_DATE;
         }
         return DateTimeFormatter
