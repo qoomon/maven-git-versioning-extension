@@ -24,12 +24,27 @@ public class Configuration {
 
         public String pattern;
         public String versionFormat;
+        @JacksonXmlElementWrapper(useWrapping = false)
+        public List<PropertyDescription> property = new ArrayList<>();
         public Boolean updatePom;
     }
 
     public static class CommitVersionDescription {
 
         public String versionFormat;
+        public List<PropertyDescription> property = new ArrayList<>();
         public Boolean updatePom;
+    }
+
+    public static class PropertyDescription {
+
+        public String pattern;
+        public PropertyValueDescription value;
+    }
+
+    public static class PropertyValueDescription {
+
+        public String pattern;
+        public String format;
     }
 }

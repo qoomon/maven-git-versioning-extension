@@ -90,6 +90,82 @@ class ConfigurationTest {
     }
 
     @Test
+    void xmlUnmarshaller_branchConfigsOnlyWithProperties() throws IOException {
+        // given
+        String configXml = "" +
+                "<gitVersioning>\n" +
+                "    <branch>\n" +
+                "        <pattern>branch1-pattern</pattern>\n" +
+                "        <versionFormat>branch1-format</versionFormat>\n" +
+                "        <property>\n" +
+                "            <pattern>my.property</pattern>\n" +
+                "            <value>\n" +
+                "                <pattern>my.property.pattern</pattern>\n" +
+                "                <format>my.property.format</format>\n" +
+                "            </value>\n" +
+                "        </property>\n" +
+                "    </branch>\n" +
+                "    <branch>\n" +
+                "        <pattern>branch2-pattern</pattern>\n" +
+                "        <versionFormat>branch2-format</versionFormat>\n" +
+                "        <property>\n" +
+                "            <pattern>my.first.property</pattern>\n" +
+                "            <value>\n" +
+                "                <pattern>my.first.property.pattern</pattern>\n" +
+                "                <format>my.first.property.format</format>\n" +
+                "            </value>\n" +
+                "        </property>\n" +
+                "        <property>\n" +
+                "            <pattern>my.second.property</pattern>\n" +
+                "            <value>\n" +
+                "                <pattern>my.second.property.pattern</pattern>\n" +
+                "                <format>my.second.property.format</format>\n" +
+                "            </value>\n" +
+                "        </property>\n" +
+                "    </branch>\n" +
+                "</gitVersioning>\n";
+
+        // when
+        Configuration config = new XmlMapper()
+                .readValue(configXml, Configuration.class);
+
+        // then
+        assertAll(
+                () -> assertThat(config.commit).isNull(),
+                () -> assertThat(config.branch)
+                        .satisfies(branchConfigs -> assertAll(
+                                () -> assertThat(branchConfigs).hasSize(2),
+                                () -> assertThat(branchConfigs.get(0)).satisfies(branchConfig -> assertAll(
+                                        () -> assertThat(branchConfig.pattern).isEqualTo("branch1-pattern"),
+                                        () -> assertThat(branchConfig.versionFormat).isEqualTo("branch1-format"),
+                                        () -> assertThat(branchConfig.property).hasSize(1),
+                                        () -> assertThat(branchConfig.property.get(0)).satisfies(branchPropertyConfig -> assertAll(
+                                                () -> assertThat(branchPropertyConfig.pattern).isEqualTo("my.property"),
+                                                () -> assertThat(branchPropertyConfig.value.pattern).isEqualTo("my.property.pattern"),
+                                                () -> assertThat(branchPropertyConfig.value.format).isEqualTo("my.property.format")
+                                        ))
+                                )),
+                                () -> assertThat(branchConfigs.get(1)).satisfies(branchConfig -> assertAll(
+                                        () -> assertThat(branchConfig.pattern).isEqualTo("branch2-pattern"),
+                                        () -> assertThat(branchConfig.versionFormat).isEqualTo("branch2-format"),
+                                        () -> assertThat(branchConfig.property).hasSize(2),
+                                        () -> assertThat(branchConfig.property.get(0)).satisfies(branchPropertyConfig -> assertAll(
+                                                () -> assertThat(branchPropertyConfig.pattern).isEqualTo("my.first.property"),
+                                                () -> assertThat(branchPropertyConfig.value.pattern).isEqualTo("my.first.property.pattern"),
+                                                () -> assertThat(branchPropertyConfig.value.format).isEqualTo("my.first.property.format")
+                                        )),
+                                        () -> assertThat(branchConfig.property.get(1)).satisfies(branchPropertyConfig -> assertAll(
+                                                () -> assertThat(branchPropertyConfig.pattern).isEqualTo("my.second.property"),
+                                                () -> assertThat(branchPropertyConfig.value.pattern).isEqualTo("my.second.property.pattern"),
+                                                () -> assertThat(branchPropertyConfig.value.format).isEqualTo("my.second.property.format")
+                                        ))
+                                ))
+                        )),
+                () -> assertThat(config.tag).isEmpty()
+        );
+    }
+
+    @Test
     void xmlUnmarshaller_tagsConfigsOnly() throws IOException {
         // given
         String configXml = "" +

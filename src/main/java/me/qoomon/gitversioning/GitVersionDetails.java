@@ -10,15 +10,18 @@ public class GitVersionDetails {
     private final String commitRefName;
     private final Map<String,String> metaData;
     private final String version;
+    private final Map<String,String> properties;
 
     public GitVersionDetails(final boolean clean,
                              final String commit,
                              final String commitRefType, final String commitRefName,
                              final Map<String, String> metaData,
-                             final String version) {
+                             final String version,
+                             final Map<String, String> properties) {
         this.clean = clean;
         this.metaData = metaData;
         this.version = version;
+        this.properties = properties;
         this.commit = commit;
         this.commitRefType = commitRefType;
         this.commitRefName = commitRefName;
@@ -42,6 +45,10 @@ public class GitVersionDetails {
 
     public Map<String, String> getMetaData() {
         return metaData;
+    }
+
+    public Map<String, String> getProperties() {
+        return properties;
     }
 
     public String getVersion() {
