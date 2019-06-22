@@ -50,7 +50,7 @@ class StringUtilTest {
         Map<String, String> valueMap = StringUtil.valueGroupMap(givenRegex, givenText);
 
         // Then
-        assertThat(valueMap).contains(entry("0", givenText), entry("1", "one"), entry("2", "two"), entry("3", "three"));
+        assertThat(valueMap).contains(entry("1", "one"), entry("2", "two"), entry("3", "three"));
     }
 
     @Test
@@ -64,7 +64,7 @@ class StringUtilTest {
         Map<String, String> valueMap = StringUtil.valueGroupMap(givenRegex, givenText);
 
         // Then
-        assertThat(valueMap).contains(entry("0", givenText), entry("1", "one"), entry("2", "two three"), entry("3", "three"));
+        assertThat(valueMap).contains(entry("1", "one"), entry("2", "two three"), entry("3", "three"));
     }
 
     @Test
@@ -78,7 +78,7 @@ class StringUtilTest {
         Map<String, String> valueMap = StringUtil.valueGroupMap(givenRegex, givenText);
 
         // Then
-        assertThat(valueMap).contains(entry("0", givenText), entry("1", "one"), entry("2", "two"), entry("3", "three"));
+        assertThat(valueMap).contains(entry("1", "one"), entry("2", "two"), entry("3", "three"));
         assertThat(valueMap).contains(entry("first", "one"), entry("second", "two"), entry("third", "three"));
     }
 
@@ -93,7 +93,7 @@ class StringUtilTest {
         Map<String, String> valueMap = StringUtil.valueGroupMap(givenRegex, givenText);
 
         // Then
-        assertThat(valueMap).contains(entry("0", givenText), entry("1", "one"), entry("2", "two three"), entry("3", "three"));
+        assertThat(valueMap).contains(entry("1", "one"), entry("2", "two three"), entry("3", "three"));
         assertThat(valueMap).contains(entry("first", "one"), entry("second", "two three"), entry("third", "three"));
     }
 }

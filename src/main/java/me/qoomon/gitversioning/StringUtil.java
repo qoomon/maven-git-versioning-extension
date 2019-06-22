@@ -36,7 +36,7 @@ public final class StringUtil {
         Matcher groupMatcher = groupPattern.matcher(text);
         if (groupMatcher.find()) {
             // add group index to value entries
-            for (int i = 0; i <= groupMatcher.groupCount(); i++) {
+            for (int i = 1; i <= groupMatcher.groupCount(); i++) {
                 result.put(String.valueOf(i), groupMatcher.group(i));
             }
 
