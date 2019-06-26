@@ -2,6 +2,13 @@
     <branch>
         <pattern>master</pattern>
         <versionFormat>${version.release}</versionFormat>
+        <property>
+          <pattern>foo</pattern>
+          <value>
+            <pattern>.*</pattern>
+            <format>new_new_new</format>
+          </value>
+        </property>    
     </branch>
     <branch>
         <pattern>feature/(.*)</pattern>

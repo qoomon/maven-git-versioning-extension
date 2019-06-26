@@ -3,7 +3,10 @@
     <branch>
         <pattern>master</pattern>
         <versionFormat>${version.release}</versionFormat>
-        <updatePom>true</updatePom>
+        <value>
+            <pattern>.*</pattern>
+            <format>new_new_new</format>
+        </value>
     </branch>
     <branch>
         <pattern>release/(.*)</pattern>
