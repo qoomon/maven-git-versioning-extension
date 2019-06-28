@@ -138,8 +138,8 @@ public class ModelProcessor extends DefaultModelProcessor {
         String projectId = projectModel.getGroupId() + ":" + projectModel.getArtifactId();
         Model virtualProjectModel = this.virtualProjectModelCache.get(projectId);
         if (virtualProjectModel == null) {
-            logger.info(projectGav.getArtifactId() + " - set project version to " + gitVersionDetails.getVersion()
-                    + " (" + gitVersionDetails.getCommitRefType() + ":" + gitVersionDetails.getCommitRefName() + ")");
+            logger.info(projectGav.getArtifactId() + " - " + gitVersionDetails.getCommitRefType() + ": " + gitVersionDetails.getCommitRefName());
+            logger.info(projectGav.getArtifactId() + " - set project version: " + gitVersionDetails.getVersion());
 
             virtualProjectModel = projectModel.clone();
 
@@ -158,9 +158,10 @@ public class ModelProcessor extends DefaultModelProcessor {
             }
 
             for (Map.Entry<String, String> property : gitVersionDetails.getProperties().entrySet()) {
-                logger.info(projectGav.getArtifactId() + " - set property " + property.getKey() + " to " + property.getValue()
-                        + " (" + gitVersionDetails.getCommitRefType() + ":" + gitVersionDetails.getCommitRefName() + ")");
-                virtualProjectModel.addProperty(property.getKey(), property.getValue());
+                if (!property.getValue().equals(virtualProjectModel.getProperties().getProperty(property.getKey()))) {
+                    logger.info(projectGav.getArtifactId() + " - set property " + property.getKey() + ": " + property.getValue());
+                    virtualProjectModel.getProperties().put(property.getKey(), property.getValue());
+                }
             }
 
             // ---------------- process parent -----------------------------------

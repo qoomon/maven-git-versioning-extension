@@ -10,6 +10,7 @@
 
     <properties>
         <foo>${basedir}/src/main/fuxx</foo>
+        <nickname>qoomon</nickname>
     </properties>
 
     <distributionManagement>
