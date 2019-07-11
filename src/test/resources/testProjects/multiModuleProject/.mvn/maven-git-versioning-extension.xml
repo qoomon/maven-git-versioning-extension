@@ -1,12 +1,15 @@
 <gitVersioning>
-    <updatePom>true</updatePom>
+    <updatePom>false</updatePom>
     <branch>
         <pattern>master</pattern>
-        <versionFormat>${version.release}</versionFormat>
-        <value>
-            <pattern>.*</pattern>
-            <format>new_new_new</format>
-        </value>
+        <versionFormat>${version.release}-master</versionFormat>
+        <property>
+            <pattern>foo</pattern>
+            <value>
+                <pattern>.*</pattern>
+                <format>new_new_new</format>
+            </value>
+        </property>
     </branch>
     <branch>
         <pattern>release/(.*)</pattern>

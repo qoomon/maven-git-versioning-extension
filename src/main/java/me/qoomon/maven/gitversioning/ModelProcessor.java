@@ -1,20 +1,19 @@
 package me.qoomon.maven.gitversioning;
 
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import com.google.common.collect.Maps;
-import com.google.inject.Key;
-import com.google.inject.OutOfScopeException;
-import me.qoomon.gitversioning.*;
-import org.apache.maven.building.Source;
-import org.apache.maven.execution.MavenSession;
-import org.apache.maven.model.*;
-import org.apache.maven.model.building.DefaultModelProcessor;
-import org.apache.maven.session.scope.internal.SessionScope;
-import org.codehaus.plexus.component.annotations.Component;
-import org.codehaus.plexus.logging.Logger;
-import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toList;
 
-import javax.inject.Inject;
+import static me.qoomon.UncheckedExceptions.unchecked;
+import static me.qoomon.maven.gitversioning.MavenUtil.isProjectPom;
+import static me.qoomon.maven.gitversioning.MavenUtil.readModel;
+import static me.qoomon.maven.gitversioning.VersioningMojo.GIT_VERSIONING_POM_NAME;
+import static me.qoomon.maven.gitversioning.VersioningMojo.GOAL;
+import static me.qoomon.maven.gitversioning.VersioningMojo.asPlugin;
+import static me.qoomon.maven.gitversioning.VersioningMojo.propertyKeyPrefix;
+import static me.qoomon.maven.gitversioning.VersioningMojo.propertyKeyUpdatePom;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -22,17 +21,37 @@ import java.io.Reader;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
-import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toList;
-import static me.qoomon.UncheckedExceptions.unchecked;
-import static me.qoomon.maven.gitversioning.MavenUtil.isProjectPom;
-import static me.qoomon.maven.gitversioning.MavenUtil.readModel;
-import static me.qoomon.maven.gitversioning.VersioningMojo.*;
+import javax.inject.Inject;
+
+import org.apache.maven.building.Source;
+import org.apache.maven.execution.MavenSession;
+import org.apache.maven.model.Build;
+import org.apache.maven.model.Model;
+import org.apache.maven.model.Parent;
+import org.apache.maven.model.Plugin;
+import org.apache.maven.model.PluginExecution;
+import org.apache.maven.model.building.DefaultModelProcessor;
+import org.apache.maven.session.scope.internal.SessionScope;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.logging.Logger;
+import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
+
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.google.common.collect.Maps;
+import com.google.inject.Key;
+import com.google.inject.OutOfScopeException;
+
+import me.qoomon.gitversioning.GitRepoSituation;
+import me.qoomon.gitversioning.GitUtil;
+import me.qoomon.gitversioning.GitVersionDetails;
+import me.qoomon.gitversioning.GitVersioning;
+import me.qoomon.gitversioning.PropertyDescription;
+import me.qoomon.gitversioning.PropertyValueDescription;
+import me.qoomon.gitversioning.VersionDescription;
 
 /**
  * Replacement for {@link org.apache.maven.model.building.ModelProcessor} to adapt versions.
@@ -138,31 +157,34 @@ public class ModelProcessor extends DefaultModelProcessor {
         String projectId = projectModel.getGroupId() + ":" + projectModel.getArtifactId();
         Model virtualProjectModel = this.virtualProjectModelCache.get(projectId);
         if (virtualProjectModel == null) {
-            logger.info(projectGav.getArtifactId() + " - " + gitVersionDetails.getCommitRefType() + ": " + gitVersionDetails.getCommitRefName());
-            logger.info(projectGav.getArtifactId() + " - set project version: " + gitVersionDetails.getVersion());
-
-            virtualProjectModel = projectModel.clone();
-
             // ---------------- process project -----------------------------------
 
-            if (projectModel.getVersion() != null) {
-                logger.debug(" replace project version");
-                virtualProjectModel.setVersion(gitVersionDetails.getVersion());
+            logger.info(projectGav.getArtifactId() + " - " + gitVersionDetails.getCommitRefType() + ": "
+                    + gitVersionDetails.getCommitRefName());
+
+            virtualProjectModel = projectModel.clone();
+            final String projectVersion = GAV.of(projectModel).getVersion();
+
+            if (virtualProjectModel.getVersion() != null) {
+                final String gitVersion = gitVersionDetails.getVersionTransformer().apply(projectVersion);
+                logger.info(projectGav.getArtifactId() + " - set project version: " + gitVersion);
+                virtualProjectModel.setVersion(gitVersion);
+            }
+
+            final Map<String, String> gitProperties = gitVersionDetails.getPropertiesTransformer().apply(
+                    Maps.fromProperties(virtualProjectModel.getProperties()),
+                    projectVersion
+            );
+            for (Entry<String, String> property : gitProperties.entrySet()) {
+                if (!property.getValue().equals(virtualProjectModel.getProperties().getProperty(property.getKey()))) {
+                    logger.info(projectGav.getArtifactId() + " - set property " + property.getKey() + ": " + property.getValue());
+                    virtualProjectModel.getProperties().setProperty(property.getKey(), property.getValue());
+                }
             }
 
             virtualProjectModel.addProperty("git.commit", gitVersionDetails.getCommit());
             virtualProjectModel.addProperty("git.ref", gitVersionDetails.getCommitRefName());
             virtualProjectModel.addProperty("git." + gitVersionDetails.getCommitRefType(), gitVersionDetails.getCommitRefName());
-            for (Map.Entry<String, String> entry : gitVersionDetails.getMetaData().entrySet()) {
-                virtualProjectModel.addProperty("git.ref." + entry.getKey(), entry.getValue());
-            }
-
-            for (Map.Entry<String, String> property : gitVersionDetails.getProperties().entrySet()) {
-                if (!property.getValue().equals(virtualProjectModel.getProperties().getProperty(property.getKey()))) {
-                    logger.info(projectGav.getArtifactId() + " - set property " + property.getKey() + ": " + property.getValue());
-                    virtualProjectModel.getProperties().put(property.getKey(), property.getValue());
-                }
-            }
 
             // ---------------- process parent -----------------------------------
 
@@ -185,7 +207,9 @@ public class ModelProcessor extends DefaultModelProcessor {
                     }
 
                     logger.debug(" replace parent version");
-                    virtualProjectModel.getParent().setVersion(gitVersionDetails.getVersion());
+                    final String parentVersion = virtualProjectModel.getParent().getVersion();
+                    final String gitParentVersion = gitVersionDetails.getVersionTransformer().apply(parentVersion);
+                    virtualProjectModel.getParent().setVersion(gitParentVersion);
                 }
             }
 
@@ -219,15 +243,15 @@ public class ModelProcessor extends DefaultModelProcessor {
                         .collect(toList()),
                 config.tag.stream()
                         .map(it -> new VersionDescription(it.pattern, it.versionFormat, convertPropertyDescription(it.property)))
-                        .collect(toList()),
-                GAV.of(projectModel).getVersion(),
-                Maps.fromProperties(projectModel.getProperties()));
+                        .collect(toList()));
     }
 
-    private List<PropertyDescription> convertPropertyDescription(List<Configuration.PropertyDescription> confPropertyDescription) {
+    private List<PropertyDescription> convertPropertyDescription(
+            List<Configuration.PropertyDescription> confPropertyDescription) {
         return confPropertyDescription
                 .stream()
-                .map(prop -> new PropertyDescription(prop.pattern, new PropertyValueDescription(prop.value.pattern, prop.value.format)))
+                .map(prop -> new PropertyDescription(prop.pattern,
+                        new PropertyValueDescription(prop.value.pattern, prop.value.format)))
                 .collect(toList());
     }
 
@@ -258,7 +282,6 @@ public class ModelProcessor extends DefaultModelProcessor {
 
         return parentModel;
     }
-
 
     private File findMvnDir(Model projectModel) {
         {
@@ -294,7 +317,6 @@ public class ModelProcessor extends DefaultModelProcessor {
                 }
                 parentDir = parentDir.getParentFile();
             }
-
         }
 
         logger.warn("Could not find .mvn directory!");

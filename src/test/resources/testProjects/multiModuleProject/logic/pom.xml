@@ -7,10 +7,15 @@
     <parent>
         <groupId>multi-module-project</groupId>
         <artifactId>main</artifactId>
-        <version>0.0.0</version>
+        <version>0.0.0-master</version>
     </parent>
 
     <artifactId>logic</artifactId>
+
+    <properties>
+        <foo>xxxxx</foo>
+        <bar>xxxxx</bar>
+    </properties>
 
     <dependencies>
         <dependency>

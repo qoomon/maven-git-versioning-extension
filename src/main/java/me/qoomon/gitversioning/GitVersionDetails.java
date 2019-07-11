@@ -2,6 +2,7 @@ package me.qoomon.gitversioning;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 
 public class GitVersionDetails {
 
@@ -9,20 +10,17 @@ public class GitVersionDetails {
     private final String commit;
     private final String commitRefType;
     private final String commitRefName;
-    private final Map<String,String> metaData;
-    private final String version;
-    private final Map<String,String> properties;
+    private final VersionTransformer versionTransformer;
+    private final PropertiesTransformer propertiesTransformer;
 
     public GitVersionDetails(final boolean clean,
                              final String commit,
                              final String commitRefType, final String commitRefName,
-                             final Map<String, String> metaData,
-                             final String version,
-                             final Map<String, String> properties) {
+                             final VersionTransformer versionTransformer,
+                             final PropertiesTransformer propertiesTransformer) {
         this.clean = clean;
-        this.metaData = Objects.requireNonNull(metaData);
-        this.version = Objects.requireNonNull(version);
-        this.properties = Objects.requireNonNull(properties);
+        this.versionTransformer = Objects.requireNonNull(versionTransformer);
+        this.propertiesTransformer = Objects.requireNonNull(propertiesTransformer);
         this.commit = Objects.requireNonNull(commit);
         this.commitRefType = Objects.requireNonNull(commitRefType);
         this.commitRefName = Objects.requireNonNull(commitRefName);
@@ -44,15 +42,23 @@ public class GitVersionDetails {
         return commitRefName;
     }
 
-    public Map<String, String> getMetaData() {
-        return metaData;
+    public VersionTransformer getVersionTransformer() {
+        return versionTransformer;
     }
 
-    public Map<String, String> getProperties() {
-        return properties;
+    public PropertiesTransformer getPropertiesTransformer() {
+        return propertiesTransformer;
     }
 
-    public String getVersion() {
-        return version;
+    @FunctionalInterface
+    public interface VersionTransformer {
+
+        String apply(String currentVersion);
+    }
+
+    @FunctionalInterface
+    public interface PropertiesTransformer {
+
+        Map<String, String> apply(Map<String, String> properties, String currentVersion);
     }
 }
