@@ -6,11 +6,12 @@
 
     <groupId>multi-module-project</groupId>
     <artifactId>main</artifactId>
-    <version>0.0.0-master</version>
+    <version>0.0.0</version>
     <packaging>pom</packaging>
 
     <properties>
         <foo>${basedir}/src/main/fuxx</foo>
+        <moo>moomoo</moo>
     </properties>
 
     <modules>

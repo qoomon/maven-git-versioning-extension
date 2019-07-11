@@ -198,7 +198,7 @@ public class ModelProcessor extends DefaultModelProcessor {
 
                 Model parentModel = getParentModel(projectModel);
                 if (parentModel != null && isProjectPom(parentModel.getPomFile())) {
-                    if (projectModel.getVersion() != null) {
+                    if (virtualProjectModel.getVersion() != null) {
                         virtualProjectModel.setVersion(null);
                         logger.warn("Do not set version tag in a multi module project module: " + projectModel.getPomFile());
                         if (!projectModel.getVersion().equals(parent.getVersion())) {

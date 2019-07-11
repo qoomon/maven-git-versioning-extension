@@ -14,6 +14,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
 
 import static me.qoomon.maven.gitversioning.MavenUtil.*;
 
@@ -54,24 +56,31 @@ public class VersioningMojo extends AbstractMojo {
             getLog().debug(project.getModel().getArtifactId() + "remove this plugin and plugin properties from model");
             Model originalModel = project.getOriginalModel();
             originalModel.getBuild().removePlugin(asPlugin());
-            new HashSet<>(originalModel.getProperties().keySet()).forEach(key -> {
-                if (((String) key).startsWith(propertyKeyPrefix)) {
-                    originalModel.getProperties().remove(key);
-                }
-            });
+            originalModel.getProperties().entrySet()
+                    .removeIf(property -> ((String)property.getKey()).startsWith(propertyKeyPrefix));
 
             getLog().info("Generating git versioned POM of project " + GAV.of(originalModel));
 
             File pomFile = project.getFile();
 
             Document gitVersionedPomDocument = readXml(pomFile);
-            Element versionElement = gitVersionedPomDocument.getChild("/project/version");
+            Element projectElement = gitVersionedPomDocument.getChild("project");
+            Element versionElement = projectElement.getChild("version");
             if (versionElement != null) {
                 versionElement.setText(project.getVersion());
             }
-            Element parentVersionElement = gitVersionedPomDocument.getChild("/project/parent/version");
-            if (parentVersionElement != null && isProjectPom(project.getParent().getFile())) {
+
+            Element parentElement = projectElement.getChild("parent");
+            if (parentElement != null && isProjectPom(project.getParent().getFile())) {
+                Element parentVersionElement = parentElement.getChild("version");
                 parentVersionElement.setText(project.getParent().getVersion());
+            }
+
+            Element propertiesElement = projectElement.getChild("properties");
+            if(propertiesElement != null){
+                for (final Element propertyElement : propertiesElement.getChildren()) {
+                    propertyElement.setText(project.getProperties().getProperty(propertyElement.getName()));
+                }
             }
 
             File gitVersionedPomFile = new File(project.getBuild().getDirectory(), GIT_VERSIONING_POM_NAME);
