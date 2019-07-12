@@ -172,9 +172,7 @@ public class ModelProcessor extends DefaultModelProcessor {
             }
 
             final Map<String, String> gitProperties = gitVersionDetails.getPropertiesTransformer().apply(
-                    Maps.fromProperties(virtualProjectModel.getProperties()),
-                    projectVersion
-            );
+                    Maps.fromProperties(virtualProjectModel.getProperties()), projectVersion);
             for (Entry<String, String> property : gitProperties.entrySet()) {
                 if (!property.getValue().equals(virtualProjectModel.getProperties().getProperty(property.getKey()))) {
                     logger.info(projectGav.getArtifactId() + " - set property " + property.getKey() + ": " + property.getValue());
