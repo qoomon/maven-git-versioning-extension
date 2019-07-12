@@ -1,6 +1,5 @@
 package me.qoomon.gitversioning;
 
-import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
