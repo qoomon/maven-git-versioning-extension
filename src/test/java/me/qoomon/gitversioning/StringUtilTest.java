@@ -38,6 +38,21 @@ class StringUtilTest {
         assertThat(outputText).isEqualTo("${missing}tale");
     }
 
+    @Test
+    void substituteText_escape_replacement_value() {
+
+        // Given
+        String givenText = "${version}";
+        Map<String, String> givenSubstitutionMap = new HashMap<>();
+        givenSubstitutionMap.put("version", "${something}");
+
+        // When
+        String outputText = StringUtil.substituteText(givenText, givenSubstitutionMap);
+
+        // Then
+        assertThat(outputText).isEqualTo("${something}");
+    }
+
 
     @Test
     void valueGroupMap() {

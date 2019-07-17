@@ -18,7 +18,7 @@ public final class StringUtil {
             String substitutionKey = placeholderMatcher.group(1);
             String substitutionValue = substitutionMap.get(substitutionKey);
             if(substitutionValue != null) {
-                result = result.replaceAll("\\$\\{" + substitutionKey + "}", substitutionValue);
+                result = result.replaceAll("\\$\\{" + substitutionKey + "}", substitutionValue.replace("$", "\\$"));
             }
         }
 
