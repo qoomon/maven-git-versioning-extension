@@ -246,10 +246,9 @@ public class ModelProcessor extends DefaultModelProcessor {
 
     private List<PropertyDescription> convertPropertyDescription(
             List<Configuration.PropertyDescription> confPropertyDescription) {
-        return confPropertyDescription
-                .stream()
-                .map(prop -> new PropertyDescription(prop.pattern,
-                        new PropertyValueDescription(prop.value.pattern, prop.value.format)))
+        return confPropertyDescription.stream()
+                .map(prop -> new PropertyDescription(
+                        prop.pattern, new PropertyValueDescription(prop.value.pattern, prop.value.format)))
                 .collect(toList());
     }
 
