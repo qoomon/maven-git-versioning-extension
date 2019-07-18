@@ -62,16 +62,16 @@ public class VersioningMojo extends AbstractMojo {
             getLog().info("Generating git versioned POM of project " + GAV.of(originalModel));
 
             File pomFile = project.getFile();
-
             Document gitVersionedPomDocument = readXml(pomFile);
             Element projectElement = gitVersionedPomDocument.getChild("project");
+
             Element versionElement = projectElement.getChild("version");
             if (versionElement != null) {
                 versionElement.setText(project.getVersion());
             }
 
             Element parentElement = projectElement.getChild("parent");
-            if (parentElement != null && isProjectPom(project.getParent().getFile())) {
+            if (parentElement != null) {
                 Element parentVersionElement = parentElement.getChild("version");
                 parentVersionElement.setText(project.getParent().getVersion());
             }
@@ -79,7 +79,7 @@ public class VersioningMojo extends AbstractMojo {
             Element propertiesElement = projectElement.getChild("properties");
             if(propertiesElement != null){
                 for (final Element propertyElement : propertiesElement.getChildren()) {
-                    propertyElement.setText(project.getProperties().getProperty(propertyElement.getName()));
+                    propertyElement.setText(project.getOriginalModel().getProperties().getProperty(propertyElement.getName()));
                 }
             }
 

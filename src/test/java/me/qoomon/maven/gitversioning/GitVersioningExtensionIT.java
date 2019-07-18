@@ -1,5 +1,6 @@
 package me.qoomon.maven.gitversioning;
 
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import me.qoomon.maven.gitversioning.Configuration.VersionDescription;
 import org.apache.maven.it.VerificationException;
@@ -40,17 +41,6 @@ class GitVersioningExtensionIT {
     }};
 
     Configuration extensionConfig = new Configuration();
-
-
-    @BeforeEach
-    void beforeEach() throws VerificationException, IOException {
-        writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
-        Verifier prepareVerifier = new Verifier(projectDir.toFile().getAbsolutePath());
-        prepareVerifier.executeGoal("dependency:purge-local-repository");
-        prepareVerifier.addCliOption("-DmanualInclude=test");
-        prepareVerifier.addCliOption("-DreResolve=false");
-    }
-
 
     @Test
     void commitVersioning() throws Exception {
@@ -239,15 +229,15 @@ class GitVersioningExtensionIT {
             softly.assertThat(it.getModelVersion()).isEqualTo(apiPomModel.getModelVersion());
             softly.assertThat(it.getGroupId()).isEqualTo(apiPomModel.getGroupId());
             softly.assertThat(it.getArtifactId()).isEqualTo(apiPomModel.getArtifactId());
-            softly.assertThat(it.getVersion()).isEqualTo(NO_COMMIT);
+            softly.assertThat(it.getVersion()).isEqualTo(expectedVersion);
             softly.assertThat(it.getProperties()).doesNotContainKeys(
                     "git.commit",
                     "git.ref"
             );
         }));
 
-        Model apiGitVersionedPomModelLogic = readModel(logicProjectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile());
-        assertThat(apiGitVersionedPomModelLogic).satisfies(it -> assertSoftly(softly -> {
+        Model logicGitVersionedPomModel = readModel(logicProjectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile());
+        assertThat(logicGitVersionedPomModel).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.getModelVersion()).isEqualTo(logicPomModel.getModelVersion());
             softly.assertThat(it.getGroupId()).isEqualTo(logicPomModel.getGroupId());
             softly.assertThat(it.getArtifactId()).isEqualTo(logicPomModel.getArtifactId());
@@ -561,7 +551,9 @@ class GitVersioningExtensionIT {
     private File writeExtensionConfigFile(Path projectDir, Configuration config) throws Exception {
         Path mvnDotDir = Files.createDirectories(projectDir.resolve(".mvn"));
         File configFile = mvnDotDir.resolve("maven-git-versioning-extension.xml").toFile();
-        new XmlMapper().writeValue(configFile, config);
+        new XmlMapper()
+                .enable(SerializationFeature.INDENT_OUTPUT)
+                .writeValue(configFile, config);
         return configFile;
     }
 

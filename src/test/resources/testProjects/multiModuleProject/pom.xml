@@ -10,8 +10,9 @@
     <packaging>pom</packaging>
 
     <properties>
-        <foo>${basedir}/src/main/fuxx</foo>
-        <moo>moomoo</moo>
+        <foo>${basedir}</foo>
+        <bar>${basedir}/src/main/fuxx</bar>
+        <moo>${skipTests}</moo>
     </properties>
 
     <modules>
