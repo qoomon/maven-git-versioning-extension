@@ -125,14 +125,16 @@ public final class GitVersioning {
             if (propertyDescription.isPresent()) {
                 String valuePattern = propertyDescription.get().getValueDescription().getPattern();
                 if (property.getValue().matches(valuePattern)) {
-                    Map<String, String> propertyFields = valueGroupMap(valuePattern, property.getValue());
                     HashMap<String, String> propertyDataMap = new HashMap<>(dataMap);
+                    propertyDataMap.put("property.name", property.getKey());
+                    propertyDataMap.put("property.value", property.getValue());
+                    Map<String, String> propertyFields = valueGroupMap(valuePattern, property.getValue());
                     propertyDataMap.putAll(propertyFields);
 
                     String valueFormat = propertyDescription.get().getValueDescription().getFormat();
                     String resultValue = substituteText(valueFormat, propertyDataMap);
 
-                    resultProperties.put(property.getKey(), resultValue);
+                    resultProperties.replace(property.getKey(), resultValue);
                 }
             }
         }

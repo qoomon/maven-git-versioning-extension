@@ -77,7 +77,7 @@ Create `${basedir}/.mvn/maven-git-versioning-extension.xml`.
     - `<property>` A property definition to update the value of a property
         - `<pattern>` An arbitrary regex to match property names
         - `<value>` The definition of the new property value
-            - `<pattern>` An arbitrary regex to match property values
+            - *optional* `<pattern>` An arbitrary regex to match property values
             - `<format>` The new value format of the property, see [Version Format & Placeholders](#version-format--placeholders)
     - *optional* `<updatePom>` Enable(`true`) or disable(`false`) version update in original pom fill (will override global `<updatePom>` value)
     - ⚠ **considered if...**
@@ -90,7 +90,7 @@ Create `${basedir}/.mvn/maven-git-versioning-extension.xml`.
     - `<property>` A property definition to update the value of a property
         - `<pattern>` An arbitrary regex to match property names
         - `<value>` The definition of the new property value
-            - `<pattern>` An arbitrary regex to match property values
+            - *optional* `<pattern>` An arbitrary regex to match property values
             - `<format>` The new value format of the property, see [Version Format & Placeholders](#version-format--placeholders)
     - *optional* `<updatePom>` Enable(`true`) or disable(`false`) version update in original pom fill (will override global `<updatePom>` value)
     - ⚠ **considered if...**
@@ -102,7 +102,7 @@ Create `${basedir}/.mvn/maven-git-versioning-extension.xml`.
     - `<property>` A property definition to update the value of a property
         - `<pattern>` An arbitrary regex to match property names
         - `<value>` The definition of the new property value
-            - `<pattern>` An arbitrary regex to match property values
+            - *optional* `<pattern>` An arbitrary regex to match property values
             - `<format>` The new value format of the property, see [Version Format & Placeholders](#version-format--placeholders)
     - ⚠ **considered if...**
         * HEAD is detached `git checkout <COMMIT>` and no matching version tag is pointing to HEAD<br>
@@ -158,6 +158,14 @@ Create `${basedir}/.mvn/maven-git-versioning-extension.xml`.
 - `${version.release}`
     - `version` set in `pom.xml` without `-SNAPSHOT` postfix
     - e.g. '1.0.0'
+
+- `${property.name}`
+    - name of matching property
+    - Only available within property format.
+    
+- `${property.value}`
+    - value of matching property
+    - Only available within property format.
       
 ### Parameters & Environment Variables
 
