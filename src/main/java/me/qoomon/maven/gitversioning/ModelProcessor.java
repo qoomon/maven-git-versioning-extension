@@ -223,13 +223,14 @@ public class ModelProcessor extends DefaultModelProcessor {
 
     private GitVersionDetails getGitVersionDetails(Configuration config, Model projectModel) {
         GitRepoSituation repoSituation = GitUtil.situation(projectModel.getPomFile());
+        String providedTag = getOption("git.tag");
+        if (providedTag != null) {
+            repoSituation.setHeadBranch(null);
+            repoSituation.setHeadTags(providedTag.isEmpty() ? emptyList() : singletonList(providedTag));
+        }
         String providedBranch = getOption("git.branch");
         if (providedBranch != null) {
             repoSituation.setHeadBranch(providedBranch.isEmpty() ? null : providedBranch);
-        }
-        String providedTag = getOption("git.tag");
-        if (providedTag != null) {
-            repoSituation.setHeadTags(providedTag.isEmpty() ? emptyList() : singletonList(providedTag));
         }
 
         return GitVersioning.determineVersion(repoSituation,
