@@ -169,13 +169,21 @@ Create `${basedir}/.mvn/maven-git-versioning-extension.xml`.
       
 ### Parameters & Environment Variables
 
+- Disable Extension
+    - **Environment Variables**
+        - `export VERSIONING_DISABLE=true`
+    - **Command Line Parameters**
+        - `maven ... -Dversioning.disable=true`
+
 - Provide **branch** or **tag** name
     - **Environment Variables**
         - `export VERSIONING_GIT_BRANCH=$PROVIDED_BRANCH_NAME`
         - `export VERSIONING_GIT_TAG=$PROVIDED_TAG_NAME`
+        - `export VERSIONING_DISABLE=true`
     - **Command Line Parameters**
         - `maven ... -Dgit.branch=$PROVIDED_BRANCH_NAME`
         - `maven ... -Dgit.tag=$PROVIDED_TAG_NAME`
+        - `maven ... -Dversioning.disable=true`
   
   ℹ Especially useful for **CI builds** see [Miscellaneous Hints](#miscellaneous-hints)
 
@@ -225,8 +233,11 @@ fi
 
 # Changelog
 
+## 4.5.0
+* Add parameters and environment variable to disable extension. see [Parameters & Environment Variables](#parameters--environment-variables)
+
 ## 4.1.0
-* Add config option(`<update>`) to update version in original pom file.  see [Configure Extension](#configure-extension)
+* Add config option(`<update>`) to update version in original pom file. see [Configure Extension](#configure-extension)
 
 ## 4.0.0
 * Major Refactoring, Simplification
