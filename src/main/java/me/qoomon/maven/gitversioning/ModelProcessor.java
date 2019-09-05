@@ -59,6 +59,8 @@ import me.qoomon.gitversioning.VersionDescription;
 @Component(role = org.apache.maven.model.building.ModelProcessor.class)
 public class ModelProcessor extends DefaultModelProcessor {
 
+    private static final String SKIP_FLAG = "qoomon.gitversioning.skip";
+
     private final Logger logger;
 
     private final SessionScope sessionScope;
@@ -116,6 +118,11 @@ public class ModelProcessor extends DefaultModelProcessor {
                 return projectModel;
             }
 
+            if (shouldSkip()) {
+                logger.warn("skip - qoomon.gitversioning.skip property is set");
+                return projectModel;
+            }
+
             final Source pomSource = (Source) options.get(org.apache.maven.model.building.ModelProcessor.SOURCE);
             if (pomSource != null) {
                 projectModel.setPomFile(new File(pomSource.getLocation()));
@@ -125,6 +132,11 @@ public class ModelProcessor extends DefaultModelProcessor {
         } catch (Exception e) {
             throw new IOException("Git Versioning Model Processor", e);
         }
+    }
+
+    private boolean shouldSkip() {
+        return Boolean.parseBoolean(mavenSession.getSystemProperties().getProperty(SKIP_FLAG))
+                || Boolean.parseBoolean(mavenSession.getUserProperties().getProperty(SKIP_FLAG));
     }
 
     private Model processModel(Model projectModel) {
