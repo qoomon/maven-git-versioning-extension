@@ -1,5 +1,6 @@
 package me.qoomon.maven.gitversioning;
 
+import static java.lang.Boolean.parseBoolean;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Optional.ofNullable;
@@ -59,6 +60,10 @@ import me.qoomon.gitversioning.VersionDescription;
 @Component(role = org.apache.maven.model.building.ModelProcessor.class)
 public class ModelProcessor extends DefaultModelProcessor {
 
+    private static final String OPTION_NAME_DISABLE = "versioning.disable";
+    private static final String OPTION_NAME_GIT_TAG = "git.tag";
+    private static final String OPTION_NAME_GIT_BRANCH = "git.branch";
+    
     private final Logger logger;
 
     private final SessionScope sessionScope;
@@ -113,6 +118,11 @@ public class ModelProcessor extends DefaultModelProcessor {
 
             if (mavenSession == null) {
                 logger.warn("skip - no maven session present");
+                return projectModel;
+            }
+
+            if (parseBoolean(getOption(OPTION_NAME_DISABLE))) {
+                logger.warn("skip - versioning is disabled");
                 return projectModel;
             }
 
@@ -223,12 +233,12 @@ public class ModelProcessor extends DefaultModelProcessor {
 
     private GitVersionDetails getGitVersionDetails(Configuration config, Model projectModel) {
         GitRepoSituation repoSituation = GitUtil.situation(projectModel.getPomFile());
-        String providedTag = getOption("git.tag");
+        String providedTag = getOption(OPTION_NAME_GIT_TAG);
         if (providedTag != null) {
             repoSituation.setHeadBranch(null);
             repoSituation.setHeadTags(providedTag.isEmpty() ? emptyList() : singletonList(providedTag));
         }
-        String providedBranch = getOption("git.branch");
+        String providedBranch = getOption(OPTION_NAME_GIT_BRANCH);
         if (providedBranch != null) {
             repoSituation.setHeadBranch(providedBranch.isEmpty() ? null : providedBranch);
         }
@@ -343,7 +353,11 @@ public class ModelProcessor extends DefaultModelProcessor {
     private String getOption(final String name) {
         String value = mavenSession.getUserProperties().getProperty(name);
         if (value == null) {
-            value = System.getenv("VERSIONING_" + name.replaceAll("\\.", "_").toUpperCase());
+            String environmentVariableName = "VERSIONING_" + name
+                    .replaceFirst("^versioning\\.", "")
+                    .replaceAll("\\.", "_")
+                    .toUpperCase();
+            value = System.getenv(environmentVariableName);
         }
         return value;
     }
