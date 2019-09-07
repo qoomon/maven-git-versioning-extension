@@ -8,13 +8,20 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
-    - name: Set up JDK 1.8
-      uses: actions/setup-java@v1
+    - uses: actions/setup-java@v1
       with:
         java-version: 1.8
     - name: Build with Maven
       env:
-        MAVEN_OPTS: -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+        MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
+        MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version"
       run: |
-        mvn install -V -B
-        mvn failsafe:integration-test failsafe:verify -V -B
+        mvn ${MAVEN_CLI_OPTS} package -DskipTests
+    - name: Test with Maven
+      env:
+        MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
+        MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version"
+      run: |
+        mvn ${MAVEN_CLI_OPTS} test
+        mvn ${MAVEN_CLI_OPTS} install -DskipTests
+        mvn ${MAVEN_CLI_OPTS} failsafe:integration-test failsafe:verify
