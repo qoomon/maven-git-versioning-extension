@@ -56,10 +56,10 @@ import me.qoomon.gitversioning.VersionDescription;
 
 /**
  * WORKAROUND
- * Initialize and use {@link ModelProcessor} from GitModelProcessor {@link org.apache.maven.model.building.ModelProcessor},
+ * Initialize and use {@link GitVersioningModelProcessor} from GitModelProcessor {@link org.apache.maven.model.building.ModelProcessor},
  * This is need because maven 3.6.2 has broken component replacement mechanism.
  */
-public class ModelProcessor {
+public class GitVersioningModelProcessor {
     private static final String OPTION_NAME_DISABLE = "versioning.disable";
     private static final String OPTION_NAME_GIT_TAG = "git.tag";
     private static final String OPTION_NAME_GIT_BRANCH = "git.branch";

@@ -1,6 +1,6 @@
 package org.apache.maven.model.building;
 
-import me.qoomon.maven.gitversioning.ModelProcessor;
+import me.qoomon.maven.gitversioning.GitVersioningModelProcessor;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.DefaultModelReader;
 import org.apache.maven.model.locator.DefaultModelLocator;
@@ -17,13 +17,13 @@ import java.util.Map;
 
 /**
  * WORKAROUND
- * Workaround to replace origin {@link org.apache.maven.model.building.ModelProcessor} component with {@link ModelProcessor}.
+ * Workaround to replace origin {@link ModelProcessor} component with {@link GitVersioningModelProcessor}.
  * This is need because maven 3.6.2 has broken component replacement mechanism.
  */
 @Named
 @Singleton
-@Typed(org.apache.maven.model.building.ModelProcessor.class)
-public class DefaultModelProcessor implements org.apache.maven.model.building.ModelProcessor {
+@Typed(ModelProcessor.class)
+public class DefaultModelProcessor implements ModelProcessor {
 
     @Inject
     private DefaultModelLocator locator;
@@ -32,7 +32,7 @@ public class DefaultModelProcessor implements org.apache.maven.model.building.Mo
     private DefaultModelReader reader;
 
     @Inject
-    private ModelProcessor modelProcessor;
+    private GitVersioningModelProcessor modelProcessor;
 
     @Override
     public File locatePom(File projectDirectory) {
