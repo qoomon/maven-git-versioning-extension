@@ -56,7 +56,7 @@ public class VersioningMojo extends AbstractMojo {
             originalModel.getProperties().entrySet()
                     .removeIf(property -> ((String)property.getKey()).startsWith(propertyKeyPrefix));
 
-            getLog().info("Generating git versioned POM of project " + GAV.of(originalModel));
+            getLog().info("Generating git versioned POM");
 
             File pomFile = project.getFile();
             Document gitVersionedPomDocument = readXml(pomFile);
