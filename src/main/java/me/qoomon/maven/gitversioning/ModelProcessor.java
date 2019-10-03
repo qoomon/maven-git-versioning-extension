@@ -17,8 +17,6 @@ import static me.qoomon.maven.gitversioning.VersioningMojo.propertyKeyUpdatePom;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,9 +33,7 @@ import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.model.PluginExecution;
-import org.apache.maven.model.building.DefaultModelProcessor;
 import org.apache.maven.session.scope.internal.SessionScope;
-import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.logging.Logger;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
@@ -55,18 +51,20 @@ import me.qoomon.gitversioning.PropertyValueDescription;
 import me.qoomon.gitversioning.VersionDescription;
 
 /**
- * Replacement for {@link org.apache.maven.model.building.ModelProcessor} to adapt versions.
+ * WORKAROUND
+ * Initialize and use {@link ModelProcessor} from GitModelProcessor {@link org.apache.maven.model.building.ModelProcessor},
+ * This is need because maven 3.6.2 has broken component replacement mechanism.
  */
-@Component(role = org.apache.maven.model.building.ModelProcessor.class)
-public class ModelProcessor extends DefaultModelProcessor {
-
+public class ModelProcessor {
     private static final String OPTION_NAME_DISABLE = "versioning.disable";
     private static final String OPTION_NAME_GIT_TAG = "git.tag";
     private static final String OPTION_NAME_GIT_BRANCH = "git.branch";
-    
-    private final Logger logger;
 
-    private final SessionScope sessionScope;
+    @Inject
+    private Logger logger;
+
+    @Inject
+    private SessionScope sessionScope;
 
     private boolean initialized = false;
 
@@ -77,31 +75,7 @@ public class ModelProcessor extends DefaultModelProcessor {
 
     private final Map<String, Model> virtualProjectModelCache = new HashMap<>();
 
-    @Inject
-    public ModelProcessor(final Logger logger, final SessionScope sessionScope) {
-        this.logger = logger;
-        this.sessionScope = sessionScope;
-    }
-
-    @Override
-    public Model read(File input, Map<String, ?> options) throws IOException {
-        final Model projectModel = super.read(input, options);
-        return processModel(projectModel, options);
-    }
-
-    @Override
-    public Model read(Reader input, Map<String, ?> options) throws IOException {
-        final Model projectModel = super.read(input, options);
-        return processModel(projectModel, options);
-    }
-
-    @Override
-    public Model read(InputStream input, Map<String, ?> options) throws IOException {
-        final Model projectModel = super.read(input, options);
-        return processModel(projectModel, options);
-    }
-
-    private Model processModel(Model projectModel, Map<String, ?> options) throws IOException {
+    public Model processModel(Model projectModel, Map<String, ?> options) throws IOException {
         try {
             if (!initialized) {
                 logger.info("");
