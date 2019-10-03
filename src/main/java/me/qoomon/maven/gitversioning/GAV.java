@@ -6,7 +6,7 @@ import org.apache.maven.model.Parent;
 /**
  * Maven artifact identifier consisting of groupId / artifactId / getVersion.
  */
-class GAV {
+public class GAV {
     private String groupId;
     private String artifactId;
     private String version;
@@ -25,19 +25,19 @@ class GAV {
     }
 
 
-    String getGroupId() {
+    public String getGroupId() {
         return groupId;
     }
 
-    String getArtifactId() {
+    public String getArtifactId() {
         return artifactId;
     }
 
-    String getVersion() {
+    public String getVersion() {
         return version;
     }
 
-    static GAV of(Model model) {
+    public static GAV of(Model model) {
 
         String groupId = model.getGroupId();
         String artifactId = model.getArtifactId();
@@ -56,7 +56,7 @@ class GAV {
         return new GAV(groupId, artifactId, version);
     }
 
-    static GAV of(Parent parent) {
+    public static GAV of(Parent parent) {
 
         String groupId = parent.getGroupId();
         String artifactId = parent.getArtifactId();

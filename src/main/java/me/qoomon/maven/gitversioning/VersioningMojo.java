@@ -1,7 +1,12 @@
 package me.qoomon.maven.gitversioning;
 
+import de.pdark.decentxml.Document;
+import de.pdark.decentxml.Element;
+import de.pdark.decentxml.XMLParser;
+import de.pdark.decentxml.XMLStringSource;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Plugin;
+import org.apache.maven.model.building.ModelProcessor;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -13,16 +18,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
 
-import static me.qoomon.maven.gitversioning.MavenUtil.*;
-
-import de.pdark.decentxml.Document;
-import de.pdark.decentxml.Element;
-import de.pdark.decentxml.XMLParser;
-import de.pdark.decentxml.XMLStringSource;
+import static java.lang.Boolean.parseBoolean;
 
 /**
  * Temporarily replace original pom files with pom files generated from in memory project models.
@@ -49,7 +46,7 @@ public class VersioningMojo extends AbstractMojo {
     public synchronized void execute() throws MojoExecutionException {
         try {
             // read plugin properties
-            final boolean configUpdatePom = Boolean.valueOf(
+            final boolean configUpdatePom = parseBoolean(
                     project.getProperties().getProperty(propertyKeyPrefix + propertyKeyUpdatePom));
 
             // remove plugin and properties
