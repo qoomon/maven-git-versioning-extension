@@ -1,6 +1,8 @@
 package me.qoomon.maven.gitversioning;
 
 import static java.lang.Boolean.parseBoolean;
+import static java.lang.Math.ceil;
+import static java.lang.Math.floor;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Optional.ofNullable;
@@ -14,6 +16,8 @@ import static me.qoomon.maven.gitversioning.VersioningMojo.GOAL;
 import static me.qoomon.maven.gitversioning.VersioningMojo.asPlugin;
 import static me.qoomon.maven.gitversioning.VersioningMojo.propertyKeyPrefix;
 import static me.qoomon.maven.gitversioning.VersioningMojo.propertyKeyUpdatePom;
+import static org.apache.maven.shared.utils.StringUtils.repeat;
+import static org.apache.maven.shared.utils.logging.MessageUtils.buffer;
 
 import java.io.File;
 import java.io.IOException;
@@ -79,8 +83,10 @@ public class ModelProcessor {
         try {
             if (!initialized) {
                 logger.info("");
-                logger.info("--- " + BuildProperties.projectArtifactId() + ":" + BuildProperties.projectVersion() + " ---");
-
+                String extensionId = BuildProperties.projectArtifactId() + ":" + BuildProperties.projectVersion();
+                logger.info(extensionLogFormat(extensionId));
+                logger.info("Adjusting project models...");
+                logger.info("");
                 try {
                     mavenSession = sessionScope.scope(Key.get(MavenSession.class), null).get();
                 } catch (OutOfScopeException ex) {
@@ -138,31 +144,33 @@ public class ModelProcessor {
             gitVersionDetails = getGitVersionDetails(config, projectModel);
         }
 
-        String projectId = projectModel.getGroupId() + ":" + projectModel.getArtifactId();
+        String projectId = projectGav.getGroupId() + ":" + projectGav.getArtifactId();
         Model virtualProjectModel = this.virtualProjectModelCache.get(projectId);
         if (virtualProjectModel == null) {
             // ---------------- process project -----------------------------------
-
-            logger.info(projectGav.getArtifactId() + " - " + gitVersionDetails.getCommitRefType() + ": "
-                    + gitVersionDetails.getCommitRefName());
+            logger.info(buffer().strong("--- ") + buffer().project(projectId).toString() + " @ " + gitVersionDetails.getCommitRefType() + " " + buffer().strong(gitVersionDetails.getCommitRefName()) + buffer().strong(" ---"));
 
             virtualProjectModel = projectModel.clone();
             final String projectVersion = GAV.of(projectModel).getVersion();
 
             if (virtualProjectModel.getVersion() != null) {
                 final String gitVersion = gitVersionDetails.getVersionTransformer().apply(projectVersion);
-                logger.info(projectGav.getArtifactId() + " - set project version: " + gitVersion);
+                logger.info("project version: " + buffer().strong(gitVersion));
                 virtualProjectModel.setVersion(gitVersion);
             }
 
             final Map<String, String> gitProperties = gitVersionDetails.getPropertiesTransformer().apply(
                     Maps.fromProperties(virtualProjectModel.getProperties()), projectVersion);
-            for (Entry<String, String> property : gitProperties.entrySet()) {
-                if (!property.getValue().equals(virtualProjectModel.getProperties().getProperty(property.getKey()))) {
-                    logger.info(projectGav.getArtifactId() + " - set property " + property.getKey() + ": " + property.getValue());
-                    virtualProjectModel.getProperties().setProperty(property.getKey(), property.getValue());
+            if (!gitProperties.isEmpty()) {
+                logger.info("properties:");
+                for (Entry<String, String> property : gitProperties.entrySet()) {
+                    if (!property.getValue().equals(virtualProjectModel.getProperties().getProperty(property.getKey()))) {
+                        logger.info("  " + property.getKey() + ": " + property.getValue());
+                        virtualProjectModel.getProperties().setProperty(property.getKey(), property.getValue());
+                    }
                 }
             }
+            logger.info("");
 
             virtualProjectModel.addProperty("git.commit", gitVersionDetails.getCommit());
             virtualProjectModel.addProperty("git.ref", gitVersionDetails.getCommitRefName());
@@ -364,5 +372,14 @@ public class ModelProcessor {
         }
 
         return updatePomOption;
+    }
+
+    private String extensionLogFormat(String extensionId) {
+        int extensionIdPadding = 72 - 2 - extensionId.length();
+        int extensionIdPaddingLeft = (int) ceil(extensionIdPadding / 2.0);
+        int extensionIdPaddingRight = (int) floor(extensionIdPadding / 2.0);
+        return buffer().strong(repeat("-", extensionIdPaddingLeft))
+                + " " + buffer().mojo(extensionId) + " "
+                + buffer().strong(repeat("-", extensionIdPaddingRight));
     }
 }
