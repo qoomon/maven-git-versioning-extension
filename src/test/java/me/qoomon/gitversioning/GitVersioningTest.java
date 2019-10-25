@@ -118,6 +118,34 @@ class GitVersioningTest {
     }
 
     @Test
+    void determineVersion_forBranchWithTag_withTagRule() {
+
+        // given
+        GitRepoSituation repoSituation = new GitRepoSituation();
+        repoSituation.setHeadBranch("develop");
+        repoSituation.setHeadTags(singletonList("v1"));
+
+        String currentVersion = "undefined";
+
+        // when
+        GitVersionDetails gitVersionDetails = GitVersioning.determineVersion(repoSituation,
+                new VersionDescription(),
+                singletonList(new VersionDescription(null, "${branch}-branch")),
+                singletonList(new VersionDescription(null, "${tag}-tag")));
+
+        String gitVersion = gitVersionDetails.getVersionTransformer().apply(currentVersion);
+
+        // then
+        assertAll(
+                () -> assertThat(gitVersionDetails.isClean()).isTrue(),
+                () -> assertThat(gitVersionDetails.getCommit()).isEqualTo(repoSituation.getHeadCommit()),
+                () -> assertThat(gitVersionDetails.getCommitRefType()).isEqualTo("tag"),
+                () -> assertThat(gitVersionDetails.getCommitRefName()).isEqualTo(repoSituation.getHeadTags().get(0)),
+                () -> assertThat(gitVersion).isEqualTo(repoSituation.getHeadTags().get(0) + "-tag")
+        );
+    }
+
+    @Test
     void determineVersion_detachedHead() {
 
         // given

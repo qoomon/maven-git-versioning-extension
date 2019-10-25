@@ -10,6 +10,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 
 import static me.qoomon.gitversioning.GitConstants.NO_COMMIT;
@@ -292,5 +293,118 @@ class GitUtilTest {
             softly.assertThat(it.getHeadBranch()).isNull();
             softly.assertThat(it.getHeadTags()).containsExactly(givenTag);
         }));
+    }
+
+    @Test
+    void situation_annotatedTagOnMaster() throws Exception {
+
+        // Given
+        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+        RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+
+        String givenTag = "v1";
+        git.tag().setAnnotated(true).setName(givenTag).call();
+
+        // When
+        GitRepoSituation repoSituation = GitUtil.situation(tempDir.toFile());
+
+        // Then
+        assertThat(repoSituation).satisfies(it -> assertSoftly(softly -> {
+            softly.assertThat(it.isClean()).isTrue();
+            softly.assertThat(it.getHeadCommit()).isEqualTo(givenCommit.getName());
+            softly.assertThat(it.getHeadBranch()).isEqualTo("master");
+            softly.assertThat(it.getHeadTags()).containsExactly(givenTag);
+        }));
+    }
+
+    @Test
+    void situation_annotatedTagDetached() throws Exception {
+
+        // Given
+        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+        RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+
+        String givenTag = "v1";
+        git.tag().setAnnotated(true).setName(givenTag).setObjectId(givenCommit).call();
+        git.checkout().setName(givenTag).call();
+
+        // When
+        GitRepoSituation repoSituation = GitUtil.situation(tempDir.toFile());
+
+        // Then
+        assertThat(repoSituation).satisfies(it -> assertSoftly(softly -> {
+            softly.assertThat(it.isClean()).isTrue();
+            softly.assertThat(it.getHeadCommit()).isEqualTo(givenCommit.getName());
+            softly.assertThat(it.getHeadBranch()).isNull();
+            softly.assertThat(it.getHeadTags()).containsExactly(givenTag);
+        }));
+    }
+
+    @Test
+    void situation_lightweightTagOnMaster() throws Exception {
+
+        // Given
+        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+        RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+
+        String givenTag = "v1";
+        git.tag().setAnnotated(false).setName(givenTag).call();
+
+        // When
+        GitRepoSituation repoSituation = GitUtil.situation(tempDir.toFile());
+
+        // Then
+        assertThat(repoSituation).satisfies(it -> assertSoftly(softly -> {
+            softly.assertThat(it.isClean()).isTrue();
+            softly.assertThat(it.getHeadCommit()).isEqualTo(givenCommit.getName());
+            softly.assertThat(it.getHeadBranch()).isEqualTo("master");
+            softly.assertThat(it.getHeadTags()).containsExactly(givenTag);
+        }));
+    }
+
+    @Test
+    void situation_lightweightTagDetached() throws Exception {
+
+        // Given
+        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+        RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+
+        String givenTag = "v1";
+        git.tag().setAnnotated(false).setName(givenTag).call();
+        git.checkout().setName(givenTag).call();
+
+        // When
+        GitRepoSituation repoSituation = GitUtil.situation(tempDir.toFile());
+
+        // Then
+        assertThat(repoSituation).satisfies(it -> assertSoftly(softly -> {
+            softly.assertThat(it.isClean()).isTrue();
+            softly.assertThat(it.getHeadCommit()).isEqualTo(givenCommit.getName());
+            softly.assertThat(it.getHeadBranch()).isNull();
+            softly.assertThat(it.getHeadTags()).containsExactly(givenTag);
+        }));
+    }
+
+    @Test
+    void situation_multipleTags() throws Exception {
+
+        // Given
+        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+        git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+
+        String givenTag1 = "v2";
+        git.tag().setAnnotated(false).setName(givenTag1).call();
+        String givenTag2 = "v1";
+        git.tag().setAnnotated(false).setName(givenTag2).call();
+        String givenTag3 = "v2.1";
+        git.tag().setAnnotated(false).setName(givenTag3).call();
+
+        // When
+        GitRepoSituation repoSituation = GitUtil.situation(tempDir.toFile());
+
+        // Then
+        // expect tags to be sorted alphanumerically
+        List<String> expectedTags = Arrays.asList(givenTag2, givenTag1, givenTag3);
+        assertThat(repoSituation.getHeadTags()).isEqualTo(expectedTags);
     }
 }

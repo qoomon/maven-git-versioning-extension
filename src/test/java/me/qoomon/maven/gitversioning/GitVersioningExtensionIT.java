@@ -3,7 +3,6 @@ package me.qoomon.maven.gitversioning;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import me.qoomon.maven.gitversioning.Configuration.VersionDescription;
-import org.apache.maven.it.VerificationException;
 import org.apache.maven.it.Verifier;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.DependencyManagement;
@@ -11,8 +10,6 @@ import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.revwalk.RevCommit;
-import org.eclipse.jgit.util.FileUtils;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -116,12 +113,13 @@ class GitVersioningExtensionIT {
     }
 
     @Test
-    void tagVersioning() throws Exception {
+    void tagVersioning_annotated_detached() throws Exception {
         // Given
         Git git = Git.init().setDirectory(projectDir.toFile()).call();
         RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
         String givenTag = "v1";
-        git.tag().setName(givenTag).call();
+
+        git.tag().setAnnotated(true).setName(givenTag).call();
         git.checkout().setName(givenTag).call();
 
         writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
@@ -135,6 +133,129 @@ class GitVersioningExtensionIT {
 
         // When
         Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath());
+        verifier.executeGoal("verify");
+
+        // Then
+        String log = getLog(verifier);
+        assertThat(log).doesNotContain("[ERROR]", "[FATAL]");
+        String expectedVersion = givenTag + "-gitVersioning";
+        assertThat(log).contains("Building " + pomModel.getArtifactId() + " " + expectedVersion);
+        Model gitVersionedPomModel = readModel(projectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile());
+        assertThat(gitVersionedPomModel).satisfies(it -> assertSoftly(softly -> {
+            softly.assertThat(it.getModelVersion()).isEqualTo(pomModel.getModelVersion());
+            softly.assertThat(it.getGroupId()).isEqualTo(pomModel.getGroupId());
+            softly.assertThat(it.getArtifactId()).isEqualTo(pomModel.getArtifactId());
+            softly.assertThat(it.getVersion()).isEqualTo(expectedVersion);
+            softly.assertThat(it.getProperties()).doesNotContainKeys(
+                    "git.commit",
+                    "git.ref",
+                    "git.tag"
+            );
+        }));
+    }
+
+    @Test
+    void tagVersioning_nonAnnotatedTagNotDetached() throws Exception {
+        // Given
+        Git git = Git.init().setDirectory(projectDir.toFile()).call();
+        RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+        String givenTag = "v1";
+
+        git.tag().setAnnotated(false).setName(givenTag).call();
+
+        writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
+        writeExtensionsFile(projectDir);
+
+        VersionDescription tagVersionDescription = new VersionDescription();
+        tagVersionDescription.pattern = ".*";
+        tagVersionDescription.versionFormat = "${tag}-gitVersioning";
+        extensionConfig.tag.add(tagVersionDescription);
+        writeExtensionConfigFile(projectDir, extensionConfig);
+
+        // When
+        Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath());
+        verifier.executeGoal("verify");
+
+        // Then
+        String log = getLog(verifier);
+        assertThat(log).doesNotContain("[ERROR]", "[FATAL]");
+        String expectedVersion = givenTag + "-gitVersioning";
+        assertThat(log).contains("Building " + pomModel.getArtifactId() + " " + expectedVersion);
+        Model gitVersionedPomModel = readModel(projectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile());
+        assertThat(gitVersionedPomModel).satisfies(it -> assertSoftly(softly -> {
+            softly.assertThat(it.getModelVersion()).isEqualTo(pomModel.getModelVersion());
+            softly.assertThat(it.getGroupId()).isEqualTo(pomModel.getGroupId());
+            softly.assertThat(it.getArtifactId()).isEqualTo(pomModel.getArtifactId());
+            softly.assertThat(it.getVersion()).isEqualTo(expectedVersion);
+            softly.assertThat(it.getProperties()).doesNotContainKeys(
+                    "git.commit",
+                    "git.ref",
+                    "git.tag"
+            );
+        }));
+    }
+
+    @Test
+    void tagVersioning_cliOption() throws Exception {
+        // Given
+        Git git = Git.init().setDirectory(projectDir.toFile()).call();
+        RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+        String givenTag = "v1";
+
+        writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
+        writeExtensionsFile(projectDir);
+
+        VersionDescription tagVersionDescription = new VersionDescription();
+        tagVersionDescription.pattern = ".*";
+        tagVersionDescription.versionFormat = "${tag}-gitVersioning";
+        extensionConfig.tag.add(tagVersionDescription);
+        writeExtensionConfigFile(projectDir, extensionConfig);
+
+        // When
+        Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath());
+        verifier.addCliOption("-Dgit.tag=" + givenTag);
+        verifier.executeGoal("verify");
+
+        // Then
+        String log = getLog(verifier);
+        assertThat(log).doesNotContain("[ERROR]", "[FATAL]");
+        String expectedVersion = givenTag + "-gitVersioning";
+        assertThat(log).contains("Building " + pomModel.getArtifactId() + " " + expectedVersion);
+        Model gitVersionedPomModel = readModel(projectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile());
+        assertThat(gitVersionedPomModel).satisfies(it -> assertSoftly(softly -> {
+            softly.assertThat(it.getModelVersion()).isEqualTo(pomModel.getModelVersion());
+            softly.assertThat(it.getGroupId()).isEqualTo(pomModel.getGroupId());
+            softly.assertThat(it.getArtifactId()).isEqualTo(pomModel.getArtifactId());
+            softly.assertThat(it.getVersion()).isEqualTo(expectedVersion);
+            softly.assertThat(it.getProperties()).doesNotContainKeys(
+                    "git.commit",
+                    "git.ref",
+                    "git.tag"
+            );
+        }));
+    }
+
+    @Test
+    void tagVersioning_cliOption_conflictingTag() throws Exception {
+        // Given
+        Git git = Git.init().setDirectory(projectDir.toFile()).call();
+        RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+        String givenTag = "v1";
+
+        git.tag().setAnnotated(false).setName("v2").call();
+
+        writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
+        writeExtensionsFile(projectDir);
+
+        VersionDescription tagVersionDescription = new VersionDescription();
+        tagVersionDescription.pattern = ".*";
+        tagVersionDescription.versionFormat = "${tag}-gitVersioning";
+        extensionConfig.tag.add(tagVersionDescription);
+        writeExtensionConfigFile(projectDir, extensionConfig);
+
+        // When
+        Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath());
+        verifier.addCliOption("-Dgit.tag=" + givenTag);
         verifier.executeGoal("verify");
 
         // Then
@@ -414,7 +535,7 @@ class GitVersioningExtensionIT {
             extensionConfig.branch.add(branchVersionDescription);
             writeExtensionConfigFile(projectDir, extensionConfig);
 
-            Parent externalParent = new Parent(){{
+            Parent externalParent = new Parent() {{
                 setGroupId("org.springframework.boot");
                 setArtifactId("spring-boot-starter-parent");
                 setVersion("2.1.3.RELEASE");
