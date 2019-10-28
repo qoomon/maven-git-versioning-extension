@@ -22,6 +22,7 @@ class ConfigurationTest {
 
         // then
         assertAll(
+                () -> assertThat(config.preferTags).isNull(),
                 () -> assertThat(config.commit).isNull(),
                 () -> assertThat(config.branch).isEmpty(),
                 () -> assertThat(config.tag).isEmpty()
@@ -208,6 +209,7 @@ class ConfigurationTest {
         // given
         String configXml = "" +
                 "<gitVersioning>\n" +
+                "    <preferTags>true</preferTags>\n" +
                 "    <commit>\n" +
                 "        <versionFormat>commit1-format</versionFormat>\n" +
                 "    </commit>\n" +
@@ -235,6 +237,7 @@ class ConfigurationTest {
 
         // then
         assertAll(
+                () -> assertThat(config.preferTags).isTrue(),
                 () -> assertThat(config.commit)
                         .satisfies(commitConfig -> assertThat(commitConfig.versionFormat).isEqualTo("commit1-format")),
                 () -> assertThat(config.branch)

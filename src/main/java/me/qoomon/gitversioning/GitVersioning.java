@@ -34,14 +34,15 @@ public final class GitVersioning {
             final GitRepoSituation repoSituation,
             final VersionDescription commitVersionDescription,
             final List<VersionDescription> branchVersionDescriptions,
-            final List<VersionDescription> tagVersionDescriptions) {
+            final List<VersionDescription> tagVersionDescriptions,
+            final boolean preferTags) {
 
         requireNonNull(repoSituation);
         requireNonNull(commitVersionDescription);
         requireNonNull(branchVersionDescriptions);
         requireNonNull(tagVersionDescriptions);
 
-        final VersioningInfo versioningInfo = getVersioningInfo(repoSituation, commitVersionDescription, branchVersionDescriptions, tagVersionDescriptions);
+        final VersioningInfo versioningInfo = getVersioningInfo(repoSituation, commitVersionDescription, branchVersionDescriptions, tagVersionDescriptions, preferTags);
 
         final Map<String, String> refData = valueGroupMap(versioningInfo.description.getPattern(), versioningInfo.gitRefName);
 
@@ -80,12 +81,18 @@ public final class GitVersioning {
         );
     }
 
-    private static VersioningInfo getVersioningInfo(GitRepoSituation repoSituation, VersionDescription commitVersionDescription, List<VersionDescription> branchVersionDescriptions, List<VersionDescription> tagVersionDescriptions) {
+    private static VersioningInfo getVersioningInfo(GitRepoSituation repoSituation, VersionDescription commitVersionDescription, List<VersionDescription> branchVersionDescriptions, List<VersionDescription> tagVersionDescriptions, boolean preferTags) {
 
         // tags take precedence over branches
-        VersioningInfo versioningInfo = getTagVersioningInfo(repoSituation, tagVersionDescriptions);
+        VersioningInfo versioningInfo = null;
+        if (preferTags) {
+            versioningInfo = getTagVersioningInfo(repoSituation, tagVersionDescriptions);
+        }
         if (versioningInfo == null) {
             versioningInfo = getBranchVersioningInfo(repoSituation, branchVersionDescriptions);
+        }
+        if (!preferTags && versioningInfo == null) {
+            versioningInfo = getTagVersioningInfo(repoSituation, tagVersionDescriptions);
         }
 
         // default versioning: commit

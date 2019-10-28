@@ -13,6 +13,8 @@ public class Configuration {
 
     public Boolean updatePom;
 
+    public Boolean preferTags;
+
     public CommitVersionDescription commit = null;
 
     @JacksonXmlElementWrapper(useWrapping = false)
