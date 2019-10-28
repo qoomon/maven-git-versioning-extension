@@ -30,6 +30,7 @@ import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 
+import com.google.common.base.CaseFormat;
 import org.apache.maven.building.Source;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Build;
@@ -60,9 +61,11 @@ import me.qoomon.gitversioning.VersionDescription;
  * This is need because maven 3.6.2 has broken component replacement mechanism.
  */
 public class GitVersioningModelProcessor {
-    private static final String OPTION_NAME_DISABLE = "versioning.disable";
     private static final String OPTION_NAME_GIT_TAG = "git.tag";
     private static final String OPTION_NAME_GIT_BRANCH = "git.branch";
+    private static final String OPTION_NAME_DISABLE = "versioning.disable";
+    private static final String OPTION_UPDATE_POM = "versioning.updatePom";
+    private static final String OPTION_PREFER_TAGS = "versioning.preferTags";
 
     @Inject
     private Logger logger;
@@ -225,6 +228,9 @@ public class GitVersioningModelProcessor {
             repoSituation.setHeadBranch(providedBranch.isEmpty() ? null : providedBranch);
         }
 
+        final boolean preferTags = (config.preferTags != null && config.preferTags)
+                || parseBoolean(getOption(OPTION_PREFER_TAGS));
+
         return GitVersioning.determineVersion(repoSituation,
                 ofNullable(config.commit)
                         .map(it -> new VersionDescription(null, it.versionFormat, convertPropertyDescription(it.property)))
@@ -234,7 +240,8 @@ public class GitVersioningModelProcessor {
                         .collect(toList()),
                 config.tag.stream()
                         .map(it -> new VersionDescription(it.pattern, it.versionFormat, convertPropertyDescription(it.property)))
-                        .collect(toList()));
+                        .collect(toList()),
+                preferTags);
     }
 
     private List<PropertyDescription> convertPropertyDescription(
@@ -332,11 +339,13 @@ public class GitVersioningModelProcessor {
         model.getProperties().setProperty(propertyKeyPrefix + propertyKeyUpdatePom, Boolean.toString(updatePomOption));
     }
 
+
     private String getOption(final String name) {
         String value = mavenSession.getUserProperties().getProperty(name);
         if (value == null) {
-            String environmentVariableName = "VERSIONING_" + name
-                    .replaceFirst("^versioning\\.", "")
+            String plainName = name.replaceFirst("^versioning\\.", "");
+            String environmentVariableName = "VERSIONING_"
+                    + String.join("_", plainName.split("(?=\\p{Lu})"))
                     .replaceAll("\\.", "_")
                     .toUpperCase();
             value = System.getenv(environmentVariableName);
@@ -353,6 +362,10 @@ public class GitVersioningModelProcessor {
     }
 
     private boolean getUpdatePomOption(final Configuration config, final GitVersionDetails gitVersionDetails) {
+        if(parseBoolean(getOption(OPTION_UPDATE_POM))){
+            return true;
+        }
+
         boolean updatePomOption = config.updatePom != null && config.updatePom;
         if (gitVersionDetails.getCommitRefType().equals("tag")) {
             updatePomOption = config.tag.stream()

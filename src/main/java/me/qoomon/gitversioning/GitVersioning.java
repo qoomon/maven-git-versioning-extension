@@ -34,7 +34,8 @@ public final class GitVersioning {
             final GitRepoSituation repoSituation,
             final VersionDescription commitVersionDescription,
             final List<VersionDescription> branchVersionDescriptions,
-            final List<VersionDescription> tagVersionDescriptions) {
+            final List<VersionDescription> tagVersionDescriptions,
+            final boolean preferTags) {
 
         requireNonNull(repoSituation);
         requireNonNull(commitVersionDescription);
@@ -42,9 +43,9 @@ public final class GitVersioning {
         requireNonNull(tagVersionDescriptions);
 
         // default versioning
-        String gitRefType = "commit";
-        String gitRefName = repoSituation.getHeadCommit();
-        VersionDescription versionDescription = commitVersionDescription;
+        String gitRefType = null;
+        String gitRefName = null;
+        VersionDescription versionDescription = null;
 
         if (repoSituation.getHeadBranch() != null) {
             // branch versioning
@@ -58,7 +59,9 @@ public final class GitVersioning {
                     break;
                 }
             }
-        } else if (!repoSituation.getHeadTags().isEmpty()) {
+        }
+
+        if ((versionDescription == null || preferTags) && !repoSituation.getHeadTags().isEmpty()) {
             // tag versioning
             for (final VersionDescription tagVersionDescription : tagVersionDescriptions) {
                 Optional<String> versionTag = repoSituation.getHeadTags().stream()
@@ -73,7 +76,12 @@ public final class GitVersioning {
             }
         }
 
-        final VersionDescription finalVersionDescription = versionDescription;
+        if (versionDescription == null) {
+            // commit versioning
+            gitRefType = "commit";
+            gitRefName = repoSituation.getHeadCommit();
+            versionDescription = commitVersionDescription;
+        }
 
         final Map<String, String> refData = valueGroupMap(versionDescription.getPattern(), gitRefName);
 
@@ -85,6 +93,8 @@ public final class GitVersioning {
         gitDataMap.put("ref", gitRefName);
         gitDataMap.put(gitRefType, gitRefName);
         gitDataMap.putAll(refData);
+
+        final VersionDescription finalVersionDescription = versionDescription;
 
         final VersionTransformer versionTransformer = currentVersion -> {
             final Map<String, String> dataMap = new HashMap<>(gitDataMap);

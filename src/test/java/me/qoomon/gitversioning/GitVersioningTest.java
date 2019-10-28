@@ -31,7 +31,8 @@ class GitVersioningTest {
         GitVersionDetails gitVersionDetails = GitVersioning.determineVersion(repoSituation,
                 new VersionDescription(),
                 singletonList(new VersionDescription(null, "${branch}-branch")),
-                emptyList());
+                emptyList(),
+                false);
 
         String gitVersion = gitVersionDetails.getVersionTransformer().apply(currentVersion);
 
@@ -70,7 +71,8 @@ class GitVersioningTest {
         GitVersionDetails gitVersionDetails = GitVersioning.determineVersion(repoSituation,
                 new VersionDescription(),
                 singletonList(branchVersionDescription),
-                emptyList());
+                emptyList(),
+                false);
 
         String gitVersion = gitVersionDetails.getVersionTransformer().apply(currentVersion);
         Map<String, String> gitProperties = gitVersionDetails.getPropertiesTransformer().apply(currentProperties, currentVersion);
@@ -103,7 +105,8 @@ class GitVersioningTest {
         GitVersionDetails gitVersionDetails = GitVersioning.determineVersion(repoSituation,
                 new VersionDescription(),
                 singletonList(new VersionDescription(null, "${branch}-branch")),
-                emptyList());
+                emptyList(),
+                false);
 
         String gitVersion = gitVersionDetails.getVersionTransformer().apply(currentVersion);
 
@@ -129,7 +132,8 @@ class GitVersioningTest {
         GitVersionDetails gitVersionDetails = GitVersioning.determineVersion(repoSituation,
                 new VersionDescription(null, "${commit}-commit"),
                 emptyList(),
-                emptyList());
+                emptyList(),
+                false);
 
         String gitVersion = gitVersionDetails.getVersionTransformer().apply(currentVersion);
 
@@ -156,7 +160,8 @@ class GitVersioningTest {
         GitVersionDetails gitVersionDetails = GitVersioning.determineVersion(repoSituation,
                 new VersionDescription(),
                 emptyList(),
-                singletonList(new VersionDescription("v.*", "${tag}-tag")));
+                singletonList(new VersionDescription("v.*", "${tag}-tag")),
+                false);
 
         String gitVersion = gitVersionDetails.getVersionTransformer().apply(currentVersion);
 
@@ -185,7 +190,8 @@ class GitVersioningTest {
         GitVersionDetails gitVersionDetails = GitVersioning.determineVersion(repoSituation,
                 new VersionDescription(),
                 singletonList(new VersionDescription(null, "${commit.timestamp}-branch")),
-                emptyList());
+                emptyList(),
+                false);
 
         String gitVersion = gitVersionDetails.getVersionTransformer().apply(currentVersion);
 
@@ -214,7 +220,8 @@ class GitVersioningTest {
         GitVersionDetails gitVersionDetails = GitVersioning.determineVersion(repoSituation,
                 new VersionDescription(),
                 singletonList(new VersionDescription(null, "${commit.timestamp.datetime}-branch")),
-                emptyList());
+                emptyList(),
+                false);
 
         String gitVersion = gitVersionDetails.getVersionTransformer().apply(currentVersion);
 
