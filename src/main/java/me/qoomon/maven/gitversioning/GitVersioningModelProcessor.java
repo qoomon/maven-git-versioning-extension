@@ -30,7 +30,6 @@ import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 
-import com.google.common.base.CaseFormat;
 import org.apache.maven.building.Source;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Build;

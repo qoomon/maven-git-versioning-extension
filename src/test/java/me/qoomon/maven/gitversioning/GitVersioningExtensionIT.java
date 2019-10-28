@@ -37,8 +37,6 @@ class GitVersioningExtensionIT {
         setVersion("0.0.0");
     }};
 
-    Configuration extensionConfig = new Configuration();
-
     @Test
     void commitVersioning() throws Exception {
         // Given
@@ -46,7 +44,7 @@ class GitVersioningExtensionIT {
 
         writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
         writeExtensionsFile(projectDir);
-        writeExtensionConfigFile(projectDir, extensionConfig);
+        writeExtensionConfigFile(projectDir, new Configuration());
 
         // When
         Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath());
@@ -83,10 +81,8 @@ class GitVersioningExtensionIT {
         writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
         writeExtensionsFile(projectDir);
 
-        VersionDescription branchVersionDescription = new VersionDescription();
-        branchVersionDescription.pattern = ".*";
-        branchVersionDescription.versionFormat = "${branch}-gitVersioning";
-        extensionConfig.branch.add(branchVersionDescription);
+        Configuration extensionConfig = new Configuration();
+        extensionConfig.branch.add(createBranchVersionDescription());
         writeExtensionConfigFile(projectDir, extensionConfig);
 
         // When
@@ -125,10 +121,10 @@ class GitVersioningExtensionIT {
         writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
         writeExtensionsFile(projectDir);
 
-        VersionDescription tagVersionDescription = new VersionDescription();
-        tagVersionDescription.pattern = ".*";
-        tagVersionDescription.versionFormat = "${tag}-gitVersioning";
-        extensionConfig.tag.add(tagVersionDescription);
+        Configuration extensionConfig = new Configuration();
+        extensionConfig.preferTags = false;
+        extensionConfig.branch.add(createBranchVersionDescription());
+        extensionConfig.tag.add(createTagVersionDescription());
         writeExtensionConfigFile(projectDir, extensionConfig);
 
         // When
@@ -166,10 +162,10 @@ class GitVersioningExtensionIT {
         writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
         writeExtensionsFile(projectDir);
 
-        VersionDescription tagVersionDescription = new VersionDescription();
-        tagVersionDescription.pattern = ".*";
-        tagVersionDescription.versionFormat = "${tag}-gitVersioning";
-        extensionConfig.tag.add(tagVersionDescription);
+        Configuration extensionConfig = new Configuration();
+        extensionConfig.preferTags = true;
+        extensionConfig.branch.add(createBranchVersionDescription());
+        extensionConfig.tag.add(createTagVersionDescription());
         writeExtensionConfigFile(projectDir, extensionConfig);
 
         // When
@@ -196,7 +192,7 @@ class GitVersioningExtensionIT {
     }
 
     @Test
-    void tagVersioning_cliOption() throws Exception {
+    void tagVersioning_cliOption_gitTag() throws Exception {
         // Given
         Git git = Git.init().setDirectory(projectDir.toFile()).call();
         RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
@@ -205,15 +201,54 @@ class GitVersioningExtensionIT {
         writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
         writeExtensionsFile(projectDir);
 
-        VersionDescription tagVersionDescription = new VersionDescription();
-        tagVersionDescription.pattern = ".*";
-        tagVersionDescription.versionFormat = "${tag}-gitVersioning";
-        extensionConfig.tag.add(tagVersionDescription);
+        Configuration extensionConfig = new Configuration();
+        extensionConfig.tag.add(createTagVersionDescription());
         writeExtensionConfigFile(projectDir, extensionConfig);
 
         // When
         Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath());
         verifier.addCliOption("-Dgit.tag=" + givenTag);
+        verifier.executeGoal("verify");
+
+        // Then
+        String log = getLog(verifier);
+        assertThat(log).doesNotContain("[ERROR]", "[FATAL]");
+        String expectedVersion = givenTag + "-gitVersioning";
+        assertThat(log).contains("Building " + pomModel.getArtifactId() + " " + expectedVersion);
+        Model gitVersionedPomModel = readModel(projectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile());
+        assertThat(gitVersionedPomModel).satisfies(it -> assertSoftly(softly -> {
+            softly.assertThat(it.getModelVersion()).isEqualTo(pomModel.getModelVersion());
+            softly.assertThat(it.getGroupId()).isEqualTo(pomModel.getGroupId());
+            softly.assertThat(it.getArtifactId()).isEqualTo(pomModel.getArtifactId());
+            softly.assertThat(it.getVersion()).isEqualTo(expectedVersion);
+            softly.assertThat(it.getProperties()).doesNotContainKeys(
+                    "git.commit",
+                    "git.ref",
+                    "git.tag"
+            );
+        }));
+    }
+
+    @Test
+    void tagVersioning_cliOption_preferTags() throws Exception {
+        // Given
+        Git git = Git.init().setDirectory(projectDir.toFile()).call();
+        RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+        String givenTag = "v1";
+
+        git.tag().setAnnotated(false).setName(givenTag).call();
+
+        writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
+        writeExtensionsFile(projectDir);
+
+        Configuration extensionConfig = new Configuration();
+        extensionConfig.branch.add(createBranchVersionDescription());
+        extensionConfig.tag.add(createTagVersionDescription());
+        writeExtensionConfigFile(projectDir, extensionConfig);
+
+        // When
+        Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath());
+        verifier.addCliOption("-Dversioning.preferTags=true");
         verifier.executeGoal("verify");
 
         // Then
@@ -247,10 +282,47 @@ class GitVersioningExtensionIT {
         writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
         writeExtensionsFile(projectDir);
 
-        VersionDescription tagVersionDescription = new VersionDescription();
-        tagVersionDescription.pattern = ".*";
-        tagVersionDescription.versionFormat = "${tag}-gitVersioning";
-        extensionConfig.tag.add(tagVersionDescription);
+        Configuration extensionConfig = new Configuration();
+        extensionConfig.tag.add(createTagVersionDescription());
+        writeExtensionConfigFile(projectDir, extensionConfig);
+
+        // When
+        Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath());
+        verifier.addCliOption("-Dgit.tag=" + givenTag);
+        verifier.executeGoal("verify");
+
+        // Then
+        String log = getLog(verifier);
+        assertThat(log).doesNotContain("[ERROR]", "[FATAL]");
+        String expectedVersion = givenTag + "-gitVersioning";
+        assertThat(log).contains("Building " + pomModel.getArtifactId() + " " + expectedVersion);
+        Model gitVersionedPomModel = readModel(projectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile());
+        assertThat(gitVersionedPomModel).satisfies(it -> assertSoftly(softly -> {
+            softly.assertThat(it.getModelVersion()).isEqualTo(pomModel.getModelVersion());
+            softly.assertThat(it.getGroupId()).isEqualTo(pomModel.getGroupId());
+            softly.assertThat(it.getArtifactId()).isEqualTo(pomModel.getArtifactId());
+            softly.assertThat(it.getVersion()).isEqualTo(expectedVersion);
+            softly.assertThat(it.getProperties()).doesNotContainKeys(
+                    "git.commit",
+                    "git.ref",
+                    "git.tag"
+            );
+        }));
+    }
+
+    @Test
+    void tagVersioning_cliOption_withBranch() throws Exception {
+        // Given
+        Git git = Git.init().setDirectory(projectDir.toFile()).call();
+        RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+        String givenTag = "v1";
+
+        writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
+        writeExtensionsFile(projectDir);
+
+        Configuration extensionConfig = new Configuration();
+        extensionConfig.branch.add(createBranchVersionDescription());
+        extensionConfig.tag.add(createTagVersionDescription());
         writeExtensionConfigFile(projectDir, extensionConfig);
 
         // When
@@ -299,7 +371,7 @@ class GitVersioningExtensionIT {
         }});
         writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
         writeExtensionsFile(projectDir);
-        writeExtensionConfigFile(projectDir, extensionConfig);
+        writeExtensionConfigFile(projectDir, new Configuration());
 
         Path apiProjectDir = Files.createDirectories(projectDir.resolve("api"));
         Model apiPomModel = writeModel(apiProjectDir.resolve("pom.xml").toFile(), new Model() {{
@@ -381,7 +453,7 @@ class GitVersioningExtensionIT {
 
         writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
         writeExtensionsFile(projectDir);
-        writeExtensionConfigFile(projectDir, extensionConfig);
+        writeExtensionConfigFile(projectDir, new Configuration());
 
         Path logicProjectDir = Files.createDirectories(projectDir.resolve("logic"));
         Model logicPomModel = writeModel(logicProjectDir.resolve("pom.xml").toFile(), new Model() {{
@@ -467,10 +539,8 @@ class GitVersioningExtensionIT {
             writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
             writeExtensionsFile(projectDir);
 
-            VersionDescription branchVersionDescription = new VersionDescription();
-            branchVersionDescription.pattern = ".*";
-            branchVersionDescription.versionFormat = "${branch}-gitVersioning";
-            extensionConfig.branch.add(branchVersionDescription);
+            Configuration extensionConfig = new Configuration();
+            extensionConfig.branch.add(createBranchVersionDescription());
             writeExtensionConfigFile(projectDir, extensionConfig);
 
             Path apiProjectDir = Files.createDirectories(projectDir.resolve("api"));
@@ -529,10 +599,8 @@ class GitVersioningExtensionIT {
             writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
             writeExtensionsFile(projectDir);
 
-            VersionDescription branchVersionDescription = new VersionDescription();
-            branchVersionDescription.pattern = ".*";
-            branchVersionDescription.versionFormat = "${branch}-gitVersioning";
-            extensionConfig.branch.add(branchVersionDescription);
+            Configuration extensionConfig = new Configuration();
+            extensionConfig.branch.add(createBranchVersionDescription());
             writeExtensionConfigFile(projectDir, extensionConfig);
 
             Parent externalParent = new Parent() {{
@@ -597,10 +665,8 @@ class GitVersioningExtensionIT {
             writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
             writeExtensionsFile(projectDir);
 
-            VersionDescription branchVersionDescription = new VersionDescription();
-            branchVersionDescription.pattern = ".*";
-            branchVersionDescription.versionFormat = "${branch}-gitVersioning";
-            extensionConfig.branch.add(branchVersionDescription);
+            Configuration extensionConfig = new Configuration();
+            extensionConfig.branch.add(createBranchVersionDescription());
             writeExtensionConfigFile(projectDir, extensionConfig);
 
             final Path parentProjectDir = Files.createDirectories(projectDir.resolve("parent"));
@@ -667,6 +733,21 @@ class GitVersioningExtensionIT {
                 "    <version>LATEST</version>\n" +
                 "  </extension>\n" +
                 "</extensions>").getBytes()).toFile();
+    }
+
+    private VersionDescription createBranchVersionDescription() {
+        return createVersionDescription("${branch}-gitVersioning");
+    }
+
+    private VersionDescription createTagVersionDescription() {
+        return createVersionDescription("${tag}-gitVersioning");
+    }
+
+    private VersionDescription createVersionDescription(String format) {
+        VersionDescription branchVersionDescription = new VersionDescription();
+        branchVersionDescription.pattern = ".*";
+        branchVersionDescription.versionFormat = format;
+        return branchVersionDescription;
     }
 
     private File writeExtensionConfigFile(Path projectDir, Configuration config) throws Exception {
