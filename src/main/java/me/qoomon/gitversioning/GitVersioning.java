@@ -91,7 +91,7 @@ public final class GitVersioning {
         if (versioningInfo == null) {
             versioningInfo = getBranchVersioningInfo(repoSituation, branchVersionDescriptions);
         }
-        if (!preferTags && versioningInfo == null) {
+        if (versioningInfo == null && !preferTags) {
             versioningInfo = getTagVersioningInfo(repoSituation, tagVersionDescriptions);
         }
 
