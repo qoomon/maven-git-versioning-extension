@@ -73,6 +73,8 @@ Create `${basedir}/.mvn/maven-git-versioning-extension.xml`.
 
 - *optional* `<updatePom>` global enable(`true`)/disable(`false`) version update in original pom file.
 
+- *optional* `<preferTags>` global enable(`true`)/disable(`false`) prefer tag rules over branch rules if both match.
+
 - `<branch>` specific version format definition.
     - `<pattern>` An arbitrary regex to match branch names (has to be a **full match pattern** e.g. `feature/.+` )
     - `<versionFormat>` An arbitrary string, see [Version Format & Placeholders](#version-format--placeholders)
@@ -182,10 +184,14 @@ Create `${basedir}/.mvn/maven-git-versioning-extension.xml`.
         - `export VERSIONING_GIT_BRANCH=$PROVIDED_BRANCH_NAME`
         - `export VERSIONING_GIT_TAG=$PROVIDED_TAG_NAME`
         - `export VERSIONING_DISABLE=true`
+        - `export VERSIONING_PREFER_TAGS=true`
+        - `export VERSIONING_UPDATE_POM=true`
     - **Command Line Parameters**
         - `maven ... -Dgit.branch=$PROVIDED_BRANCH_NAME`
         - `maven ... -Dgit.tag=$PROVIDED_TAG_NAME`
         - `maven ... -Dversioning.disable=true`
+        - `maven ... -Dversioning.preferTags=true`
+        - `maven ... -Dversioning.updatePom=true`
   
   ℹ Especially useful for **CI builds** see [Miscellaneous Hints](#miscellaneous-hints)
 
