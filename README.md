@@ -183,17 +183,23 @@ Create `${basedir}/.mvn/maven-git-versioning-extension.xml`.
     - **Environment Variables**
         - `export VERSIONING_GIT_BRANCH=$PROVIDED_BRANCH_NAME`
         - `export VERSIONING_GIT_TAG=$PROVIDED_TAG_NAME`
-        - `export VERSIONING_DISABLE=true`
-        - `export VERSIONING_PREFER_TAGS=true`
-        - `export VERSIONING_UPDATE_POM=true`
     - **Command Line Parameters**
         - `maven ... -Dgit.branch=$PROVIDED_BRANCH_NAME`
         - `maven ... -Dgit.tag=$PROVIDED_TAG_NAME`
-        - `maven ... -Dversioning.disable=true`
-        - `maven ... -Dversioning.preferTags=true`
-        - `maven ... -Dversioning.updatePom=true`
-  
+        
   ℹ Especially useful for **CI builds** see [Miscellaneous Hints](#miscellaneous-hints)
+
+- Update `pom.xml`
+    - **Environment Variables**
+        - `export VERSIONING_UPDATE_POM=true`
+    - **Command Line Parameters**
+        - `maven ... -Dversioning.updatePom=true`
+
+- **Prefer Tags** for Versioning instead of Branches
+    - **Environment Variables**
+        - `export VERSIONING_PREFER_TAGS=true`
+    - **Command Line Parameters**
+        - `maven ... -Dversioning.preferTags=true`
 
 ## Provided Project Properties
 
