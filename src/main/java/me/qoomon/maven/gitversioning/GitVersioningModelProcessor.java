@@ -227,16 +227,7 @@ public class GitVersioningModelProcessor {
             repoSituation.setHeadBranch(providedBranch.isEmpty() ? null : providedBranch);
         }
 
-        final boolean preferTagsOption;
-        final String preferTagsCommandOption = getCommandOption(OPTION_PREFER_TAGS);
-        if(preferTagsCommandOption != null){
-            preferTagsOption = parseBoolean(preferTagsCommandOption);
-        } else if (config.preferTags != null){
-            preferTagsOption = config.preferTags;
-        } else {
-            preferTagsOption = false;
-        }
-
+        final boolean preferTagsOption = getPreferTagsOption(config);
         return GitVersioning.determineVersion(repoSituation,
                 ofNullable(config.commit)
                         .map(it -> new VersionDescription(null, it.versionFormat, convertPropertyDescription(it.property)))
@@ -365,6 +356,19 @@ public class GitVersioningModelProcessor {
         }
         logger.debug("load config from " + configFile);
         return unchecked(() -> new XmlMapper().readValue(configFile, Configuration.class));
+    }
+
+    private boolean getPreferTagsOption(final Configuration config) {
+        final boolean preferTagsOption;
+        final String preferTagsCommandOption = getCommandOption(OPTION_PREFER_TAGS);
+        if(preferTagsCommandOption != null){
+            preferTagsOption = parseBoolean(preferTagsCommandOption);
+        } else if (config.preferTags != null){
+            preferTagsOption = config.preferTags;
+        } else {
+            preferTagsOption = false;
+        }
+        return preferTagsOption;
     }
 
     private boolean getUpdatePomOption(final Configuration config, final GitVersionDetails gitVersionDetails) {
