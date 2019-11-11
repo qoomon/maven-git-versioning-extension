@@ -230,7 +230,7 @@ class GitVersioningExtensionIT {
     }
 
     @Test
-    void tagVersioning_cliOption_preferTags() throws Exception {
+    void tagVersioning_cliOption_preferTags_true() throws Exception {
         // Given
         Git git = Git.init().setDirectory(projectDir.toFile()).call();
         RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
@@ -255,6 +255,48 @@ class GitVersioningExtensionIT {
         String log = getLog(verifier);
         assertThat(log).doesNotContain("[ERROR]", "[FATAL]");
         String expectedVersion = givenTag + "-gitVersioning";
+        assertThat(log).contains("Building " + pomModel.getArtifactId() + " " + expectedVersion);
+        Model gitVersionedPomModel = readModel(projectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile());
+        assertThat(gitVersionedPomModel).satisfies(it -> assertSoftly(softly -> {
+            softly.assertThat(it.getModelVersion()).isEqualTo(pomModel.getModelVersion());
+            softly.assertThat(it.getGroupId()).isEqualTo(pomModel.getGroupId());
+            softly.assertThat(it.getArtifactId()).isEqualTo(pomModel.getArtifactId());
+            softly.assertThat(it.getVersion()).isEqualTo(expectedVersion);
+            softly.assertThat(it.getProperties()).doesNotContainKeys(
+                    "git.commit",
+                    "git.ref",
+                    "git.tag"
+            );
+        }));
+    }
+
+    @Test
+    void tagVersioning_cliOption_preferTags_false() throws Exception {
+        // Given
+        Git git = Git.init().setDirectory(projectDir.toFile()).call();
+        RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+        String givenTag = "v1";
+
+        git.tag().setAnnotated(false).setName(givenTag).call();
+
+        writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
+        writeExtensionsFile(projectDir);
+
+        Configuration extensionConfig = new Configuration();
+        extensionConfig.branch.add(createBranchVersionDescription());
+        extensionConfig.tag.add(createTagVersionDescription());
+        extensionConfig.preferTags = true;
+        writeExtensionConfigFile(projectDir, extensionConfig);
+
+        // When
+        Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath());
+        verifier.addCliOption("-Dversioning.preferTags=false");
+        verifier.executeGoal("verify");
+
+        // Then
+        String log = getLog(verifier);
+        assertThat(log).doesNotContain("[ERROR]", "[FATAL]");
+        String expectedVersion = "master-gitVersioning";
         assertThat(log).contains("Building " + pomModel.getArtifactId() + " " + expectedVersion);
         Model gitVersionedPomModel = readModel(projectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile());
         assertThat(gitVersionedPomModel).satisfies(it -> assertSoftly(softly -> {

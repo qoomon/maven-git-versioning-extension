@@ -1,24 +1,18 @@
 package me.qoomon.maven.gitversioning;
 
-import static java.lang.Boolean.parseBoolean;
-import static java.lang.Math.ceil;
-import static java.lang.Math.floor;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
-import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toList;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.google.common.collect.Maps;
+import com.google.inject.Key;
+import com.google.inject.OutOfScopeException;
+import me.qoomon.gitversioning.*;
+import org.apache.maven.building.Source;
+import org.apache.maven.execution.MavenSession;
+import org.apache.maven.model.*;
+import org.apache.maven.session.scope.internal.SessionScope;
+import org.codehaus.plexus.logging.Logger;
+import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
-import static me.qoomon.UncheckedExceptions.unchecked;
-import static me.qoomon.maven.gitversioning.MavenUtil.isProjectPom;
-import static me.qoomon.maven.gitversioning.MavenUtil.readModel;
-import static me.qoomon.maven.gitversioning.VersioningMojo.GIT_VERSIONING_POM_NAME;
-import static me.qoomon.maven.gitversioning.VersioningMojo.GOAL;
-import static me.qoomon.maven.gitversioning.VersioningMojo.asPlugin;
-import static me.qoomon.maven.gitversioning.VersioningMojo.propertyKeyPrefix;
-import static me.qoomon.maven.gitversioning.VersioningMojo.propertyKeyUpdatePom;
-import static org.apache.maven.shared.utils.StringUtils.repeat;
-import static org.apache.maven.shared.utils.logging.MessageUtils.buffer;
-
+import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
@@ -28,31 +22,19 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
-import javax.inject.Inject;
-
-import org.apache.maven.building.Source;
-import org.apache.maven.execution.MavenSession;
-import org.apache.maven.model.Build;
-import org.apache.maven.model.Model;
-import org.apache.maven.model.Parent;
-import org.apache.maven.model.Plugin;
-import org.apache.maven.model.PluginExecution;
-import org.apache.maven.session.scope.internal.SessionScope;
-import org.codehaus.plexus.logging.Logger;
-import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
-
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import com.google.common.collect.Maps;
-import com.google.inject.Key;
-import com.google.inject.OutOfScopeException;
-
-import me.qoomon.gitversioning.GitRepoSituation;
-import me.qoomon.gitversioning.GitUtil;
-import me.qoomon.gitversioning.GitVersionDetails;
-import me.qoomon.gitversioning.GitVersioning;
-import me.qoomon.gitversioning.PropertyDescription;
-import me.qoomon.gitversioning.PropertyValueDescription;
-import me.qoomon.gitversioning.VersionDescription;
+import static java.lang.Boolean.parseBoolean;
+import static java.lang.Math.ceil;
+import static java.lang.Math.floor;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toList;
+import static me.qoomon.UncheckedExceptions.unchecked;
+import static me.qoomon.maven.gitversioning.MavenUtil.isProjectPom;
+import static me.qoomon.maven.gitversioning.MavenUtil.readModel;
+import static me.qoomon.maven.gitversioning.VersioningMojo.*;
+import static org.apache.maven.shared.utils.StringUtils.repeat;
+import static org.apache.maven.shared.utils.logging.MessageUtils.buffer;
 
 /**
  * WORKAROUND
@@ -227,8 +209,8 @@ public class GitVersioningModelProcessor {
             repoSituation.setHeadBranch(providedBranch.isEmpty() ? null : providedBranch);
         }
 
-        final boolean preferTags = (config.preferTags != null && config.preferTags)
-                || parseBoolean(getOption(OPTION_PREFER_TAGS));
+        final String cliOption = getOption(OPTION_PREFER_TAGS);
+        final boolean preferTags = (cliOption != null && parseBoolean(cliOption)) || (cliOption == null && config.preferTags != null && config.preferTags);
 
         return GitVersioning.determineVersion(repoSituation,
                 ofNullable(config.commit)
