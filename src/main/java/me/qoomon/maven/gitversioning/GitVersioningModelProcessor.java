@@ -103,7 +103,7 @@ public class GitVersioningModelProcessor {
                 return projectModel;
             }
 
-            if (parseBoolean(getOption(OPTION_NAME_DISABLE))) {
+            if (parseBoolean(getCommandOption(OPTION_NAME_DISABLE))) {
                 logger.warn("skip - versioning is disabled");
                 return projectModel;
             }
@@ -217,18 +217,25 @@ public class GitVersioningModelProcessor {
 
     private GitVersionDetails getGitVersionDetails(Configuration config, Model projectModel) {
         GitRepoSituation repoSituation = GitUtil.situation(projectModel.getPomFile());
-        String providedTag = getOption(OPTION_NAME_GIT_TAG);
+        String providedTag = getCommandOption(OPTION_NAME_GIT_TAG);
         if (providedTag != null) {
             repoSituation.setHeadBranch(null);
             repoSituation.setHeadTags(providedTag.isEmpty() ? emptyList() : singletonList(providedTag));
         }
-        String providedBranch = getOption(OPTION_NAME_GIT_BRANCH);
+        String providedBranch = getCommandOption(OPTION_NAME_GIT_BRANCH);
         if (providedBranch != null) {
             repoSituation.setHeadBranch(providedBranch.isEmpty() ? null : providedBranch);
         }
 
-        final boolean preferTags = (config.preferTags != null && config.preferTags)
-                || parseBoolean(getOption(OPTION_PREFER_TAGS));
+        final boolean preferTagsOption;
+        final String preferTagsCommandOption = getCommandOption(OPTION_PREFER_TAGS);
+        if(preferTagsCommandOption != null){
+            preferTagsOption = parseBoolean(preferTagsCommandOption);
+        } else if (config.preferTags != null){
+            preferTagsOption = config.preferTags;
+        } else {
+            preferTagsOption = false;
+        }
 
         return GitVersioning.determineVersion(repoSituation,
                 ofNullable(config.commit)
@@ -240,7 +247,7 @@ public class GitVersioningModelProcessor {
                 config.tag.stream()
                         .map(it -> new VersionDescription(it.pattern, it.versionFormat, convertPropertyDescription(it.property)))
                         .collect(toList()),
-                preferTags);
+                preferTagsOption);
     }
 
     private List<PropertyDescription> convertPropertyDescription(
@@ -339,7 +346,7 @@ public class GitVersioningModelProcessor {
     }
 
 
-    private String getOption(final String name) {
+    private String getCommandOption(final String name) {
         String value = mavenSession.getUserProperties().getProperty(name);
         if (value == null) {
             String plainName = name.replaceFirst("^versioning\\.", "");
@@ -361,8 +368,9 @@ public class GitVersioningModelProcessor {
     }
 
     private boolean getUpdatePomOption(final Configuration config, final GitVersionDetails gitVersionDetails) {
-        if(parseBoolean(getOption(OPTION_UPDATE_POM))){
-            return true;
+        String updatePomCommandOption = getCommandOption(OPTION_UPDATE_POM);
+        if(updatePomCommandOption != null){
+            return parseBoolean(updatePomCommandOption);
         }
 
         boolean updatePomOption = config.updatePom != null && config.updatePom;
