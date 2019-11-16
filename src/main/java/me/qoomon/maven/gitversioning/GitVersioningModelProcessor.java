@@ -21,6 +21,9 @@ import static org.apache.maven.shared.utils.logging.MessageUtils.buffer;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -175,6 +178,8 @@ public class GitVersioningModelProcessor {
             logger.info("");
 
             virtualProjectModel.addProperty("git.commit", gitVersionDetails.getCommit());
+            virtualProjectModel.addProperty("git.commit.timestamp", Long.toString(gitVersionDetails.getCommitTimestamp()));
+            virtualProjectModel.addProperty("git.commit.timestamp.datetime", toTimestampDateTime(gitVersionDetails.getCommitTimestamp()));
             virtualProjectModel.addProperty("git.ref", gitVersionDetails.getCommitRefName());
             virtualProjectModel.addProperty("git." + gitVersionDetails.getCommitRefType(), gitVersionDetails.getCommitRefName());
 
@@ -405,5 +410,15 @@ public class GitVersioningModelProcessor {
         return buffer().strong(repeat("-", extensionIdPaddingLeft))
                 + " " + buffer().mojo(extensionId) + " "
                 + buffer().strong(repeat("-", extensionIdPaddingRight));
+    }
+
+    private static String toTimestampDateTime(long timestamp) {
+        if (timestamp == 0) {
+            return "0000-00-00T00:00:00Z";
+        }
+
+        return DateTimeFormatter.ISO_DATE_TIME
+                .withZone(ZoneOffset.UTC)
+                .format(Instant.ofEpochSecond(timestamp));
     }
 }

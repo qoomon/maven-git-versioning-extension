@@ -2,7 +2,6 @@ package me.qoomon.gitversioning;
 
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Function;
 
 public class GitVersionDetails {
 
@@ -10,15 +9,18 @@ public class GitVersionDetails {
     private final String commit;
     private final String commitRefType;
     private final String commitRefName;
+    private final long commitTimestamp;
     private final VersionTransformer versionTransformer;
     private final PropertiesTransformer propertiesTransformer;
 
     public GitVersionDetails(final boolean clean,
                              final String commit,
                              final String commitRefType, final String commitRefName,
+                             final long commitTimestamp,
                              final VersionTransformer versionTransformer,
                              final PropertiesTransformer propertiesTransformer) {
         this.clean = clean;
+        this.commitTimestamp = commitTimestamp;
         this.versionTransformer = Objects.requireNonNull(versionTransformer);
         this.propertiesTransformer = Objects.requireNonNull(propertiesTransformer);
         this.commit = Objects.requireNonNull(commit);
@@ -40,6 +42,10 @@ public class GitVersionDetails {
 
     public String getCommitRefName() {
         return commitRefName;
+    }
+
+    public long getCommitTimestamp() {
+        return commitTimestamp;
     }
 
     public VersionTransformer getVersionTransformer() {

@@ -50,7 +50,7 @@ public final class GitVersioning {
         gitDataMap.put("commit", repoSituation.getHeadCommit());
         gitDataMap.put("commit.short", repoSituation.getHeadCommit().substring(0, 7));
         gitDataMap.put("commit.timestamp", Long.toString(repoSituation.getHeadCommitTimestamp()));
-        gitDataMap.put("commit.timestamp.datetime", formatHeadCommitTimestamp(repoSituation.getHeadCommitTimestamp()));
+        gitDataMap.put("commit.timestamp.datetime", toTimestampDateTime(repoSituation.getHeadCommitTimestamp()));
         gitDataMap.put("ref", versioningInfo.gitRefName);
         gitDataMap.put(versioningInfo.gitRefType, versioningInfo.gitRefName);
         gitDataMap.putAll(refData);
@@ -76,6 +76,7 @@ public final class GitVersioning {
                 repoSituation.getHeadCommit(),
                 versioningInfo.gitRefType,
                 versioningInfo.gitRefName,
+                repoSituation.getHeadCommitTimestamp(),
                 versionTransformer,
                 propertiesTransformer
         );
@@ -159,14 +160,14 @@ public final class GitVersioning {
         return resultProperties;
     }
 
-    private static String formatHeadCommitTimestamp(long headCommitDate) {
-        if (headCommitDate == 0) {
+    private static String toTimestampDateTime(long timestamp) {
+        if (timestamp == 0) {
             return NO_COMMIT_DATE;
         }
         return DateTimeFormatter
                 .ofPattern(VERSION_DATE_TIME_FORMAT)
                 .withZone(ZoneOffset.UTC)
-                .format(Instant.ofEpochSecond(headCommitDate));
+                .format(Instant.ofEpochSecond(timestamp));
     }
 
     private static class VersioningInfo {
