@@ -244,6 +244,10 @@ fi
 ```
 
 # Changelog
+## 4.7.0
+* New Provided properties, see [Provided Project Properties](#provided-roject-roperties)
+  * `git.commit.timestamp`
+  * `git.commit.timestamp.datetime`
 
 ## 4.5.0
 * Add parameters and environment variable to disable extension. see [Parameters & Environment Variables](#parameters--environment-variables)
