@@ -5,7 +5,7 @@
 
 [![Changelog](https://badgen.net/badge/changelog/%E2%98%85/blue)](#changelog)
 
-ℹ Also available as [Gradle Plugin](https://github.com/qoomon/gradle-git-versioning-plugin)
+**ℹ Also available as [Gradle Plugin](https://github.com/qoomon/gradle-git-versioning-plugin)**
 
 
 This extension will virtually set project versions, based on current **Git branch** or **Git tag**.
