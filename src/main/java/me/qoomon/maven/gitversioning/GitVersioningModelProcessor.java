@@ -21,6 +21,8 @@ import static org.apache.maven.shared.utils.logging.MessageUtils.buffer;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -32,6 +34,9 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 
 import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
+import org.eclipse.sisu.Typed;
 
 import org.apache.maven.building.Source;
 import org.apache.maven.execution.MavenSession;
@@ -40,6 +45,8 @@ import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.model.PluginExecution;
+import org.apache.maven.model.building.DefaultModelProcessor;
+import org.apache.maven.model.building.ModelProcessor;
 import org.apache.maven.session.scope.internal.SessionScope;
 import org.codehaus.plexus.logging.Logger;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
@@ -58,11 +65,13 @@ import me.qoomon.gitversioning.PropertyValueDescription;
 import me.qoomon.gitversioning.VersionDescription;
 
 /**
- * WORKAROUND
- * Initialize and use {@link GitVersioningModelProcessor} from GitModelProcessor {@link org.apache.maven.model.building.ModelProcessor},
- * This is need because maven 3.6.2 has broken component replacement mechanism.
+ * Replacement for {@link ModelProcessor} to adapt versions.
  */
-public class GitVersioningModelProcessor {
+@Named( "core-default" )
+@Singleton
+@Typed( ModelProcessor.class )
+public class GitVersioningModelProcessor extends DefaultModelProcessor {
+
     private static final String OPTION_NAME_GIT_TAG = "git.tag";
     private static final String OPTION_NAME_GIT_BRANCH = "git.branch";
     private static final String OPTION_NAME_DISABLE = "versioning.disable";
@@ -84,13 +93,30 @@ public class GitVersioningModelProcessor {
 
     private final Map<String, Model> virtualProjectModelCache = new HashMap<>();
 
-    public Model processModel(Model projectModel, Map<String, ?> options) throws IOException {
+    @Override
+    public Model read(File input, Map<String, ?> options) throws IOException {
+        final Model projectModel = super.read(input, options);
+        return processModel(projectModel, options);
+    }
+
+    @Override
+    public Model read(Reader input, Map<String, ?> options) throws IOException {
+        final Model projectModel = super.read(input, options);
+        return processModel(projectModel, options);
+    }
+
+    @Override
+    public Model read(InputStream input, Map<String, ?> options) throws IOException {
+        final Model projectModel = super.read(input, options);
+        return processModel(projectModel, options);
+    }
+
+    private Model processModel(Model projectModel, Map<String, ?> options) throws IOException {
         try {
             if (!initialized) {
                 logger.info("");
                 String extensionId = BuildProperties.projectArtifactId() + ":" + BuildProperties.projectVersion();
                 logger.info(extensionLogFormat(extensionId));
-                logger.info("Adjusting project models...");
                 logger.info("");
                 try {
                     mavenSession = sessionScope.scope(Key.get(MavenSession.class), null).get();
@@ -111,7 +137,7 @@ public class GitVersioningModelProcessor {
                 return projectModel;
             }
 
-            final Source pomSource = (Source) options.get(org.apache.maven.model.building.ModelProcessor.SOURCE);
+            final Source pomSource = (Source) options.get(ModelProcessor.SOURCE);
             if (pomSource != null) {
                 projectModel.setPomFile(new File(pomSource.getLocation()));
             }
