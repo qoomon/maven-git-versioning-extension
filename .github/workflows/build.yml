@@ -5,6 +5,7 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    container: maven:3-jdk-8-slim
 
     steps:
     - uses: actions/checkout@v1
