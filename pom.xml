@@ -48,9 +48,9 @@
     <dependencies>
 
         <dependency>
-            <groupId>org.eclipse.jgit</groupId>
-            <artifactId>org.eclipse.jgit</artifactId>
-            <version>5.2.1.201812262042-r</version>
+            <groupId>me.qoomon</groupId>
+            <artifactId>git-versioning</artifactId>
+            <version>0.1.0</version>
         </dependency>
 
         <dependency>
