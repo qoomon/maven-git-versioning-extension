@@ -378,6 +378,9 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                     .toUpperCase();
             value = System.getenv(environmentVariableName);
         }
+        if(value == null) {
+            value = System.getProperty(name);
+        }
         return value;
     }
 
