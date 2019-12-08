@@ -30,7 +30,7 @@ import static java.lang.Boolean.parseBoolean;
  */
 
 @Mojo(name = VersioningMojo.GOAL,
-      defaultPhase = LifecyclePhase.PROCESS_RESOURCES,
+      defaultPhase = LifecyclePhase.INITIALIZE,
       threadSafe = true)
 public class VersioningMojo extends AbstractMojo {
 
