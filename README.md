@@ -251,8 +251,8 @@ fi
 
 # Changelog
 ## 4.10.0
-   * add `${dirty}` flag version formt placholder
-   * add `git.dirty` porperty
+   * add `${dirty}` flag version format placeholder
+   * add `git.dirty` property
    
 ## 4.8.0
 * set execution phase to INITIALIZE
