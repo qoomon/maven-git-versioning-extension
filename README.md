@@ -250,6 +250,14 @@ fi
 ```
 
 # Changelog
+## 4.10.0
+   * add `${dirty}` flag version formt placholder
+   * add `git.dirty` porperty
+   
+## 4.8.0
+* set execution phase to INITIALIZE
+  * Fix IntelliJ multi-modules project handling.
+
 ## 4.7.0
 * New Provided properties, see [Provided Project Properties](#provided-roject-roperties)
   * `git.commit.timestamp`
