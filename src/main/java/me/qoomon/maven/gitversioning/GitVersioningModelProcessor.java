@@ -9,7 +9,6 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 
 import static me.qoomon.UncheckedExceptions.unchecked;
-import static me.qoomon.maven.gitversioning.MavenUtil.isProjectPom;
 import static me.qoomon.maven.gitversioning.MavenUtil.readModel;
 import static me.qoomon.maven.gitversioning.VersioningMojo.GIT_VERSIONING_POM_NAME;
 import static me.qoomon.maven.gitversioning.VersioningMojo.GOAL;
@@ -79,6 +78,7 @@ public class GitVersioningModelProcessor {
 
     private MavenSession mavenSession;  // can not be injected cause it is not always available
 
+    private File gitRepositoryDirectory;
     private Configuration config;
     private GitVersionDetails gitVersionDetails;
 
@@ -95,15 +95,17 @@ public class GitVersioningModelProcessor {
                 try {
                     mavenSession = sessionScope.scope(Key.get(MavenSession.class), null).get();
                 } catch (OutOfScopeException ex) {
-                    mavenSession = null;
+                    logger.warn("skip - no maven session present");
+                    return projectModel;
+                }
+
+                gitRepositoryDirectory = getRepositoryRootDirectory(new File(mavenSession.getExecutionRootDirectory()));
+                if (gitRepositoryDirectory == null) {
+                    throw new IllegalArgumentException(
+                            mavenSession.getExecutionRootDirectory() + " directory is not a git repository (or any of the parent directories)");
                 }
 
                 initialized = true;
-            }
-
-            if (mavenSession == null) {
-                logger.warn("skip - no maven session present");
-                return projectModel;
             }
 
             if (parseBoolean(getCommandOption(OPTION_NAME_DISABLE))) {
@@ -342,6 +344,30 @@ public class GitVersioningModelProcessor {
         model.getProperties().setProperty(propertyKeyPrefix + propertyKeyUpdatePom, Boolean.toString(updatePomOption));
     }
 
+    /**
+     * checks if <code>pomFile</code> is part of a project
+     *
+     * @param pomFile the pom file
+     * @return true if <code>pomFile</code> is part of a project
+     */
+    private boolean isProjectPom(File pomFile) {
+        return pomFile != null
+                && pomFile.exists()
+                && pomFile.isFile()
+                // only project pom files ends in .xml, pom files from dependencies from repositories ends in .pom
+                && pomFile.getName().endsWith(".xml")
+                // only pom files within git directory are treated as project pom files
+                && pomFile.getAbsolutePath().startsWith(gitRepositoryDirectory.getAbsolutePath() + File.separator);
+    }
+
+    private static File getRepositoryRootDirectory(File directory) {
+        FileRepositoryBuilder repositoryBuilder = new FileRepositoryBuilder().findGitDir(directory);
+        if (repositoryBuilder.getGitDir() == null) {
+            return null;
+        }
+        return repositoryBuilder.getGitDir().getParentFile();
+    }
+
 
     private String getCommandOption(final String name) {
         String value = mavenSession.getUserProperties().getProperty(name);
@@ -353,7 +379,7 @@ public class GitVersioningModelProcessor {
                     .toUpperCase();
             value = System.getenv(environmentVariableName);
         }
-        if(value == null) {
+        if (value == null) {
             value = System.getProperty(name);
         }
         return value;
@@ -370,9 +396,9 @@ public class GitVersioningModelProcessor {
     private boolean getPreferTagsOption(final Configuration config) {
         final boolean preferTagsOption;
         final String preferTagsCommandOption = getCommandOption(OPTION_PREFER_TAGS);
-        if(preferTagsCommandOption != null){
+        if (preferTagsCommandOption != null) {
             preferTagsOption = parseBoolean(preferTagsCommandOption);
-        } else if (config.preferTags != null){
+        } else if (config.preferTags != null) {
             preferTagsOption = config.preferTags;
         } else {
             preferTagsOption = false;
@@ -382,7 +408,7 @@ public class GitVersioningModelProcessor {
 
     private boolean getUpdatePomOption(final Configuration config, final GitVersionDetails gitVersionDetails) {
         String updatePomCommandOption = getCommandOption(OPTION_UPDATE_POM);
-        if(updatePomCommandOption != null){
+        if (updatePomCommandOption != null) {
             return parseBoolean(updatePomCommandOption);
         }
 
