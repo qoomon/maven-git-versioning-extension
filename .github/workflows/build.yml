@@ -12,16 +12,14 @@ jobs:
       with:
         java-version: 1.8
     - name: Build with Maven
-      env:
-        MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
-        MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version"
       run: |
         mvn ${MAVEN_CLI_OPTS} package -DskipTests
     - name: Test with Maven
-      env:
-        MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
-        MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version"
       run: |
         mvn ${MAVEN_CLI_OPTS} test
         mvn ${MAVEN_CLI_OPTS} install -DskipTests
         mvn ${MAVEN_CLI_OPTS} failsafe:integration-test failsafe:verify
+    
+    env:
+      MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
+      MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version"
