@@ -217,6 +217,12 @@ Create `${basedir}/.mvn/maven-git-versioning-extension.xml`.
 ### Commandline To Print Project Version
 `mvn --non-recursive exec:exec -Dexec.executable='echo' -Dexec.args='${project.version}' -q`
 
+### Reproducible builds ###
+The reproducible builds feature (https://maven.apache.org/guides/mini/guide-reproducible-builds.html) newly introduced in maven can be easily supported with this extension by using the latest commit timestamp as build timestamps.
+```xml
+<project.build.outputTimestamp>${git.commit.timestamp.datetime}</project.build.outputTimestamp>
+```
+
 ### CI/CD
 Most CI/CD systems do checkouts in a detached HEAD state so no branch information is available, however they provide environment variables with this information. You can provide those, by using [Parameters & Environment Variables](#parameters--environment-variables). Below you'll find some setup example for common CI/CD systems.
 
@@ -286,7 +292,7 @@ fi
 * **Renamed Maven Parameters**
   * `-Dproject.branch` -> `-Dgit.branch`
   * `-Dproject.tag` -> `-Dgit.tag`
-* **Removed Mave Parameters**
+* **Removed Maven Parameters**
   * `-DgitVersioning` - disable the extension by a parameter is no longer supported
 * **Renamed Provided Project Properties**
   * `project.branch` -> `git.branch`
