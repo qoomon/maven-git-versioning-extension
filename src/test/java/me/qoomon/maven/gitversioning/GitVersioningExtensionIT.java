@@ -575,7 +575,6 @@ class GitVersioningExtensionIT {
             git.checkout().setName(givenBranch).call();
 
             pomModel.setPackaging("pom");
-            pomModel.addModule("api");
             pomModel.addModule("logic");
 
             writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
@@ -584,14 +583,6 @@ class GitVersioningExtensionIT {
             Configuration extensionConfig = new Configuration();
             extensionConfig.branch.add(createBranchVersionDescription());
             writeExtensionConfigFile(projectDir, extensionConfig);
-
-            Path apiProjectDir = Files.createDirectories(projectDir.resolve("api"));
-            Model apiPomModel = writeModel(apiProjectDir.resolve("pom.xml").toFile(), new Model() {{
-                setModelVersion(pomModel.getModelVersion());
-                setGroupId(pomModel.getGroupId());
-                setVersion(pomModel.getVersion());
-                setArtifactId("api");
-            }});
 
             Path logicProjectDir = Files.createDirectories(projectDir.resolve("logic"));
             Model logicPomModel = writeModel(logicProjectDir.resolve("pom.xml").toFile(), new Model() {{

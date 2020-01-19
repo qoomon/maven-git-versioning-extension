@@ -19,15 +19,13 @@ import static org.apache.maven.shared.utils.StringUtils.repeat;
 import static org.apache.maven.shared.utils.logging.MessageUtils.buffer;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.regex.Pattern;
 
 import javax.inject.Inject;
@@ -39,6 +37,7 @@ import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.model.PluginExecution;
+import org.apache.maven.model.building.ModelProcessor;
 import org.apache.maven.session.scope.internal.SessionScope;
 import org.codehaus.plexus.logging.Logger;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
@@ -83,6 +82,7 @@ public class GitVersioningModelProcessor {
     private Configuration config;
     private GitVersionDetails gitVersionDetails;
 
+    private final Set<String> allProjectDirectories = new HashSet<>();
     private final Map<String, Model> virtualProjectModelCache = new HashMap<>();
 
     public Model processModel(Model projectModel, Map<String, ?> options) throws IOException {
@@ -121,7 +121,7 @@ public class GitVersioningModelProcessor {
                 initialized = true;
             }
 
-            final Source pomSource = (Source) options.get(org.apache.maven.model.building.ModelProcessor.SOURCE);
+            final Source pomSource = (Source) options.get(ModelProcessor.SOURCE);
             if (pomSource != null) {
                 projectModel.setPomFile(new File(pomSource.getLocation()));
             }
@@ -132,7 +132,7 @@ public class GitVersioningModelProcessor {
         }
     }
 
-    private Model processModel(Model projectModel) {
+    private Model processModel(Model projectModel) throws IOException {
         if (!isProjectPom(projectModel.getPomFile())) {
             logger.debug("skip - unrelated pom location - " + projectModel.getPomFile());
             return projectModel;
@@ -150,32 +150,32 @@ public class GitVersioningModelProcessor {
         }
 
         if (config == null) {
-            File mvnDir = findMvnDir(projectModel);
-            File configFile = new File(mvnDir, BuildProperties.projectArtifactId() + ".xml");
-            config = loadConfig(configFile);
+            config = loadConfig(projectModel);
         }
 
         if (gitVersionDetails == null) {
             gitVersionDetails = getGitVersionDetails(config, projectModel);
         }
 
-        String projectId = projectGav.getGroupId() + ":" + projectGav.getArtifactId();
+        String projectId = projectGav.getProjectId();
         Model virtualProjectModel = this.virtualProjectModelCache.get(projectId);
         if (virtualProjectModel == null) {
+            allProjectDirectories.add(projectModel.getProjectDirectory().getCanonicalPath());
+            for (String module : projectModel.getModules()) {
+                allProjectDirectories.add(new File(projectModel.getProjectDirectory(), module).getCanonicalPath());
+            }
             // ---------------- process project -----------------------------------
             logger.info(buffer().strong("--- ") + buffer().project(projectId).toString() + " @ " + gitVersionDetails.getCommitRefType() + " " + buffer().strong(gitVersionDetails.getCommitRefName()) + buffer().strong(" ---"));
 
             virtualProjectModel = projectModel.clone();
-            final String projectVersion = GAV.of(projectModel).getVersion();
-
             if (virtualProjectModel.getVersion() != null) {
-                final String gitVersion = gitVersionDetails.getVersionTransformer().apply(projectVersion);
+                final String gitVersion = gitVersionDetails.getVersionTransformer().apply(projectGav.getVersion());
                 logger.info("project version: " + buffer().strong(gitVersion));
                 virtualProjectModel.setVersion(gitVersion);
             }
 
             final Map<String, String> gitProperties = gitVersionDetails.getPropertiesTransformer().apply(
-                    Maps.fromProperties(virtualProjectModel.getProperties()), projectVersion);
+                    Maps.fromProperties(virtualProjectModel.getProperties()), projectGav.getVersion());
             if (!gitProperties.isEmpty()) {
                 logger.info("properties:");
                 for (Entry<String, String> property : gitProperties.entrySet()) {
@@ -293,23 +293,25 @@ public class GitVersioningModelProcessor {
         return parentModel;
     }
 
-    private File findMvnDir(Model projectModel) {
+    private File findConfigFile(Model projectModel) throws IOException {
+        String configFileName = BuildProperties.projectArtifactId() + ".xml";
+
         {
             final File mvnDir = new File(projectModel.getProjectDirectory(), ".mvn");
             if (mvnDir.exists()) {
-                logger.debug("Found .mvn directory in project directory - " + mvnDir.toString());
-                return mvnDir;
+                logger.debug("Found config in project directory - " + mvnDir.toString());
+                return new File(mvnDir, configFileName);
             }
         }
 
         {
             // search in parent project directories
             Model parentModel = getParentModel(projectModel);
-            while (parentModel != null && isProjectPom(parentModel.getPomFile())) {
+            while (parentModel != null) {
                 final File mvnDir = new File(parentModel.getProjectDirectory(), ".mvn");
                 if (mvnDir.exists()) {
-                    logger.debug("Found .mvn directory in parent project hierarchy - " + mvnDir.toString());
-                    return mvnDir;
+                    logger.debug("Found config in parent project hierarchy - " + mvnDir.toString());
+                    return new File(mvnDir, configFileName);
                 }
                 parentModel = getParentModel(parentModel);
             }
@@ -317,20 +319,18 @@ public class GitVersioningModelProcessor {
 
         {
             // search in git directories
-            File gitDir = new FileRepositoryBuilder().findGitDir(projectModel.getProjectDirectory()).getGitDir();
             File parentDir = projectModel.getProjectDirectory().getParentFile();
-            while (!parentDir.equals(gitDir)) {
+            while (parentDir.getCanonicalPath().startsWith(gitRepositoryDirectory.getCanonicalPath())) {
                 File mvnDir = new File(parentDir, ".mvn");
                 if (mvnDir.exists()) {
-                    logger.debug("Found .mvn directory in git directory hierarchy - " + mvnDir.toString());
-                    return mvnDir;
+                    logger.debug("Found config in git directory hierarchy - " + mvnDir.toString());
+                    return new File(mvnDir, configFileName);
                 }
                 parentDir = parentDir.getParentFile();
             }
         }
 
-        logger.warn("Could not find .mvn directory!");
-        return null;
+        throw new FileNotFoundException("Could not find config file");
     }
 
     private void addBuildPlugin(Model model, boolean updatePomOption) {
@@ -358,14 +358,15 @@ public class GitVersioningModelProcessor {
      * @param pomFile the pom file
      * @return true if <code>pomFile</code> is part of a project
      */
-    private boolean isProjectPom(File pomFile) {
+    private boolean isProjectPom(File pomFile) throws IOException {
         return pomFile != null
                 && pomFile.exists()
                 && pomFile.isFile()
                 // only project pom files ends in .xml, pom files from dependencies from repositories ends in .pom
                 && pomFile.getName().endsWith(".xml")
+                && (allProjectDirectories.isEmpty() || allProjectDirectories.contains(pomFile.getParentFile().getCanonicalPath()))
                 // only pom files within git directory are treated as project pom files
-                && pomFile.getAbsolutePath().startsWith(gitRepositoryDirectory.getAbsolutePath() + File.separator);
+                && pomFile.getCanonicalPath().startsWith(gitRepositoryDirectory.getCanonicalPath() + File.separator);
     }
 
     private static File getRepositoryRootDirectory(File directory) {
@@ -375,7 +376,6 @@ public class GitVersioningModelProcessor {
         }
         return repositoryBuilder.getGitDir().getParentFile();
     }
-
 
     private String getCommandOption(final String name) {
         String value = mavenSession.getUserProperties().getProperty(name);
@@ -393,10 +393,8 @@ public class GitVersioningModelProcessor {
         return value;
     }
 
-    private Configuration loadConfig(File configFile) {
-        if (!configFile.exists()) {
-            return new Configuration();
-        }
+    private Configuration loadConfig(Model projectModel) throws IOException {
+        File configFile = findConfigFile(projectModel);
         logger.debug("load config from " + configFile);
         return unchecked(() -> new XmlMapper().readValue(configFile, Configuration.class));
     }

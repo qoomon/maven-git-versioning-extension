@@ -37,6 +37,10 @@ public class GAV {
         return version;
     }
 
+    public String getProjectId() {
+        return getGroupId() + ":" + getArtifactId();
+    }
+
     public static GAV of(Model model) {
 
         String groupId = model.getGroupId();
