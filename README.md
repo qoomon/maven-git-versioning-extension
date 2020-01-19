@@ -256,6 +256,11 @@ fi
 ```
 
 # Changelog
+
+## 4.10.2
+* fix verbose logging when disabling extension by flag
+* restrict project versioning to root- and sub-projects
+
 ## 4.10.0
    * add `${dirty}` flag version format placeholder
    * add `git.dirty` property
