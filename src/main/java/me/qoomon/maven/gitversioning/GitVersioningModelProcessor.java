@@ -75,6 +75,7 @@ public class GitVersioningModelProcessor {
     private SessionScope sessionScope;
 
     private boolean initialized = false;
+    private boolean disabled = false;
 
     private MavenSession mavenSession;  // can not be injected cause it is not always available
 
@@ -85,17 +86,27 @@ public class GitVersioningModelProcessor {
     private final Map<String, Model> virtualProjectModelCache = new HashMap<>();
 
     public Model processModel(Model projectModel, Map<String, ?> options) throws IOException {
+        if(this.disabled){
+            return projectModel;
+        }
+
         try {
             if (!initialized) {
                 logger.info("");
                 String extensionId = BuildProperties.projectArtifactId() + ":" + BuildProperties.projectVersion();
                 logger.info(extensionLogFormat(extensionId));
-                logger.info("Adjusting project models...");
-                logger.info("");
+
                 try {
                     mavenSession = sessionScope.scope(Key.get(MavenSession.class), null).get();
                 } catch (OutOfScopeException ex) {
-                    logger.warn("skip - no maven session present");
+                    logger.warn("versioning is disabled, because no maven session present");
+                    disabled = true;
+                    return projectModel;
+                }
+
+                if (parseBoolean(getCommandOption(OPTION_NAME_DISABLE))) {
+                    logger.warn("versioning is disabled");
+                    disabled = true;
                     return projectModel;
                 }
 
@@ -105,12 +116,9 @@ public class GitVersioningModelProcessor {
                             mavenSession.getExecutionRootDirectory() + " directory is not a git repository (or any of the parent directories)");
                 }
 
+                logger.info("Adjusting project models...");
+                logger.info("");
                 initialized = true;
-            }
-
-            if (parseBoolean(getCommandOption(OPTION_NAME_DISABLE))) {
-                logger.warn("skip - versioning is disabled");
-                return projectModel;
             }
 
             final Source pomSource = (Source) options.get(org.apache.maven.model.building.ModelProcessor.SOURCE);
