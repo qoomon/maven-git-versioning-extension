@@ -105,7 +105,7 @@ public class GitVersioningModelProcessor {
                 }
 
                 if (parseBoolean(getCommandOption(OPTION_NAME_DISABLE))) {
-                    logger.warn("versioning is disabled");
+                    logger.info("versioning is disabled");
                     disabled = true;
                     return projectModel;
                 }
