@@ -140,10 +140,6 @@ Create `${basedir}/.mvn/maven-git-versioning-extension.xml`.
     - The `HEAD` commit timestamp formatted as `yyyyMMdd.HHmmss`
     - e.g. '20190616.161442'
 
-- `${dirty}`
-    - A dirty flag indicator
-    - resolves to '-DIRTY' if repo is in dirty state, empty string otherwise
-
 - `Pattern Groups`
     - Contents of group in the regex pattern can be addressed by `group name` or `group index` e.g.
     - Named Group Example
@@ -211,6 +207,7 @@ Create `${basedir}/.mvn/maven-git-versioning-extension.xml`.
   - `git.tag` e.g. 'v1.2.3', only set for tag versioning
 - `git.commit.timestamp` e.g. '1560694278'
 - `git.commit.timestamp.datetime` e.g. '2019-11-16T14:37:10Z'
+- `git.dirty` repository dirty state indictor `true` or `false`
 
 ## Miscellaneous Hints
 
@@ -262,7 +259,6 @@ fi
 * restrict project versioning to root- and sub-projects
 
 ## 4.10.0
-   * add `${dirty}` flag version format placeholder
    * add `git.dirty` property
    
 ## 4.8.0
