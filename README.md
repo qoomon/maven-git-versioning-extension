@@ -259,7 +259,7 @@ fi
 * restrict project versioning to root- and sub-projects
 
 ## 4.10.0
-   * add `git.dirty` property
+* provide `${git.dirty}` project property
    
 ## 4.8.0
 * set execution phase to INITIALIZE
