@@ -252,39 +252,41 @@ fi
 # Changelog
 
 ## 5.0.0
-*
-
-### Breaking Changes
+#### Features
 * simplify <property> replacement configuration
-
-new config
-```xml
-<gitVersioning>
-    <branch>
-        <pattern>master</pattern>
-        <versionFormat>${version}</versionFormat>
-        <property>
-            <pattern>revision</pattern>
-            <valueFormat>${branch-SNAPSHOT}</valueFormat>
-        </property>
-    </branch>
-</gitVersioning>
-```
-old config
-```xml
-<gitVersioning>
-    <branch>
-        <pattern>master</pattern>
-        <versionFormat>${version}</versionFormat>
-        <property>
-            <pattern>revision</pattern>
-            <value>
-                <format>${branch-SNAPSHOT}</format>
-            </value>
-        </property>
-    </branch>
-</gitVersioning>
-```
+#### Fixes
+* add missing dependecy vor maven version 3.3
+#### Breaking Changes
+* simplify <property> replacement configuration
+    
+    new config
+    ```xml
+    <gitVersioning>
+        <branch>
+            <pattern>master</pattern>
+            <versionFormat>${version}</versionFormat>
+            <property>
+                <pattern>revision</pattern>
+                <valueFormat>${branch-SNAPSHOT}</valueFormat>
+            </property>
+        </branch>
+    </gitVersioning>
+    ```
+    old config
+    ```xml
+    <gitVersioning>
+        <branch>
+            <pattern>master</pattern>
+            <versionFormat>${version}</versionFormat>
+            <property>
+                <pattern>revision</pattern>
+                <value>
+                    <format>${branch-SNAPSHOT}</format>
+                </value>
+            </property>
+        </branch>
+    </gitVersioning>
+    ```
 
 ## 4.10.2
 * fix verbose logging when disabling extension by flag
