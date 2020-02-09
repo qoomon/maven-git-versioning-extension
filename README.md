@@ -78,9 +78,8 @@ Create `${basedir}/.mvn/maven-git-versioning-extension.xml`.
     - `<versionFormat>` An arbitrary string, see [Version Format & Placeholders](#version-format--placeholders)
     - `<property>` A property definition to update the value of a property
         - `<pattern>` An arbitrary regex to match property names
-        - `<value>` The definition of the new property value
-            - *optional* `<pattern>` An arbitrary regex to match property values
-            - `<format>` The new value format of the property, see [Version Format & Placeholders](#version-format--placeholders)
+        - `<valueFormat>` The new value format of the property, see [Version Format & Placeholders](#version-format--placeholders)
+        - *optional* `<valuePattern>` An arbitrary regex to match and use capture group values of property value
     - *optional* `<updatePom>` Enable(`true`) or disable(`false`) version update in original pom fill (will override global `<updatePom>` value)
     - ⚠ **considered if...**
         * HEAD attached to a branch `git checkout <BRANCH>`<br>
@@ -91,9 +90,8 @@ Create `${basedir}/.mvn/maven-git-versioning-extension.xml`.
     - `<versionFormat>` An arbitrary string, see [Version Format & Placeholders](#version-format--placeholders)
     - `<property>` A property definition to update the value of a property
         - `<pattern>` An arbitrary regex to match property names
-        - `<value>` The definition of the new property value
-            - *optional* `<pattern>` An arbitrary regex to match property values
-            - `<format>` The new value format of the property, see [Version Format & Placeholders](#version-format--placeholders)
+        - `<valueFormat>` The new value format of the property, see [Version Format & Placeholders](#version-format--placeholders)
+        - *optional* `<valuePattern>` An arbitrary regex to match and use capture group values of property value
     - *optional* `<updatePom>` Enable(`true`) or disable(`false`) version update in original pom fill (will override global `<updatePom>` value)
     - ⚠ **considered if...**
         * HEAD is detached `git checkout <TAG>`<br>
@@ -103,9 +101,8 @@ Create `${basedir}/.mvn/maven-git-versioning-extension.xml`.
     - `<versionFormat>` An arbitrary string, see [Version Format & Placeholders](#version-format--placeholders)
     - `<property>` A property definition to update the value of a property
         - `<pattern>` An arbitrary regex to match property names
-        - `<value>` The definition of the new property value
-            - *optional* `<pattern>` An arbitrary regex to match property values
-            - `<format>` The new value format of the property, see [Version Format & Placeholders](#version-format--placeholders)
+        - `<valueFormat>` The new value format of the property, see [Version Format & Placeholders](#version-format--placeholders)
+        - *optional* `<valuePattern>` An arbitrary regex to match and use capture group values of property value
     - ⚠ **considered if...**
         * HEAD is detached `git checkout <COMMIT>` and no matching version tag is pointing to HEAD<br>
 
@@ -253,6 +250,41 @@ fi
 ```
 
 # Changelog
+
+## 5.0.0
+*
+
+### Breaking Changes
+* simplify <property> replacement configuration
+
+new config
+```xml
+<gitVersioning>
+    <branch>
+        <pattern>master</pattern>
+        <versionFormat>${version}</versionFormat>
+        <property>
+            <pattern>revision</pattern>
+            <valueFormat>${branch-SNAPSHOT}</valueFormat>
+        </property>
+    </branch>
+</gitVersioning>
+```
+old config
+```xml
+<gitVersioning>
+    <branch>
+        <pattern>master</pattern>
+        <versionFormat>${version}</versionFormat>
+        <property>
+            <pattern>revision</pattern>
+            <value>
+                <format>${branch-SNAPSHOT}</format>
+            </value>
+        </property>
+    </branch>
+</gitVersioning>
+```
 
 ## 4.10.2
 * fix verbose logging when disabling extension by flag

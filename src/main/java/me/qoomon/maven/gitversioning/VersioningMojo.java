@@ -67,17 +67,20 @@ public class VersioningMojo extends AbstractMojo {
                 versionElement.setText(project.getVersion());
             }
 
-            Element parentElement = projectElement.getChild("parent");
-            if (parentElement != null) {
-                Element parentVersionElement = parentElement.getChild("version");
-                parentVersionElement.setText(project.getParent().getVersion());
-            }
-
             Element propertiesElement = projectElement.getChild("properties");
             if(propertiesElement != null){
                 for (final Element propertyElement : propertiesElement.getChildren()) {
                     propertyElement.setText(project.getOriginalModel().getProperties().getProperty(propertyElement.getName()));
                 }
+            }
+
+            // TODO
+            // update version within dependencies, dependency management, plugins, plugin management
+
+            Element parentElement = projectElement.getChild("parent");
+            if (parentElement != null) {
+                Element parentVersionElement = parentElement.getChild("version");
+                parentVersionElement.setText(project.getParent().getVersion());
             }
 
             File gitVersionedPomFile = new File(project.getBuild().getDirectory(), GIT_VERSIONING_POM_NAME);

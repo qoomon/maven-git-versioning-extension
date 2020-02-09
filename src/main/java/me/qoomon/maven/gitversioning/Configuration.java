@@ -43,12 +43,7 @@ public class Configuration {
     public static class PropertyDescription {
 
         public String pattern;
-        public PropertyValueDescription value;
-    }
-
-    public static class PropertyValueDescription {
-
-        public String pattern;
-        public String format;
+        public String valueFormat;
+        public String valuePattern;
     }
 }

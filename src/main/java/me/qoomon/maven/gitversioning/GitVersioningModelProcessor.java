@@ -185,6 +185,10 @@ public class GitVersioningModelProcessor {
                     }
                 }
             }
+
+            // TODO
+            // update version within dependencies, dependency management, plugins, plugin management
+
             logger.info("");
 
             virtualProjectModel.addProperty("git.commit", gitVersionDetails.getCommit());
@@ -261,7 +265,7 @@ public class GitVersioningModelProcessor {
             List<Configuration.PropertyDescription> confPropertyDescription) {
         return confPropertyDescription.stream()
                 .map(prop -> new PropertyDescription(
-                        prop.pattern, new PropertyValueDescription(prop.value.pattern, prop.value.format)))
+                        prop.pattern, new PropertyValueDescription(prop.valuePattern, prop.valueFormat)))
                 .collect(toList());
     }
 
