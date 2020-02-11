@@ -253,11 +253,11 @@ fi
 
 ## 5.0.0
 #### Features
-* simplify <property> replacement configuration
+* simplify `<property>` replacement configuration
 #### Fixes
 * add missing dependency vor maven version 3.3
 #### Breaking Changes
-* simplify <property> replacement configuration
+* simplify `<property>` replacement configuration
     
     new config
     ```xml
