@@ -37,6 +37,7 @@ import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.model.PluginExecution;
+import org.apache.maven.model.Profile;
 import org.apache.maven.model.building.ModelProcessor;
 import org.apache.maven.session.scope.internal.SessionScope;
 import org.codehaus.plexus.logging.Logger;
@@ -133,7 +134,7 @@ public class GitVersioningModelProcessor {
     }
 
     private Model processModel(Model projectModel) throws IOException {
-        if (!isProjectPom(projectModel.getPomFile())) {
+        if (!isRelatedProject(projectModel.getPomFile())) {
             logger.debug("skip - unrelated pom location - " + projectModel.getPomFile());
             return projectModel;
         }
@@ -160,14 +161,54 @@ public class GitVersioningModelProcessor {
         String projectId = projectGav.getProjectId();
         Model virtualProjectModel = this.virtualProjectModelCache.get(projectId);
         if (virtualProjectModel == null) {
+            logger.info(buffer().strong("--- ") + buffer().project(projectId).toString() + " @ " + gitVersionDetails.getCommitRefType() + " " + buffer().strong(gitVersionDetails.getCommitRefName()) + buffer().strong(" ---"));
+
+            virtualProjectModel = projectModel.clone();
+
+
+            // ---------------- gather all sub projects -----------------------------------
+
             allProjectDirectories.add(projectModel.getProjectDirectory().getCanonicalPath());
             for (String module : projectModel.getModules()) {
                 allProjectDirectories.add(new File(projectModel.getProjectDirectory(), module).getCanonicalPath());
             }
-            // ---------------- process project -----------------------------------
-            logger.info(buffer().strong("--- ") + buffer().project(projectId).toString() + " @ " + gitVersionDetails.getCommitRefType() + " " + buffer().strong(gitVersionDetails.getCommitRefName()) + buffer().strong(" ---"));
+            for (Profile profile : projectModel.getProfiles()){
+                for (String module :  profile.getModules()) {
+                    allProjectDirectories.add(new File(projectModel.getProjectDirectory(), module).getCanonicalPath());
+                }
+            }
 
-            virtualProjectModel = projectModel.clone();
+            // ---------------- process parent -----------------------------------
+
+            final Parent parent = projectModel.getParent();
+            boolean parentIsProjectPom = false;
+            if (parent != null) {
+
+                if (parent.getVersion() == null) {
+                    logger.warn("skip - invalid model - parent 'version' is missing - " + projectModel.getPomFile());
+                    return projectModel;
+                }
+
+                Model parentModel = getParentModel(projectModel);
+                if (parentModel != null && isRelatedProject(parentModel.getPomFile())) {
+                    if (virtualProjectModel.getVersion() != null) {
+                        virtualProjectModel.setVersion(null);
+                        logger.warn("Do not set version tag in a multi module project module: " + projectModel.getPomFile());
+                        if (!projectModel.getVersion().equals(parent.getVersion())) {
+                            throw new IllegalStateException("'version' has to be equal to parent 'version'");
+                        }
+                    }
+
+                    logger.debug(" replace parent version");
+                    final String parentVersion = virtualProjectModel.getParent().getVersion();
+                    final String gitParentVersion = gitVersionDetails.getVersionTransformer().apply(parentVersion);
+                    virtualProjectModel.getParent().setVersion(gitParentVersion);
+                }
+            }
+
+
+            // ---------------- process project -----------------------------------
+
             if (virtualProjectModel.getVersion() != null) {
                 final String gitVersion = gitVersionDetails.getVersionTransformer().apply(projectGav.getVersion());
                 logger.info("project version: " + buffer().strong(gitVersion));
@@ -198,37 +239,13 @@ public class GitVersioningModelProcessor {
             virtualProjectModel.addProperty("git." + gitVersionDetails.getCommitRefType(), gitVersionDetails.getCommitRefName());
             virtualProjectModel.addProperty("git.dirty", Boolean.toString(!gitVersionDetails.isClean()));
 
-            // ---------------- process parent -----------------------------------
-
-            final Parent parent = projectModel.getParent();
-            if (parent != null) {
-
-                if (parent.getVersion() == null) {
-                    logger.warn("skip - invalid model - parent 'version' is missing - " + projectModel.getPomFile());
-                    return projectModel;
-                }
-
-                Model parentModel = getParentModel(projectModel);
-                if (parentModel != null && isProjectPom(parentModel.getPomFile())) {
-                    if (virtualProjectModel.getVersion() != null) {
-                        virtualProjectModel.setVersion(null);
-                        logger.warn("Do not set version tag in a multi module project module: " + projectModel.getPomFile());
-                        if (!projectModel.getVersion().equals(parent.getVersion())) {
-                            throw new IllegalStateException("'version' has to be equal to parent 'version'");
-                        }
-                    }
-
-                    logger.debug(" replace parent version");
-                    final String parentVersion = virtualProjectModel.getParent().getVersion();
-                    final String gitParentVersion = gitVersionDetails.getVersionTransformer().apply(parentVersion);
-                    virtualProjectModel.getParent().setVersion(gitParentVersion);
-                }
-            }
-
             // ---------------- add plugin ---------------------------------------
 
-            boolean updatePomOption = getUpdatePomOption(config, gitVersionDetails);
-            addBuildPlugin(virtualProjectModel, updatePomOption);
+            boolean isProjectPom = allProjectDirectories.contains(virtualProjectModel.getPomFile().getParentFile().getCanonicalPath());
+            if(isProjectPom) {
+                boolean updatePomOption = getUpdatePomOption(config, gitVersionDetails);
+                addBuildPlugin(virtualProjectModel, updatePomOption);
+            }
 
             this.virtualProjectModelCache.put(projectId, virtualProjectModel);
         }
@@ -362,13 +379,12 @@ public class GitVersioningModelProcessor {
      * @param pomFile the pom file
      * @return true if <code>pomFile</code> is part of a project
      */
-    private boolean isProjectPom(File pomFile) throws IOException {
+    private boolean isRelatedProject(File pomFile) throws IOException {
         return pomFile != null
                 && pomFile.exists()
                 && pomFile.isFile()
                 // only project pom files ends in .xml, pom files from dependencies from repositories ends in .pom
                 && pomFile.getName().endsWith(".xml")
-                && (allProjectDirectories.isEmpty() || allProjectDirectories.contains(pomFile.getParentFile().getCanonicalPath()))
                 // only pom files within git directory are treated as project pom files
                 && pomFile.getCanonicalPath().startsWith(gitRepositoryDirectory.getCanonicalPath() + File.separator);
     }
