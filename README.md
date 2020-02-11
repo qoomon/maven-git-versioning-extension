@@ -255,7 +255,7 @@ fi
 #### Features
 * simplify <property> replacement configuration
 #### Fixes
-* add missing dependecy vor maven version 3.3
+* add missing dependency vor maven version 3.3
 #### Breaking Changes
 * simplify <property> replacement configuration
     
