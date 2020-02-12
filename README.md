@@ -206,7 +206,7 @@ Create `${basedir}/.mvn/maven-git-versioning-extension.xml`.
 - `git.commit.timestamp.datetime` e.g. '2019-11-16T14:37:10Z'
 - `git.dirty` repository dirty state indictor `true` or `false`
 
-## Miscellaneous Hints
+# Miscellaneous Hints
 
 ### Commandline To Print Project Version
 `mvn --non-recursive exec:exec -Dexec.executable='echo' -Dexec.args='${project.version}' -q`
