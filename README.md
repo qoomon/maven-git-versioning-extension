@@ -216,8 +216,11 @@ The reproducible builds feature (https://maven.apache.org/guides/mini/guide-repr
 ```xml
 <project.build.outputTimestamp>${git.commit.timestamp.datetime}</project.build.outputTimestamp>
 ```
+### IntelliJ Setup
+For a flawless experience you need to disable this extension during project import.
+Disable it by adding `-Dversioning.disable=true` to Maven Importer VM options (Preferences > Build, Execution, Deployment > Build Tools > Maven > Importing > VM options for importer).
 
-### CI/CD
+### CI/CD Setup
 Most CI/CD systems do checkouts in a detached HEAD state so no branch information is available, however they provide environment variables with this information. You can provide those, by using [Parameters & Environment Variables](#parameters--environment-variables). Below you'll find some setup example for common CI/CD systems.
 
 #### GitLab CI Setup
