@@ -18,9 +18,7 @@ import static me.qoomon.maven.gitversioning.VersioningMojo.propertyKeyUpdatePom;
 import static org.apache.maven.shared.utils.StringUtils.repeat;
 import static org.apache.maven.shared.utils.logging.MessageUtils.buffer;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -39,6 +37,8 @@ import org.apache.maven.model.Plugin;
 import org.apache.maven.model.PluginExecution;
 import org.apache.maven.model.Profile;
 import org.apache.maven.model.building.ModelProcessor;
+import org.apache.maven.model.io.DefaultModelReader;
+import org.apache.maven.model.locator.DefaultModelLocator;
 import org.apache.maven.session.scope.internal.SessionScope;
 import org.codehaus.plexus.logging.Logger;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
@@ -88,16 +88,16 @@ public class GitVersioningModelProcessor {
     private final Map<String, Model> virtualProjectModelCache = new HashMap<>();
 
     public Model processModel(Model projectModel, Map<String, ?> options) throws IOException {
+        if (this.disabled) {
+            return projectModel;
+        }
+
+        final Source pomSource = (Source) options.get(ModelProcessor.SOURCE);
+        if (pomSource != null) {
+            projectModel.setPomFile(new File(pomSource.getLocation()));
+        }
+
         try {
-            if (this.disabled) {
-                return projectModel;
-            }
-
-            final Source pomSource = (Source) options.get(ModelProcessor.SOURCE);
-            if (pomSource != null) {
-                projectModel.setPomFile(new File(pomSource.getLocation()));
-            }
-
             if (!initialized) {
                 logger.info("");
                 String extensionId = BuildProperties.projectArtifactId() + ":" + BuildProperties.projectVersion();
@@ -106,13 +106,13 @@ public class GitVersioningModelProcessor {
                 try {
                     mavenSession = sessionScope.scope(Key.get(MavenSession.class), null).get();
                 } catch (OutOfScopeException ex) {
-                    logger.warn("versioning is disabled, because no maven session present");
+                    logger.warn("skip - no maven session present");
                     disabled = true;
                     return projectModel;
                 }
 
                 if (parseBoolean(getCommandOption(OPTION_NAME_DISABLE))) {
-                    logger.info("versioning is disabled");
+                    logger.info("skip - versioning is disabled");
                     disabled = true;
                     return projectModel;
                 }
@@ -161,26 +161,16 @@ public class GitVersioningModelProcessor {
             return projectModel;
         }
 
+        if(sessionProjectDirectories.isEmpty()){
+            sessionProjectDirectories.add(projectModel.getProjectDirectory().getCanonicalPath());
+        }
+
         String projectId = projectGav.getProjectId();
         Model virtualProjectModel = this.virtualProjectModelCache.get(projectId);
         if (virtualProjectModel == null) {
             logger.info(buffer().strong("--- ") + buffer().project(projectId).toString() + " @ " + gitVersionDetails.getCommitRefType() + " " + buffer().strong(gitVersionDetails.getCommitRefName()) + buffer().strong(" ---"));
 
             virtualProjectModel = projectModel.clone();
-
-
-            // ---------------- gather all sub projects -----------------------------------
-
-            sessionProjectDirectories.add(projectModel.getProjectDirectory().getCanonicalPath());
-            for (String module : projectModel.getModules()) {
-                sessionProjectDirectories.add(new File(projectModel.getProjectDirectory(), module).getCanonicalPath());
-            }
-            for (Profile profile : projectModel.getProfiles()) {
-                for (String module : profile.getModules()) {
-                    sessionProjectDirectories.add(new File(projectModel.getProjectDirectory(), module).getCanonicalPath());
-                }
-            }
-
 
             // ---------------- process parent -----------------------------------
 
@@ -249,6 +239,17 @@ public class GitVersioningModelProcessor {
             if (isProjectPom) {
                 boolean updatePomOption = getUpdatePomOption(config, gitVersionDetails);
                 addBuildPlugin(virtualProjectModel, updatePomOption);
+
+                // ---------------- add all sub projects to session  -----------------
+
+                for (String module : projectModel.getModules()) {
+                    sessionProjectDirectories.add(new File(projectModel.getProjectDirectory(), module).getCanonicalPath());
+                }
+                for (Profile profile : projectModel.getProfiles()) {
+                    for (String module : profile.getModules()) {
+                        sessionProjectDirectories.add(new File(projectModel.getProjectDirectory(), module).getCanonicalPath());
+                    }
+                }
             }
 
             this.virtualProjectModelCache.put(projectId, virtualProjectModel);
