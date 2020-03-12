@@ -253,6 +253,8 @@ fi
 ```
 
 # Changelog
+## 5.0.3
+* fix incompatibility with maven version `3.6.2`
 
 ## 5.0.0
 #### Features
