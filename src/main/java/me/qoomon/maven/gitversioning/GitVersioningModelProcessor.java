@@ -129,6 +129,12 @@ public class GitVersioningModelProcessor {
                 config = loadConfig(configFile);
 
                 gitDirectory = findGitDir(executionRootDirectory);
+                if (gitDirectory == null || !gitDirectory.exists()) {
+                    logger.warn("skip - project is not part of a git repository");
+                    disabled = true;
+                    return projectModel;
+                }
+
                 logger.debug("gitDirectory: " + gitDirectory.toString());
 
                 gitVersionDetails = getGitVersionDetails(config, executionRootDirectory);
@@ -368,12 +374,8 @@ public class GitVersioningModelProcessor {
                 && pomFile.getCanonicalPath().startsWith(gitDirectory.getParentFile().getCanonicalPath() + File.separator);
     }
 
-    private static File findGitDir(File baseDirectory) throws FileNotFoundException {
-        File gitDir = new FileRepositoryBuilder().findGitDir(baseDirectory).getGitDir();
-        if (!gitDir.exists()) {
-            throw new FileNotFoundException("Can not find .git directory in hierarchy of " + baseDirectory);
-        }
-        return gitDir;
+    private static File findGitDir(File baseDirectory) {
+        return new FileRepositoryBuilder().findGitDir(baseDirectory).getGitDir();
     }
 
     private String getCommandOption(final String name) {
