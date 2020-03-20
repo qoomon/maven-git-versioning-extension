@@ -127,7 +127,7 @@ class GitVersioningExtensionIT {
         assertThat(log).contains("Building " + pomModel.getArtifactId() + " " + expectedVersion);
 
         assertThat(projectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile().exists()).isEqualTo(false);
-        assertThat(log).contains("[WARNING] Can not find .git directory in hierarchy of " + projectDir.toRealPath());
+        assertThat(log).contains("[WARNING] skip - project is not part of a git repository");
     }
 
     @Test
