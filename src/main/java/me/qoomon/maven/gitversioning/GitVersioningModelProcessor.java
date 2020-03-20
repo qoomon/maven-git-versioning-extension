@@ -128,14 +128,16 @@ public class GitVersioningModelProcessor {
                 logger.debug("configFile: " + configFile.toString());
                 config = loadConfig(configFile);
 
-                try {
-                    gitDirectory = findGitDir(executionRootDirectory);
-                    logger.debug("gitDirectory: " + gitDirectory.toString());
-
-                    gitVersionDetails = getGitVersionDetails(config, executionRootDirectory);
-                } catch (FileNotFoundException e) {
-                    logger.warn(e.getMessage());
+                gitDirectory = findGitDir(executionRootDirectory);
+                if (gitDirectory == null || !gitDirectory.exists()) {
+                    logger.warn("skip - project is not part of a git repository");
+                    disabled = true;
+                    return projectModel;
                 }
+
+                logger.debug("gitDirectory: " + gitDirectory.toString());
+
+                gitVersionDetails = getGitVersionDetails(config, executionRootDirectory);
 
                 logger.info("Adjusting project models...");
                 logger.info("");
@@ -362,7 +364,7 @@ public class GitVersioningModelProcessor {
      * @return true if <code>pomFile</code> is part of a project
      */
     private boolean isRelatedPom(File pomFile) throws IOException {
-        return pomFile != null && gitDirectory != null
+        return pomFile != null
                 && pomFile.exists()
                 && pomFile.isFile()
                 // only project pom files ends in .xml, pom files from dependencies from repositories ends in .pom
@@ -372,12 +374,8 @@ public class GitVersioningModelProcessor {
                 && pomFile.getCanonicalPath().startsWith(gitDirectory.getParentFile().getCanonicalPath() + File.separator);
     }
 
-    private static File findGitDir(File baseDirectory) throws FileNotFoundException {
-        File gitDir = new FileRepositoryBuilder().findGitDir(baseDirectory).getGitDir();
-        if (gitDir == null || !gitDir.exists()) {
-            throw new FileNotFoundException("Can not find .git directory in hierarchy of " + baseDirectory);
-        }
-        return gitDir;
+    private static File findGitDir(File baseDirectory) {
+        return new FileRepositoryBuilder().findGitDir(baseDirectory).getGitDir();
     }
 
     private String getCommandOption(final String name) {
