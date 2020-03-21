@@ -253,6 +253,9 @@ fi
 ```
 
 # Changelog
+## 5.1.0
+* prevent maven from failing, if project is not part of a git repository. Instead a warning is logged.
+
 ## 5.0.2
 * fix incompatibility with maven version `3.6.2`
 
