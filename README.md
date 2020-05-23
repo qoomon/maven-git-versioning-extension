@@ -223,6 +223,16 @@ Disable it by adding `-Dversioning.disable=true` to Maven Importer VM options (P
 ### CI/CD Setup
 Most CI/CD systems do checkouts in a detached HEAD state so no branch information is available, however they provide environment variables with this information. You can provide those, by using [Parameters & Environment Variables](#parameters--environment-variables). Below you'll find some setup example for common CI/CD systems.
 
+#### GitHub Actions Setup
+execute this snippet before running your `maven` command
+```shell
+if [[ "$GITHUB_REF" = refs/heads/* ]]; then
+    export VERSIONING_GIT_BRANCH=${GITHUB_REF#refs/heads/};
+elif [[ "$GITHUB_REF" = refs/tags/* ]];
+    export VERSIONING_GIT_TAG=${GITHUB_REF#refs/tags/};
+fi
+```
+
 #### GitLab CI Setup
 execute this snippet before running your `maven` command
 ```shell
