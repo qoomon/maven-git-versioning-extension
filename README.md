@@ -39,7 +39,7 @@ create or update `${basedir}/.mvn/extensions.xml` file
 </extensions>
 ```
 
-ℹ Consider [CI/CD](#cicd) section when running this extension in a CI/CD environment 
+ℹ Consider [CI/CD](#cicd-setup) section when running this extension in a CI/CD environment 
 
 ## Configure Extension
 
