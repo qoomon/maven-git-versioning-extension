@@ -236,6 +236,7 @@ public class GitVersioningModelProcessor {
             virtualProjectModel.addProperty("git.commit.timestamp", Long.toString(gitVersionDetails.getCommitTimestamp()));
             virtualProjectModel.addProperty("git.commit.timestamp.datetime", toTimestampDateTime(gitVersionDetails.getCommitTimestamp()));
             virtualProjectModel.addProperty("git.ref", gitVersionDetails.getCommitRefName());
+            virtualProjectModel.addProperty("git.ref.slug", gitVersionDetails.getCommitRefName().toLowerCase().replaceAll("/","-"));
             virtualProjectModel.addProperty("git." + gitVersionDetails.getCommitRefType(), gitVersionDetails.getCommitRefName());
             virtualProjectModel.addProperty("git.dirty", Boolean.toString(!gitVersionDetails.isClean()));
 
