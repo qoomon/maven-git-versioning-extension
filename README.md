@@ -267,6 +267,10 @@ fi
 ```
 
 # Changelog
+## 5.2.0
+* new version format placeholder `${ref.slug}` alike `${ref}` with all `/` replaced by `-`
+* new property `git.ref.slug`  alike `git.ref` with all `/` replaced by `-`
+
 ## 5.1.0
 * prevent maven from failing, if project is not part of a git repository. Instead a warning is logged.
 
