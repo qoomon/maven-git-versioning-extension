@@ -50,11 +50,16 @@ public class VersioningMojo extends AbstractMojo {
                     project.getProperties().getProperty(propertyKeyPrefix + propertyKeyUpdatePom));
 
             // remove plugin and properties
-            getLog().debug(project.getModel().getArtifactId() + "remove this plugin and plugin properties from model");
+            getLog().debug(project.getModel().getArtifactId() + " remove this plugin and plugin properties from model");
             Model originalModel = project.getOriginalModel();
-            originalModel.getBuild().removePlugin(asPlugin());
-            originalModel.getProperties().entrySet()
-                    .removeIf(property -> ((String)property.getKey()).startsWith(propertyKeyPrefix));
+            if (originalModel.getBuild() != null) {
+                originalModel.getBuild()
+                        .removePlugin(asPlugin());
+            }
+            if (originalModel.getProperties() != null) {
+                originalModel.getProperties()
+                        .entrySet().removeIf(property -> ((String) property.getKey()).startsWith(propertyKeyPrefix));
+            }
 
             getLog().info("Generating git versioned POM");
 
@@ -68,7 +73,7 @@ public class VersioningMojo extends AbstractMojo {
             }
 
             Element propertiesElement = projectElement.getChild("properties");
-            if(propertiesElement != null){
+            if (propertiesElement != null) {
                 for (final Element propertyElement : propertiesElement.getChildren()) {
                     propertyElement.setText(project.getOriginalModel().getProperties().getProperty(propertyElement.getName()));
                 }
