@@ -109,6 +109,28 @@ class GitVersioningExtensionIT {
     }
 
     @Test
+    void outsideGitVersioning() throws Exception {
+        // Given
+
+        writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
+        writeExtensionsFile(projectDir);
+        writeExtensionConfigFile(projectDir, new Configuration());
+
+        // When
+        Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath());
+        verifier.executeGoal("verify");
+
+        // Then
+        String log = getLog(verifier);
+        assertThat(log).doesNotContain("[ERROR]", "[FATAL]");
+        String expectedVersion = "0.0.0";
+        assertThat(log).contains("Building " + pomModel.getArtifactId() + " " + expectedVersion);
+
+        assertThat(projectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile().exists()).isEqualTo(false);
+        assertThat(log).contains("[WARNING] skip - project is not part of a git repository");
+    }
+
+    @Test
     void tagVersioning_annotated_detached() throws Exception {
         // Given
         Git git = Git.init().setDirectory(projectDir.toFile()).call();
@@ -575,7 +597,6 @@ class GitVersioningExtensionIT {
             git.checkout().setName(givenBranch).call();
 
             pomModel.setPackaging("pom");
-            pomModel.addModule("api");
             pomModel.addModule("logic");
 
             writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
@@ -584,14 +605,6 @@ class GitVersioningExtensionIT {
             Configuration extensionConfig = new Configuration();
             extensionConfig.branch.add(createBranchVersionDescription());
             writeExtensionConfigFile(projectDir, extensionConfig);
-
-            Path apiProjectDir = Files.createDirectories(projectDir.resolve("api"));
-            Model apiPomModel = writeModel(apiProjectDir.resolve("pom.xml").toFile(), new Model() {{
-                setModelVersion(pomModel.getModelVersion());
-                setGroupId(pomModel.getGroupId());
-                setVersion(pomModel.getVersion());
-                setArtifactId("api");
-            }});
 
             Path logicProjectDir = Files.createDirectories(projectDir.resolve("logic"));
             Model logicPomModel = writeModel(logicProjectDir.resolve("pom.xml").toFile(), new Model() {{
