@@ -269,12 +269,17 @@ fi
 ```
 
 # Changelog
+## 5.2.1
+* ⚠️ minimal required maven version is now `3.6.3`
+* remove workaround for maven `3.6.2` compatibility
+
 ## 5.2.0
 * **BREAKING** minimal required maven version set to `3.6.3`
 * new version format placeholder `${ref.slug}` alike `${ref}` with all `/` replaced by `-`
 * new property `git.ref.slug`  alike `git.ref` with all `/` replaced by `-`
 
 ## 5.1.0
+* ⚠️ accidentally bump minimal required maven version to `3.6.3`
 * prevent maven from failing, if project is not part of a git repository. Instead a warning is logged.
 
 ## 5.0.2
