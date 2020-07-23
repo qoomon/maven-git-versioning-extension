@@ -26,7 +26,10 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
+import javax.enterprise.inject.Typed;
 import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
 
 import org.apache.maven.building.Source;
 import org.apache.maven.execution.MavenSession;
@@ -36,6 +39,7 @@ import org.apache.maven.model.Parent;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.model.PluginExecution;
 import org.apache.maven.model.Profile;
+import org.apache.maven.model.building.DefaultModelProcessor;
 import org.apache.maven.model.building.ModelProcessor;
 import org.apache.maven.model.io.DefaultModelReader;
 import org.apache.maven.model.locator.DefaultModelLocator;
@@ -57,11 +61,13 @@ import me.qoomon.gitversioning.PropertyValueDescription;
 import me.qoomon.gitversioning.VersionDescription;
 
 /**
- * WORKAROUND
- * Initialize and use {@link GitVersioningModelProcessor} from GitModelProcessor {@link org.apache.maven.model.building.ModelProcessor},
- * This is need because maven 3.6.2 has broken component replacement mechanism.
+ * Replacement for {@link ModelProcessor} to adapt versions.
  */
-public class GitVersioningModelProcessor {
+@Named( "core-default" )
+@Singleton
+@Typed( ModelProcessor.class )
+public class GitVersioningModelProcessor extends DefaultModelProcessor {
+
     private static final String OPTION_NAME_GIT_TAG = "git.tag";
     private static final String OPTION_NAME_GIT_BRANCH = "git.branch";
     private static final String OPTION_NAME_DISABLE = "versioning.disable";
@@ -86,6 +92,24 @@ public class GitVersioningModelProcessor {
 
     private final Set<String> sessionProjectDirectories = new HashSet<>();
     private final Map<String, Model> virtualProjectModelCache = new HashMap<>();
+
+    @Override
+    public Model read(File input, Map<String, ?> options) throws IOException {
+        final Model projectModel = super.read(input, options);
+        return processModel(projectModel, options);
+    }
+
+    @Override
+    public Model read(Reader input, Map<String, ?> options) throws IOException {
+        final Model projectModel = super.read(input, options);
+        return processModel(projectModel, options);
+    }
+
+    @Override
+    public Model read(InputStream input, Map<String, ?> options) throws IOException {
+        final Model projectModel = super.read(input, options);
+        return processModel(projectModel, options);
+    }
 
     public Model processModel(Model projectModel, Map<String, ?> options) throws IOException {
         if (this.disabled) {
