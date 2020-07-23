@@ -22,6 +22,8 @@ This extension will virtually set project versions, based on current **Git branc
 
 ## Install
 
+⚠️ minimal required maven version is `3.6.3`
+
 ### Add Extension
 
 create or update `${basedir}/.mvn/extensions.xml` file
@@ -268,6 +270,7 @@ fi
 
 # Changelog
 ## 5.2.0
+* **BREAKING** minimal required maven version set to `3.6.3`
 * new version format placeholder `${ref.slug}` alike `${ref}` with all `/` replaced by `-`
 * new property `git.ref.slug`  alike `git.ref` with all `/` replaced by `-`
 
