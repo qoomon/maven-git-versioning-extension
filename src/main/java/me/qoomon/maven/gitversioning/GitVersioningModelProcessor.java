@@ -86,9 +86,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     private MavenSession mavenSession;  // can not be injected cause it is not always available
 
     private File mvnDirectory;
-    private File gitDirectory;
     private Configuration config;
-    private GitVersionDetails gitVersionDetails;
 
     private final Set<String> sessionProjectDirectories = new HashSet<>();
     private final Map<String, Model> virtualProjectModelCache = new HashMap<>();
@@ -152,17 +150,6 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                 logger.debug("configFile: " + configFile.toString());
                 config = loadConfig(configFile);
 
-                gitDirectory = findGitDir(executionRootDirectory);
-                if (gitDirectory == null || !gitDirectory.exists()) {
-                    logger.warn("skip - project is not part of a git repository");
-                    disabled = true;
-                    return projectModel;
-                }
-
-                logger.debug("gitDirectory: " + gitDirectory.toString());
-
-                gitVersionDetails = getGitVersionDetails(config, executionRootDirectory);
-
                 logger.info("Adjusting project models...");
                 logger.info("");
                 initialized = true;
@@ -175,7 +162,17 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     }
 
     private Model processModel(Model projectModel) throws IOException {
-        if (!isRelatedPom(projectModel.getPomFile())) {
+        File gitDirectory = findGitDir(projectModel.getProjectDirectory());
+
+        if (gitDirectory == null || !gitDirectory.exists()) {
+            logger.warn("skip - project is not part of a git repository");
+            disabled = true;
+            return projectModel;
+        }
+
+        logger.debug("gitDirectory: " + gitDirectory.toString());
+
+        if (!isRelatedPom(projectModel.getPomFile(), gitDirectory)) {
             logger.debug("skip - unrelated pom location - " + projectModel.getPomFile());
             return projectModel;
         }
@@ -195,6 +192,8 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             sessionProjectDirectories.add(projectModel.getProjectDirectory().getCanonicalPath());
         }
 
+        GitVersionDetails gitVersionDetails = getGitVersionDetails(config, gitDirectory);
+
         String projectId = projectGav.getProjectId();
         Model virtualProjectModel = this.virtualProjectModelCache.get(projectId);
         if (virtualProjectModel == null) {
@@ -213,7 +212,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                 }
 
                 Model parentModel = getParentModel(projectModel);
-                if (parentModel != null && isRelatedPom(parentModel.getPomFile())) {
+                if (parentModel != null && isRelatedPom(parentModel.getPomFile(), gitDirectory)) {
                     if (virtualProjectModel.getVersion() != null) {
                         virtualProjectModel.setVersion(null);
                         logger.warn("Do not set version tag in a multi module project module: " + projectModel.getPomFile());
@@ -388,7 +387,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
      * @param pomFile the pom file
      * @return true if <code>pomFile</code> is part of a project
      */
-    private boolean isRelatedPom(File pomFile) throws IOException {
+    private boolean isRelatedPom(File pomFile, File gitDirectory) throws IOException {
         return pomFile != null
                 && pomFile.exists()
                 && pomFile.isFile()
@@ -399,8 +398,8 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                 && pomFile.getCanonicalPath().startsWith(gitDirectory.getParentFile().getCanonicalPath() + File.separator);
     }
 
-    private static File findGitDir(File baseDirectory) {
-        return new FileRepositoryBuilder().findGitDir(baseDirectory).getGitDir();
+    private static File findGitDir(File baseDirectory) throws IOException{
+        return new FileRepositoryBuilder().setGitDir(baseDirectory).readEnvironment().findGitDir().build().getDirectory();
     }
 
     private String getCommandOption(final String name) {
