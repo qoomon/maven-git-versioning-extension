@@ -45,6 +45,8 @@ import org.apache.maven.model.io.DefaultModelReader;
 import org.apache.maven.model.locator.DefaultModelLocator;
 import org.apache.maven.session.scope.internal.SessionScope;
 import org.codehaus.plexus.logging.Logger;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
@@ -399,7 +401,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     }
 
     private static File findGitDir(File baseDirectory) throws IOException{
-        return new FileRepositoryBuilder().setGitDir(baseDirectory).readEnvironment().findGitDir().build().getDirectory();
+        return new FileRepositoryBuilder().setWorkTree(baseDirectory).readEnvironment().findGitDir().build().getDirectory();
     }
 
     private String getCommandOption(final String name) {
