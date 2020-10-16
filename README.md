@@ -242,7 +242,7 @@ elif [[ "$GITHUB_REF" = refs/pull/*/merge ]]; then
 fi
 ```
 
-Pull request versions can be created using following branch configuration in your `maven-git-versioning-extension.xml`:
+Pull request versions can be created by using following branch configuration in your `maven-git-versioning-extension.xml`:
 ```xml
     <branch>
          <pattern><![CDATA[pull/(?<pull>[0-9].*)]]></pattern>
