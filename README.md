@@ -234,9 +234,20 @@ execute this snippet before running your `maven` command
 ```shell
 if [[ "$GITHUB_REF" = refs/heads/* ]]; then
     export VERSIONING_GIT_BRANCH=${GITHUB_REF#refs/heads/};
-elif [[ "$GITHUB_REF" = refs/tags/* ]];
+elif [[ "$GITHUB_REF" = refs/tags/* ]]; then
     export VERSIONING_GIT_TAG=${GITHUB_REF#refs/tags/};
+elif [[ "$GITHUB_REF" = refs/pull/*/merge ]]; then
+    export VERSIONING_GIT_BRANCH=${GITHUB_REF#refs/};
+    VERSIONING_GIT_BRANCH=${VERSIONING_GIT_BRANCH%/merge};
 fi
+```
+
+Pull request versions can be created using following branch configuration in your `maven-git-versioning-extension.xml`:
+```xml
+    <branch>
+         <pattern><![CDATA[pull/(?<pull>[0-9].*)]]></pattern>
+         <versionFormat>pull-${pull}-SNAPSHOT</versionFormat>
+    </branch>
 ```
 
 #### GitLab CI Setup
