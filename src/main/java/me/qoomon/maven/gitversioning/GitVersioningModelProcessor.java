@@ -1,6 +1,7 @@
 package me.qoomon.maven.gitversioning;
 
-import static java.lang.Boolean.parseBoolean;
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
 import static java.lang.Math.ceil;
 import static java.lang.Math.floor;
 import static java.util.Collections.emptyList;
@@ -41,8 +42,6 @@ import org.apache.maven.model.PluginExecution;
 import org.apache.maven.model.Profile;
 import org.apache.maven.model.building.DefaultModelProcessor;
 import org.apache.maven.model.building.ModelProcessor;
-import org.apache.maven.model.io.DefaultModelReader;
-import org.apache.maven.model.locator.DefaultModelLocator;
 import org.apache.maven.session.scope.internal.SessionScope;
 import org.codehaus.plexus.logging.Logger;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
@@ -71,6 +70,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     private static final String OPTION_NAME_GIT_TAG = "git.tag";
     private static final String OPTION_NAME_GIT_BRANCH = "git.branch";
     private static final String OPTION_NAME_DISABLE = "versioning.disable";
+    private static final String OPTION_NAME_ENABLE = "versioning.enable";
     private static final String OPTION_UPDATE_POM = "versioning.updatePom";
     private static final String OPTION_PREFER_TAGS = "versioning.preferTags";
 
@@ -135,7 +135,15 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                     return projectModel;
                 }
 
-                if (parseBoolean(getCommandOption(OPTION_NAME_DISABLE))) {
+                if (FALSE.equals(parseBoolean(getCommandOption(OPTION_NAME_DISABLE)))) {
+                    logger.info("non-skip - versioning is enabled");
+                }
+                else if (TRUE.equals(parseBoolean(getCommandOption(OPTION_NAME_DISABLE)))) {
+                    logger.info("skip - versioning is disabled");
+                    disabled = true;
+                    return projectModel;
+                }
+                else if (TRUE.equals(parseBoolean(projectModel.getProperties().getProperty(OPTION_NAME_DISABLE)))) {
                     logger.info("skip - versioning is disabled");
                     disabled = true;
                     return projectModel;
@@ -481,5 +489,15 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         return DateTimeFormatter.ISO_DATE_TIME
                 .withZone(ZoneOffset.UTC)
                 .format(Instant.ofEpochSecond(timestamp));
+    }
+
+    public static Boolean parseBoolean(String s) {
+        if ("true".equalsIgnoreCase(s)) {
+            return true;
+        } else if ("false".equalsIgnoreCase(s)) {
+            return false;
+        } else{
+            return null;
+        }
     }
 }
