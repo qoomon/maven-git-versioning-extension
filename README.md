@@ -279,6 +279,9 @@ fi
 ```
 
 # Changelog
+## 5.3.0
+* Add feature to disable extension by default and enaable on demand
+
 ## 5.2.1
 * ⚠️ minimal required maven version is now `3.6.3`
 * remove workaround for maven `3.6.2` compatibility
