@@ -180,11 +180,12 @@ Create `${basedir}/.mvn/maven-git-versioning-extension.xml`.
         - `maven ... -Dversioning.disable=true`
     - **Maven property**
         - `<versioning.disable>true</versioning.disable>`
-- Enabling Extension
-    - **Default is enabled**
-      - Extension is activated by default.
-    - **-Dversioning.disable=false**
-        - When extension is disabled by `<versioning.disable>true</versioning.disable>` , `Command Line` paramaters have precendence on them.   
+        - Enabling Extension On Demand
+          - **Environment Variables**
+            - `export VERSIONING_DISABLE=false`
+          - **Command Line Parameters**
+            - `maven ... -Dversioning.disable=false`
+            
 - Provide **branch** or **tag** name
     - **Environment Variables**
         - `export VERSIONING_GIT_BRANCH=$PROVIDED_BRANCH_NAME`
