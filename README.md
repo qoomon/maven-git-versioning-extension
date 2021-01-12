@@ -178,7 +178,14 @@ Create `${basedir}/.mvn/maven-git-versioning-extension.xml`.
         - `export VERSIONING_DISABLE=true`
     - **Command Line Parameters**
         - `maven ... -Dversioning.disable=true`
-
+    - **Maven property**
+        - `<versioning.disable>true</versioning.disable>`
+        - Enabling Extension On Demand
+          - **Environment Variables**
+            - `export VERSIONING_DISABLE=false`
+          - **Command Line Parameters**
+            - `maven ... -Dversioning.disable=false`
+            
 - Provide **branch** or **tag** name
     - **Environment Variables**
         - `export VERSIONING_GIT_BRANCH=$PROVIDED_BRANCH_NAME`

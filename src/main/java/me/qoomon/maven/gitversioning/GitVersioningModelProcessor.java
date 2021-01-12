@@ -41,8 +41,6 @@ import org.apache.maven.model.PluginExecution;
 import org.apache.maven.model.Profile;
 import org.apache.maven.model.building.DefaultModelProcessor;
 import org.apache.maven.model.building.ModelProcessor;
-import org.apache.maven.model.io.DefaultModelReader;
-import org.apache.maven.model.locator.DefaultModelLocator;
 import org.apache.maven.session.scope.internal.SessionScope;
 import org.codehaus.plexus.logging.Logger;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
@@ -135,10 +133,21 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                     return projectModel;
                 }
 
-                if (parseBoolean(getCommandOption(OPTION_NAME_DISABLE))) {
-                    logger.info("skip - versioning is disabled");
-                    disabled = true;
-                    return projectModel;
+                String commandOptionValueDisable = getCommandOption(OPTION_NAME_DISABLE);
+                if(commandOptionValueDisable != null){
+                    if (parseBoolean(commandOptionValueDisable)) {
+                        logger.info("skip - versioning is disabled");
+                        disabled = true;
+                        return projectModel;
+                    }
+                } else {
+                    String propertyOptionValueDisable = projectModel.getProperties().getProperty(OPTION_NAME_DISABLE);
+                    if(propertyOptionValueDisable != null) {
+                        if (parseBoolean(propertyOptionValueDisable)) {
+                            disabled = true;
+                            return projectModel;
+                        }
+                    }
                 }
 
                 File executionRootDirectory = new File(mavenSession.getRequest().getBaseDirectory());
