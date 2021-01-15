@@ -34,6 +34,8 @@ import javax.inject.Singleton;
 import org.apache.maven.building.Source;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Build;
+import org.apache.maven.model.Dependency;
+import org.apache.maven.model.DependencyManagement;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;
 import org.apache.maven.model.Plugin;
@@ -290,11 +292,38 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                         sessionProjectDirectories.add(new File(projectModel.getProjectDirectory(), module).getCanonicalPath());
                     }
                 }
+
+                for (Model previousModel : virtualProjectModelCache.values()) {
+                    // dependency management section
+                    DependencyManagement dependencyManagement = previousModel.getDependencyManagement();
+                    if (dependencyManagement != null && dependencyManagement.getDependencies() != null ) {
+                        updateDependencies(projectId, virtualProjectModel, dependencyManagement.getDependencies());
+                    }
+                    // dependency section
+                    if (previousModel.getDependencies() != null) {
+                        updateDependencies(projectId, virtualProjectModel, previousModel.getDependencies());
+                    }
+                }
             }
 
             this.virtualProjectModelCache.put(projectId, virtualProjectModel);
         }
         return virtualProjectModel;
+    }
+
+    private void updateDependencies(String projectId, Model virtualProjectModel, List<Dependency> dependencies) {
+        for (Dependency dependency : dependencies) {
+            if (dependency.getVersion() != null) {
+                GAV dep = new GAV(dependency);
+                if (dep.getProjectId().equals(projectId)) {
+                    if (virtualProjectModel.getVersion() != null) {
+                        dependency.setVersion(virtualProjectModel.getVersion());
+                    } else {
+                        dependency.setVersion(virtualProjectModel.getParent().getVersion());
+                    }
+                }
+            }
+        }
     }
 
     private GitVersionDetails getGitVersionDetails(Configuration config, File repositoryDirectory) {
