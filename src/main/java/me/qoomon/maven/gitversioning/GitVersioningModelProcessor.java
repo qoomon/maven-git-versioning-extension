@@ -263,8 +263,49 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                 }
             }
 
-            // TODO
-            // update version within dependencies, dependency management, plugins, plugin management
+            for (Model previousModel : virtualProjectModelCache.values()) {
+                // dependency management section
+                DependencyManagement dependencyManagement = previousModel.getDependencyManagement();
+                if (dependencyManagement != null && dependencyManagement.getDependencies() != null ) {
+                    updateDependencies(projectId, virtualProjectModel, dependencyManagement.getDependencies());
+                }
+                // dependency section
+                if (previousModel.getDependencies() != null) {
+                    updateDependencies(projectId, virtualProjectModel, previousModel.getDependencies());
+                }
+                // Plugin section
+                List<Plugin> plugins = previousModel.getBuild().getPlugins();
+                if (plugins != null) {
+                    updatePlugins(projectId, virtualProjectModel, plugins);
+                }
+                // PluginManagement section
+                PluginManagement pluginManagement = previousModel.getBuild().getPluginManagement();
+                if (pluginManagement != null && pluginManagement.getPlugins() != null) {
+                    updatePlugins(projectId, virtualProjectModel, pluginManagement.getPlugins());
+                }
+
+                // update profile's dependency and dependency management section too
+                for (Profile previousModelProfile : previousModel.getProfiles()) {
+                    dependencyManagement = previousModelProfile.getDependencyManagement();
+                    if (dependencyManagement != null && dependencyManagement.getDependencies() != null ) {
+                        updateDependencies(projectId, virtualProjectModel, dependencyManagement.getDependencies());
+                    }
+                    // dependency section
+                    if (previousModelProfile.getDependencies() != null) {
+                        updateDependencies(projectId, virtualProjectModel, previousModelProfile.getDependencies());
+                    }
+                    // Plugin section
+                    plugins = previousModelProfile.getBuild().getPlugins();
+                    if (plugins != null) {
+                        updatePlugins(projectId, virtualProjectModel, plugins);
+                    }
+                    // PluginManagement section
+                    pluginManagement = previousModelProfile.getBuild().getPluginManagement();
+                    if (pluginManagement != null && pluginManagement.getPlugins() != null) {
+                        updatePlugins(projectId, virtualProjectModel, pluginManagement.getPlugins());
+                    }
+                }
+            }
 
             logger.info("");
 
@@ -294,49 +335,6 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                     }
                 }
 
-                for (Model previousModel : virtualProjectModelCache.values()) {
-                    // dependency management section
-                    DependencyManagement dependencyManagement = previousModel.getDependencyManagement();
-                    if (dependencyManagement != null && dependencyManagement.getDependencies() != null ) {
-                        updateDependencies(projectId, virtualProjectModel, dependencyManagement.getDependencies());
-                    }
-                    // dependency section
-                    if (previousModel.getDependencies() != null) {
-                        updateDependencies(projectId, virtualProjectModel, previousModel.getDependencies());
-                    }
-                    // Plugin section
-                    List<Plugin> plugins = previousModel.getBuild().getPlugins();
-                    if (plugins != null) {
-                        updatePlugins(projectId, virtualProjectModel, plugins);
-                    }
-                    // PluginManagement section
-                    PluginManagement pluginManagement = previousModel.getBuild().getPluginManagement();
-                    if (pluginManagement != null && pluginManagement.getPlugins() != null) {
-                        updatePlugins(projectId, virtualProjectModel, pluginManagement.getPlugins());
-                    }
-
-                    // update profile's dependency and dependency management section too
-                    for (Profile previousModelProfile : previousModel.getProfiles()) {
-                        dependencyManagement = previousModelProfile.getDependencyManagement();
-                        if (dependencyManagement != null && dependencyManagement.getDependencies() != null ) {
-                            updateDependencies(projectId, virtualProjectModel, dependencyManagement.getDependencies());
-                        }
-                        // dependency section
-                        if (previousModelProfile.getDependencies() != null) {
-                            updateDependencies(projectId, virtualProjectModel, previousModelProfile.getDependencies());
-                        }
-                        // Plugin section
-                        plugins = previousModelProfile.getBuild().getPlugins();
-                        if (plugins != null) {
-                            updatePlugins(projectId, virtualProjectModel, plugins);
-                        }
-                        // PluginManagement section
-                        pluginManagement = previousModelProfile.getBuild().getPluginManagement();
-                        if (pluginManagement != null && pluginManagement.getPlugins() != null) {
-                            updatePlugins(projectId, virtualProjectModel, pluginManagement.getPlugins());
-                        }
-                    }
-                }
             }
 
             this.virtualProjectModelCache.put(projectId, virtualProjectModel);
