@@ -3,6 +3,7 @@ package me.qoomon.maven.gitversioning;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;
+import org.apache.maven.model.Plugin;
 
 /**
  * Maven artifact identifier consisting of groupId / artifactId / getVersion.
@@ -31,6 +32,14 @@ public class GAV {
      */
     GAV(Dependency dependency) {
         this(dependency.getGroupId(), dependency.getArtifactId(), dependency.getVersion());
+    }
+    /**
+     * Builds an immutable GAV object.
+     *
+     * @param plugin object to create a GAV
+     */
+    GAV(Plugin plugin) {
+        this(plugin.getGroupId(), plugin.getArtifactId(), plugin.getVersion());
     }
 
 

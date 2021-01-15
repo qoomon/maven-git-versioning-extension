@@ -40,6 +40,7 @@ import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.model.PluginExecution;
+import org.apache.maven.model.PluginManagement;
 import org.apache.maven.model.Profile;
 import org.apache.maven.model.building.DefaultModelProcessor;
 import org.apache.maven.model.building.ModelProcessor;
@@ -303,6 +304,17 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                     if (previousModel.getDependencies() != null) {
                         updateDependencies(projectId, virtualProjectModel, previousModel.getDependencies());
                     }
+                    // Plugin section
+                    List<Plugin> plugins = previousModel.getBuild().getPlugins();
+                    if (plugins != null) {
+                        updatePlugins(projectId, virtualProjectModel, plugins);
+                    }
+                    // PluginManagement section
+                    PluginManagement pluginManagement = previousModel.getBuild().getPluginManagement();
+                    if (pluginManagement != null && pluginManagement.getPlugins() != null) {
+                        updatePlugins(projectId, virtualProjectModel, pluginManagement.getPlugins());
+                    }
+
                     // update profile's dependency and dependency management section too
                     for (Profile previousModelProfile : previousModel.getProfiles()) {
                         dependencyManagement = previousModelProfile.getDependencyManagement();
@@ -312,6 +324,16 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                         // dependency section
                         if (previousModelProfile.getDependencies() != null) {
                             updateDependencies(projectId, virtualProjectModel, previousModelProfile.getDependencies());
+                        }
+                        // Plugin section
+                        plugins = previousModelProfile.getBuild().getPlugins();
+                        if (plugins != null) {
+                            updatePlugins(projectId, virtualProjectModel, plugins);
+                        }
+                        // PluginManagement section
+                        pluginManagement = previousModelProfile.getBuild().getPluginManagement();
+                        if (pluginManagement != null && pluginManagement.getPlugins() != null) {
+                            updatePlugins(projectId, virtualProjectModel, pluginManagement.getPlugins());
                         }
                     }
                 }
@@ -331,6 +353,21 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                         dependency.setVersion(virtualProjectModel.getVersion());
                     } else {
                         dependency.setVersion(virtualProjectModel.getParent().getVersion());
+                    }
+                }
+            }
+        }
+    }
+
+    private void updatePlugins(String projectId, Model virtualProjectModel, List<Plugin> dependencies) {
+        for (Plugin plugin : dependencies) {
+            if (plugin.getVersion() != null) {
+                GAV dep = new GAV(plugin);
+                if (dep.getProjectId().equals(projectId)) {
+                    if (virtualProjectModel.getVersion() != null) {
+                        plugin.setVersion(virtualProjectModel.getVersion());
+                    } else {
+                        plugin.setVersion(virtualProjectModel.getParent().getVersion());
                     }
                 }
             }
