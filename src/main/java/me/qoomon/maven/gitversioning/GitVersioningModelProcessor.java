@@ -44,6 +44,7 @@ import org.apache.maven.model.PluginManagement;
 import org.apache.maven.model.Profile;
 import org.apache.maven.model.building.DefaultModelProcessor;
 import org.apache.maven.model.building.ModelProcessor;
+import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.apache.maven.session.scope.internal.SessionScope;
 import org.codehaus.plexus.logging.Logger;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
@@ -338,6 +339,14 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             }
 
             this.virtualProjectModelCache.put(projectId, virtualProjectModel);
+
+            for (Model model : virtualProjectModelCache.values()) {
+                if(projectModel != model){
+                    MavenXpp3Writer writer = new MavenXpp3Writer();
+                    File file = new File(model.getPomFile().getParent(), GIT_VERSIONING_POM_NAME);
+                    writer.write(new FileOutputStream(file), model);
+                }
+            }
         }
         return virtualProjectModel;
     }

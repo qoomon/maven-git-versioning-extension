@@ -34,8 +34,8 @@ import static java.lang.Boolean.parseBoolean;
       threadSafe = true)
 public class VersioningMojo extends AbstractMojo {
 
+    public static final String GIT_VERSIONING_POM_NAME = ".git-versioned-pom.xml";
     static final String GOAL = "git-versioning";
-    static final String GIT_VERSIONING_POM_NAME = ".git-versioned-pom.xml";
     static final String propertyKeyPrefix = VersioningMojo.class.getName() + ".";
     static final String propertyKeyUpdatePom = "updatePom";
 
