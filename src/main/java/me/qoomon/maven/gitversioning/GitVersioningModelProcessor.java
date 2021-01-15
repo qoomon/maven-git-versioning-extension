@@ -303,6 +303,17 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                     if (previousModel.getDependencies() != null) {
                         updateDependencies(projectId, virtualProjectModel, previousModel.getDependencies());
                     }
+                    // update profile's dependency and dependency management section too
+                    for (Profile previousModelProfile : previousModel.getProfiles()) {
+                        dependencyManagement = previousModelProfile.getDependencyManagement();
+                        if (dependencyManagement != null && dependencyManagement.getDependencies() != null ) {
+                            updateDependencies(projectId, virtualProjectModel, dependencyManagement.getDependencies());
+                        }
+                        // dependency section
+                        if (previousModelProfile.getDependencies() != null) {
+                            updateDependencies(projectId, virtualProjectModel, previousModelProfile.getDependencies());
+                        }
+                    }
                 }
             }
 
