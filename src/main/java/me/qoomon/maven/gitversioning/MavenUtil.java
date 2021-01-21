@@ -42,4 +42,19 @@ final class MavenUtil {
         }
     }
 
+    /**
+     * Builds pom file location from relative path
+     *
+     * @param workingDirectory current working directory
+     * @param relativePath     pom file path or directory of pom.xml
+     * @return pom.xml file
+     */
+    public static File pomFile(File workingDirectory, String relativePath) {
+        File modulePomFile = new File(workingDirectory, relativePath);
+        if (modulePomFile.isDirectory()) {
+            modulePomFile = new File(modulePomFile, "pom.xml");
+        }
+        return modulePomFile;
+    }
+
 }

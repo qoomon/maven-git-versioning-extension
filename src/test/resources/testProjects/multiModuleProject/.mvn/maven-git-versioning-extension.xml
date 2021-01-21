@@ -21,4 +21,11 @@
         <pattern>version/(.*)</pattern>
         <versionFormat>${1}</versionFormat>
     </tag>
+    <commit>
+        <property>
+            <pattern>foo</pattern>
+            <valueFormat>new_new_new</valueFormat>
+            <valuePattern>.*</valuePattern>
+        </property>
+    </commit>
 </gitVersioning>

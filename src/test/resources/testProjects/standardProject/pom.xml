@@ -13,13 +13,6 @@
         <nickname>qoomon</nickname>
     </properties>
 
-    <distributionManagement>
-        <repository>
-            <id>absolute directory</id>
-            <url>file:${basedir}/.m2</url>
-        </repository>
-    </distributionManagement>
-
     <dependencies>
         <dependency>
             <groupId>com.google.guava</groupId>
@@ -29,3 +22,5 @@
     </dependencies>
 
 </project>
+
+<!--mvn install -Dmaven.repo.local=$PWD/.m2/repository-->

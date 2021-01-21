@@ -16,9 +16,8 @@
     </properties>
 
     <modules>
-        <module>api/pom.xml</module>
+        <module>api</module>
         <module>logic</module>
-        <module>nested</module>
     </modules>
 
     <dependencyManagement>
