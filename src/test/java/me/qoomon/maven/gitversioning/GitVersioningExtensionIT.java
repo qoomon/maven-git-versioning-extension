@@ -19,9 +19,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import static me.qoomon.gitversioning.GitConstants.NO_COMMIT;
 import static me.qoomon.maven.gitversioning.MavenUtil.readModel;
-import static me.qoomon.maven.gitversioning.GitVersioningMojo.GIT_VERSIONING_POM_NAME;
+import static me.qoomon.maven.gitversioning.GitVersioningModelProcessor.GIT_VERSIONING_POM_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
@@ -48,12 +47,13 @@ class GitVersioningExtensionIT {
 
         // When
         Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath());
+        verifier.setMavenDebug(true);
         verifier.executeGoal("verify");
 
         // Then
         String log = getLog(verifier);
         assertThat(log).doesNotContain("[ERROR]", "[FATAL]");
-        String expectedVersion = NO_COMMIT;
+        String expectedVersion = "master-SNAPSHOT";
         assertThat(log).contains("Building " + pomModel.getArtifactId() + " " + expectedVersion);
 
         Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
@@ -467,7 +467,7 @@ class GitVersioningExtensionIT {
         // Then
         String log = getLog(verifier);
         assertThat(log).doesNotContain("[ERROR]", "[FATAL]");
-        String expectedVersion = NO_COMMIT;
+        String expectedVersion = "master-SNAPSHOT";
         assertThat(log).contains("Building " + pomModel.getArtifactId() + " " + expectedVersion);
         Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
         assertThat(gitVersionedPomModel).satisfies(it -> assertSoftly(softly -> {
@@ -548,7 +548,7 @@ class GitVersioningExtensionIT {
         // Then
         String log = getLog(verifier);
         assertThat(log).doesNotContain("[ERROR]", "[FATAL]");
-        String expectedVersion = NO_COMMIT;
+        String expectedVersion = "master-SNAPSHOT";
         assertThat(log).contains("Building " + pomModel.getArtifactId() + " " + expectedVersion);
         Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
         assertThat(gitVersionedPomModel).satisfies(it -> assertSoftly(softly -> {

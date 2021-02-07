@@ -5,7 +5,14 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Key;
 import com.google.inject.OutOfScopeException;
-import me.qoomon.gitversioning.*;
+import de.pdark.decentxml.Document;
+import de.pdark.decentxml.Element;
+import me.qoomon.gitversionng.commons.GitRefType;
+import me.qoomon.gitversionng.commons.GitSituation;
+import me.qoomon.gitversionng.commons.GitUtil;
+import me.qoomon.maven.gitversioning.Configuration.PropertyDescription;
+import me.qoomon.maven.gitversioning.Configuration.VersionDescription;
+import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.apache.maven.building.Source;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.*;
@@ -13,34 +20,40 @@ import org.apache.maven.model.building.DefaultModelProcessor;
 import org.apache.maven.model.building.ModelProcessor;
 import org.apache.maven.session.scope.internal.SessionScope;
 import org.codehaus.plexus.logging.Logger;
-import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
 import javax.enterprise.inject.Typed;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import java.io.*;
-import java.time.Instant;
-import java.time.ZoneOffset;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.regex.Pattern;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.Math.ceil;
 import static java.lang.Math.floor;
+import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
-import static java.util.Optional.ofNullable;
+import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
+import static me.qoomon.gitversionng.commons.GitRefType.*;
+import static me.qoomon.gitversionng.commons.StringUtil.substituteText;
+import static me.qoomon.gitversionng.commons.StringUtil.valueGroupMap;
 import static me.qoomon.maven.gitversioning.BuildProperties.projectArtifactId;
-import static me.qoomon.maven.gitversioning.GitVersioningMojo.*;
-import static me.qoomon.maven.gitversioning.MavenUtil.pomFile;
-import static me.qoomon.maven.gitversioning.MavenUtil.readModel;
+import static me.qoomon.maven.gitversioning.GitVersioningMojo.GOAL;
+import static me.qoomon.maven.gitversioning.GitVersioningMojo.asPlugin;
+import static me.qoomon.maven.gitversioning.MavenUtil.*;
 import static org.apache.maven.shared.utils.StringUtils.repeat;
 import static org.apache.maven.shared.utils.logging.MessageUtils.buffer;
+
+// TODO add option to throw an error if git has non clean state
 
 /**
  * Replacement for {@link ModelProcessor} to adapt versions.
@@ -57,6 +70,8 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     private static final String OPTION_UPDATE_POM = "versioning.updatePom";
     private static final String OPTION_PREFER_TAGS = "versioning.preferTags";
 
+    static final String GIT_VERSIONING_POM_NAME = ".git-versioned-pom.xml";
+
     @Inject
     private Logger logger;
 
@@ -64,17 +79,20 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     private SessionScope sessionScope;
 
     private boolean initialized = false;
+    // --- following fields will be set by init() method --------------------------------------------------------------------------------
 
-    // can't be injected, cause it's not available before model read
-    private MavenSession mavenSession;
+    private MavenSession mavenSession; // can't be injected, cause it's not available before model read
     private File mvnDirectory;
-
-    private File gitDirectory;
-    private GitVersionDetails gitVersionDetails;
+    private GitSituation gitSituation;
 
     private boolean disabled = false;
     private boolean updatePomOption = false;
+    private GitVersionDetails gitVersionDetails;
+    private Map<String, PropertyDescription> gitVersioningPropertyDescriptionMap;
+    private Map<String, String> gitFormatPlaceholderMap;
+    private Map<String, String> gitProjectProperties;
     private Set<GAV> relatedProjects;
+    // -----------------------------------------------------------------------------------------------------------------
 
     private final Set<File> projectModules = new HashSet<>();
     private final Map<File, Model> sessionModelCache = new HashMap<>();
@@ -111,20 +129,6 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             return;
         }
 
-        // check if extension is disabled
-        String propertyOptionDisableValue = projectModel.getProperties().getProperty(OPTION_NAME_DISABLE);
-        if (propertyOptionDisableValue != null) {
-            disabled = parseBoolean(propertyOptionDisableValue);
-        }
-        String commandOptionDisable = getCommandOption(OPTION_NAME_DISABLE);
-        if (commandOptionDisable != null) {
-            disabled = parseBoolean(commandOptionDisable);
-        }
-        if (disabled) {
-            logger.info("skip - versioning is disabled");
-            return;
-        }
-
         File executionRootDirectory = new File(mavenSession.getRequest().getBaseDirectory());
         logger.debug("execution root directory: " + executionRootDirectory);
 
@@ -135,18 +139,47 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         logger.debug("read config from " + configFile);
         Configuration config = readConfig(configFile);
 
-        gitDirectory = findGitDir(executionRootDirectory);
-        if (gitDirectory == null || !gitDirectory.exists()) {
+        // check if extension is disabled by command option
+        String commandOptionDisable = getCommandOption(OPTION_NAME_DISABLE);
+        if (commandOptionDisable != null) {
+            disabled = parseBoolean(commandOptionDisable);
+            if (disabled) {
+                logger.info("skip - versioning is disabled by command option");
+                return;
+            }
+        } else {
+            // check if extension is disabled by config option
+            disabled = config.disable != null && config.disable;
+            if (disabled) {
+                logger.info("skip - versioning is disabled by config option");
+                return;
+            }
+        }
+
+        gitSituation = getGitSituation(executionRootDirectory);
+        if (gitSituation == null) {
             logger.warn("skip - project is not part of a git repository");
             disabled = true;
             return;
         }
-        logger.debug("git directory: " + gitDirectory.toString());
+        logger.debug("git situation: " + gitSituation.getRootDirectory());
+        logger.debug("  root directory: " + gitSituation.getRootDirectory());
+        logger.debug("  head commit: " + gitSituation.getHeadCommit());
+        logger.debug("  head commit timestamp: " + gitSituation.getHeadCommitTimestamp());
+        logger.debug("  head branch: " + gitSituation.getHeadBranch());
+        logger.debug("  head tags: " + String.join(", ", gitSituation.getHeadTags()));
 
-        gitVersionDetails = getGitVersionDetails(config, executionRootDirectory);
-        logger.info("git ref: " + gitVersionDetails.getCommitRefType() + " " + buffer().strong(gitVersionDetails.getCommitRefName()));
+        boolean preferTagsOption = getPreferTagsOption(config);
+        logger.debug("option -  prefer tags: " + preferTagsOption);
 
-        updatePomOption = getUpdatePomOption(config, gitVersionDetails);
+        // determine git version details
+        gitVersionDetails = getGitVersionDetails(gitSituation, config, preferTagsOption);
+        logger.info("git " + gitVersionDetails.getRefType().name().toLowerCase() + ": " + buffer().strong(gitVersionDetails.getRefName()));
+        gitVersioningPropertyDescriptionMap = gitVersionDetails.getConfig().property.stream()
+                .collect(toMap(property -> property.name, property -> property));
+
+        updatePomOption = getUpdatePomOption(config, gitVersionDetails.config);
+        logger.debug("option - update pom: " + updatePomOption);
 
         // determine related projects
         relatedProjects = determineRelatedProjects(projectModel);
@@ -155,6 +188,9 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
         // add session root project as initial module
         projectModules.add(projectModel.getPomFile());
+
+        gitFormatPlaceholderMap = generateGitPlaceholderMap(gitSituation, gitVersionDetails);
+        gitProjectProperties = generateGitProjectProperties(gitSituation, gitVersionDetails);
 
         logger.info("");
     }
@@ -204,28 +240,24 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         // add current project model to session project models
         sessionModelCache.put(canonicalProjectPomFile, projectModel);
 
-
-        // --------------------------- update project model versions ---------------------------------------------------
-
-        GAV originalProjectGAV = GAV.of(projectModel);
-
         // log project header
-        logger.info(buffer().strong("--- ") + buffer().project(originalProjectGAV).toString() + buffer().strong(" ---"));
+        logger.info(buffer().strong("--- ") + buffer().project(GAV.of(projectModel)).toString() + buffer().strong(" ---"));
 
-        updateParent(projectModel);
+        updateModelVersions(projectModel);
 
-        updateVersion(projectModel);
+        File gitVersionedPomFile = writePomFile(projectModel);
+        if (updatePomOption) {
+            logger.debug("updating original POM file");
+            Files.copy(
+                    gitVersionedPomFile.toPath(),
+                    projectModel.getPomFile().toPath(),
+                    StandardCopyOption.REPLACE_EXISTING);
+        }
 
-        updateProperties(projectModel, originalProjectGAV.getVersion());
-
-        addGitProperties(projectModel);
-
-        updateDependencies(projectModel);
-
-        updatePlugins(projectModel);
-
-        // TODO generate right away only do profile replacement within plugin
-        // add build plugin to model to generate git-versioned pom.xml
+        // git versioned pom can't be set as model pom right away, file
+        // cause it will break plugins, that trying to update original pom file
+        //   e.g. mvn versions:set -DnewVersion=1.0.0
+        // That's why we need to add a build plugin that sets project pom file to git versioned pom file
         addBuildPlugin(projectModel);
 
         // add potential project modules
@@ -237,30 +269,92 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         return projectModel;
     }
 
-    private GitVersionDetails getGitVersionDetails(Configuration config, File repositoryDirectory) {
-        GitRepoSituation repoSituation = GitUtil.situation(repositoryDirectory);
-        String providedTag = getCommandOption(OPTION_NAME_GIT_TAG);
-        if (providedTag != null) {
-            repoSituation.setHeadBranch(null);
-            repoSituation.setHeadTags(providedTag.isEmpty() ? emptyList() : singletonList(providedTag));
-        }
-        String providedBranch = getCommandOption(OPTION_NAME_GIT_BRANCH);
-        if (providedBranch != null) {
-            repoSituation.setHeadBranch(providedBranch.isEmpty() ? null : providedBranch);
+    private void updateModelVersions(Model projectModel) {
+        GAV originalProjectGAV = GAV.of(projectModel);
+
+        updateParentVersion(projectModel);
+
+        updateVersion(projectModel);
+
+        updatePropertyValues(projectModel, originalProjectGAV);
+
+        addGitProperties(projectModel);
+
+        updateDependencyVersions(projectModel);
+
+        updatePluginVersions(projectModel);
+    }
+
+    private File writePomFile(Model projectModel) throws IOException {
+        logger.info("generate " + GIT_VERSIONING_POM_NAME);
+
+        // read original pom file
+        Document gitVersionedPomDocument = readXml(projectModel.getPomFile());
+        Element projectElement = gitVersionedPomDocument.getChild("project");
+
+        updateParentVersion(projectElement, projectModel);
+
+        updateVersion(projectElement, projectModel);
+
+        updatePropertyValues(projectElement, projectModel);
+
+        updateDependencyVersions(projectElement, projectModel);
+
+        updatePluginVersions(projectElement, projectModel);
+
+        File gitVersionedPomFile = new File(projectModel.getProjectDirectory(), GIT_VERSIONING_POM_NAME);
+        writeXml(gitVersionedPomFile, gitVersionedPomDocument);
+
+        return gitVersionedPomFile;
+    }
+
+    private static GitVersionDetails getGitVersionDetails(GitSituation gitSituation, Configuration config, boolean preferTags) {
+        String headCommit = gitSituation.getHeadCommit();
+
+        // detached tag
+        if (!gitSituation.getHeadTags().isEmpty() && (gitSituation.isDetached() || preferTags)) {
+            // sort tags by maven version logic
+            List<String> sortedHeadTags = gitSituation.getHeadTags().stream()
+                    .sorted(comparing(DefaultArtifactVersion::new)).collect(toList());
+            for (VersionDescription tagConfig : config.tag) {
+                for (String headTag : sortedHeadTags) {
+                    if (tagConfig.pattern == null || headTag.matches(tagConfig.pattern)) {
+                        return new GitVersionDetails(headCommit, TAG, headTag, tagConfig);
+                    }
+                }
+            }
         }
 
-        final boolean preferTagsOption = getPreferTagsOption(config);
-        return GitVersioning.determineVersion(repoSituation,
-                ofNullable(config.commit)
-                        .map(it -> new VersionDescription(null, it.versionFormat, convertPropertyDescription(it.property)))
-                        .orElse(new VersionDescription()),
-                config.branch.stream()
-                        .map(it -> new VersionDescription(it.pattern, it.versionFormat, convertPropertyDescription(it.property)))
-                        .collect(toList()),
-                config.tag.stream()
-                        .map(it -> new VersionDescription(it.pattern, it.versionFormat, convertPropertyDescription(it.property)))
-                        .collect(toList()),
-                preferTagsOption);
+        // detached commit
+        if (gitSituation.isDetached()) {
+            if (config.commit != null) {
+                if (config.commit.pattern == null || headCommit.matches(config.commit.pattern)) {
+                    return new GitVersionDetails(headCommit, COMMIT, headCommit, config.commit);
+                }
+            }
+
+            // default config for detached head commit
+            return new GitVersionDetails(headCommit, COMMIT, headCommit, new VersionDescription() {{
+                pattern = ".*";
+                versionFormat = "${commit}";
+            }});
+        }
+
+        // branch
+        {
+            String headBranch = gitSituation.getHeadBranch();
+            for (VersionDescription branchConfig : config.branch) {
+                if (branchConfig.pattern == null || headBranch.matches(branchConfig.pattern)) {
+                    return new GitVersionDetails(headCommit, BRANCH, headBranch, branchConfig);
+                }
+            }
+
+            // default config for branch
+            return new GitVersionDetails(headCommit, BRANCH, headBranch, new VersionDescription() {{
+                pattern = ".*";
+                versionFormat = "${branch}-SNAPSHOT";
+            }});
+        }
     }
 
     private Set<GAV> determineRelatedProjects(Model projectModel) throws IOException {
@@ -318,7 +412,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                 && pomFile.getName().endsWith(".xml")
                 && pomFile.getCanonicalPath().startsWith(mvnDirectory.getParentFile().getCanonicalPath() + File.separator)
                 // only pom files within git directory are treated as project pom files
-                && pomFile.getCanonicalPath().startsWith(gitDirectory.getParentFile().getCanonicalPath() + File.separator);
+                && pomFile.getCanonicalPath().startsWith(gitSituation.getRootDirectory().getCanonicalPath() + File.separator);
     }
 
     private Model searchParentProjectInParentDirectory(Model projectModel) throws IOException {
@@ -336,15 +430,38 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         return null;
     }
 
-    private String getGitVersion(GAV projectGAV) {
-        String projectVersion = projectGAV.getVersion();
-        if (isNullOrEmpty(projectVersion)) {
+    private GitSituation getGitSituation(File executionRootDirectory) throws IOException {
+        GitSituation gitSituation = GitUtil.situation(executionRootDirectory);
+        if (gitSituation == null) {
             return null;
         }
-        return gitVersionDetails.getVersionTransformer().apply(projectVersion);
+        String providedTag = getCommandOption(OPTION_NAME_GIT_TAG);
+        if (providedTag != null) {
+            logger.debug("set git head tag by command option: " + providedTag);
+            gitSituation = GitSituation.Builder.of(gitSituation)
+                    .setHeadBranch(null)
+                    .setHeadTags(providedTag.isEmpty() ? emptyList() : singletonList(providedTag))
+                    .build();
+        }
+        String providedBranch = getCommandOption(OPTION_NAME_GIT_BRANCH);
+        if (providedBranch != null) {
+            logger.debug("set git head branch by command option: " + providedBranch);
+            gitSituation = GitSituation.Builder.of(gitSituation)
+                    .setHeadBranch(providedBranch)
+                    .build();
+        }
+
+        return gitSituation;
     }
 
-    private void updateParent(Model projectModel) {
+    private String getGitVersion(GAV originalProjectGAV) {
+        final Map<String, String> placeholderMap = generateFormatPlaceholderMap(originalProjectGAV);
+        return substituteText(gitVersionDetails.getConfig().versionFormat, placeholderMap)
+                // replace invalid version characters
+                .replace("/", "-");
+    }
+
+    private void updateParentVersion(Model projectModel) {
         final Parent parent = projectModel.getParent();
         if (parent != null) {
             GAV parentGAV = GAV.of(parent);
@@ -360,71 +477,123 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         if (projectModel.getVersion() != null) {
             GAV projectGAV = GAV.of(projectModel);
             String gitVersion = getGitVersion(projectGAV);
-            logger.info("update version: " + projectGAV + " -> " + gitVersion);
+            logger.info("update version: " + gitVersion);
             projectModel.setVersion(gitVersion);
         }
     }
 
-    private void updateProperties(Model projectModel, String originalVersion) {
+    private void updatePropertyValues(Model projectModel, GAV originalProjectGAV) {
         // properties section
-        {
-            final Map<String, String> gitProperties = gitVersionDetails.getPropertiesTransformer()
-                    .apply(Maps.fromProperties(projectModel.getProperties()), originalVersion);
-            for (Entry<String, String> property : gitProperties.entrySet()) {
-                if (!property.getValue().equals(projectModel.getProperties().getProperty(property.getKey()))) {
-                    logger.info("update property: " + property.getKey() + ": " + property.getValue());
-                    projectModel.getProperties().setProperty(property.getKey(), property.getValue());
-                }
-            }
+        for (Entry<String, String> property : Maps.fromProperties(projectModel.getProperties()).entrySet()) {
+            String propertyValue = getGitProjectPropertyValue(property.getKey(), property.getValue(), originalProjectGAV);
+            projectModel.addProperty(property.getKey(), propertyValue);
         }
-        // profiles section
+
+        // profile section
         for (Profile profile : projectModel.getProfiles()) {
+
             // properties section
-            {
-                final Map<String, String> gitProperties = gitVersionDetails.getPropertiesTransformer()
-                        .apply(Maps.fromProperties(profile.getProperties()), originalVersion);
-                for (Entry<String, String> property : gitProperties.entrySet()) {
-                    if (!property.getValue().equals(projectModel.getProperties().getProperty(property.getKey()))) {
-                        logger.info("update profile '" + profile.getId() + "' property: " + property.getKey() + ": " + property.getValue());
-                        projectModel.getProperties().setProperty(property.getKey(), property.getValue());
-                    }
-                }
+            for (Entry<String, String> property : Maps.fromProperties(profile.getProperties()).entrySet()) {
+                String propertyValue = getGitProjectPropertyValue(property.getKey(), property.getValue(), originalProjectGAV);
+                profile.addProperty(property.getKey(), propertyValue);
             }
         }
+    }
 
+    private String getGitProjectPropertyValue(String key, String originalValue, GAV originalProjectGAV) {
+        PropertyDescription propertyConfig = gitVersioningPropertyDescriptionMap.get(key);
+        if (propertyConfig == null) {
+            return originalValue;
+        }
+        final Map<String, String> placeholderMap = generateFormatPlaceholderMap(originalProjectGAV);
+        placeholderMap.put("value", originalValue);
+        return substituteText(propertyConfig.valueFormat, placeholderMap);
+    }
 
-        // TODO update project properties update git versioning lib
-//        PropertiesTransformer propertyTransformer = gitVersionDetails.getPropertyTransformer(projectGAV.getVersion());
-//        // properties section
-//        {
-//            for (Entry<String, String> property : Maps.fromProperties(projectModel.getProperties()).entrySet()) {
-//                String transformedPropertyValue = propertyTransformer.apply(property.getKey(), property.getValue());
-//                projectModel.addProperty(property.getKey(), transformedPropertyValue);
-//            }
-//        }
-//        // profile section
-//        for (Profile profile : projectModel.getProfiles()) {
-//            // properties section
-//            {
-//                for (Entry<String, String> property : Maps.fromProperties(projectModel.getProperties()).entrySet()) {
-//                    String transformedPropertyValue = propertyTransformer.apply(property.getKey(), property.getValue());
-//                    projectModel.addProperty(property.getKey(), transformedPropertyValue);
-//                }
-//            }
-//        }
+    private Map<String, String> generateFormatPlaceholderMap(GAV originalProjectGAV) {
+        final Map<String, String> placeholderMap = new HashMap<>();
+        placeholderMap.putAll(Maps.fromProperties(mavenSession.getUserProperties()));
+        placeholderMap.putAll(gitFormatPlaceholderMap);
+        placeholderMap.putAll(generateVersionPlaceholderMap(originalProjectGAV));
+        return placeholderMap;
+    }
+
+    private static Map<String, String> generateGitPlaceholderMap(GitSituation gitSituation, GitVersionDetails gitVersionDetails) {
+        final Map<String, String> placeholderMap = new HashMap<>();
+
+        String headCommit = gitSituation.getHeadCommit();
+        placeholderMap.put("commit", headCommit);
+        placeholderMap.put("commit.short", headCommit.substring(0, 7));
+
+        ZonedDateTime headCommitDateTime = gitSituation.getHeadCommitDateTime();
+        placeholderMap.put("commit.timestamp", Long.toString(headCommitDateTime.toEpochSecond()));
+        placeholderMap.put("commit.timestamp.year", Long.toString(headCommitDateTime.getYear()));
+        placeholderMap.put("commit.timestamp.month", Long.toString(headCommitDateTime.getMonthValue()));
+        placeholderMap.put("commit.timestamp.day", Long.toString(headCommitDateTime.getDayOfMonth()));
+        placeholderMap.put("commit.timestamp.hour", Long.toString(headCommitDateTime.getHour()));
+        placeholderMap.put("commit.timestamp.minute", Long.toString(headCommitDateTime.getMinute()));
+        placeholderMap.put("commit.timestamp.second", Long.toString(headCommitDateTime.getSecond()));
+        placeholderMap.put("commit.timestamp.datetime", formatPlaceholderDateTime(headCommitDateTime));
+
+        String refTypeName = gitVersionDetails.getRefType().name().toLowerCase();
+        String refName = gitVersionDetails.getRefName();
+        String refNameSlug = slugify(refName);
+        placeholderMap.put("ref", refName);
+        placeholderMap.put("ref.slug", refNameSlug);
+        placeholderMap.put(refTypeName, refName);
+        placeholderMap.put(refTypeName + ".slug", refNameSlug);
+        Map<String, String> refNameValueGroupMap = valueGroupMap(refName, gitVersionDetails.getConfig().pattern);
+        placeholderMap.putAll(refNameValueGroupMap);
+        placeholderMap.putAll(refNameValueGroupMap.entrySet().stream()
+                .collect(toMap(entry -> entry.getKey() + ".slug", entry -> slugify(entry.getValue()))));
+
+        placeholderMap.put("dirty", gitSituation.isClean() ? "" : "-DIRTY");
+
+        return placeholderMap;
+    }
+
+    private static String formatPlaceholderDateTime(ZonedDateTime commitDateTime) {
+        return commitDateTime.toEpochSecond() > 0
+                ? commitDateTime.format(DateTimeFormatter.ofPattern("yyyyMMdd.HHmmss"))
+                : "00000000.000000";
+    }
+
+    private Map<String, String> generateVersionPlaceholderMap(GAV originalProjectGAV) {
+        Map<String, String> placeholderMap = new HashMap<>();
+        String originalProjectVersion = originalProjectGAV.getVersion();
+        placeholderMap.put("version", originalProjectVersion);
+        placeholderMap.put("version.release", originalProjectVersion.replaceFirst("-SNAPSHOT$", ""));
+        return placeholderMap;
+    }
+
+    private static Map<String, String> generateGitProjectProperties(GitSituation gitSituation, GitVersionDetails gitVersionDetails) {
+        Map<String, String> properties = new HashMap<>();
+
+        properties.put("git.commit", gitVersionDetails.getCommit());
+
+        ZonedDateTime headCommitDateTime = gitSituation.getHeadCommitDateTime();
+        properties.put("git.commit.timestamp", Long.toString(headCommitDateTime.toEpochSecond()));
+        properties.put("git.commit.timestamp.datetime", headCommitDateTime.toEpochSecond() > 0
+                ? headCommitDateTime.format(ISO_INSTANT) : "0000-00-00T00:00:00Z");
+
+        String refTypeName = gitVersionDetails.getRefType().name().toLowerCase();
+        String refName = gitVersionDetails.getRefName();
+        String refNameSlug = slugify(refName);
+        properties.put("git.ref", refName);
+        properties.put("git.ref.slug", refNameSlug);
+        properties.put("git." + refTypeName, refName);
+        properties.put("git." + refTypeName + ".slug", refNameSlug);
+
+        properties.put("git.dirty", Boolean.toString(!gitSituation.isClean()));
+
+        return properties;
     }
 
     private void addGitProperties(Model projectModel) {
-        projectModel.addProperty("git.commit", gitVersionDetails.getCommit());
-        projectModel.addProperty("git.commit.timestamp", Long.toString(gitVersionDetails.getCommitTimestamp()));
-        projectModel.addProperty("git.commit.timestamp.datetime", toTimestampDateTime(gitVersionDetails.getCommitTimestamp()));
-        projectModel.addProperty("git.ref", gitVersionDetails.getCommitRefName());
-        projectModel.addProperty("git.ref.slug", gitVersionDetails.getCommitRefName().toLowerCase().replaceAll("/", "-"));
-        projectModel.addProperty("git." + gitVersionDetails.getCommitRefType(), gitVersionDetails.getCommitRefName());
-        projectModel.addProperty("git.dirty", Boolean.toString(!gitVersionDetails.isClean()));
+        gitProjectProperties.forEach(projectModel::addProperty);
     }
 
-    private void updatePlugins(Model projectModel) {
+    private void updatePluginVersions(Model projectModel) {
         for (Plugin plugin : getProjectPlugins(projectModel)) {
             GAV pluginGAV = GAV.of(plugin);
             if (relatedProjects.contains(pluginGAV)) {
@@ -435,13 +604,196 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         }
     }
 
-    private void updateDependencies(Model projectModel) {
+    private void updateDependencyVersions(Model projectModel) {
         for (Dependency dependency : getProjectDependencies(projectModel)) {
             GAV dependencyGAV = GAV.of(dependency);
             if (relatedProjects.contains(dependencyGAV)) {
                 String gitVersion = getGitVersion(dependencyGAV);
                 logger.info("update dependency version: " + dependencyGAV.getProjectId() + ":" + gitVersion);
                 dependency.setVersion(gitVersion);
+            }
+        }
+    }
+
+    private void updateParentVersion(Element projectElement, Model projectModel) {
+        Element parentElement = projectElement.getChild("parent");
+        if (parentElement != null) {
+            Element parentVersionElement = parentElement.getChild("version");
+            parentVersionElement.setText(projectModel.getParent().getVersion());
+        }
+    }
+
+    private void updateVersion(Element projectElement, Model projectModel) {
+        Element versionElement = projectElement.getChild("version");
+        if (versionElement != null) {
+            versionElement.setText(projectModel.getVersion());
+        }
+    }
+
+    private static void updatePropertyValues(Element projectElement, Model projectModel) {
+        // properties section
+        {
+            Element propertiesElement = projectElement.getChild("properties");
+            if (propertiesElement != null) {
+                updatePropertyValues(propertiesElement, projectModel.getProperties());
+            }
+        }
+        // profiles section
+        Element profilesElement = projectElement.getChild("profiles");
+        if (profilesElement != null) {
+            Map<String, Profile> profileMap = projectModel.getProfiles().stream()
+                    .collect(toMap(Profile::getId, it -> it));
+            for (Element profileElement : profilesElement.getChildren()) {
+                Profile profile = profileMap.get(profileElement.getChild("id").getText());
+                // properties section
+                {
+                    Element propertiesElement = projectElement.getChild("properties");
+                    if (propertiesElement != null) {
+                        updatePropertyValues(propertiesElement, profile.getProperties());
+                    }
+                }
+            }
+        }
+    }
+
+    private static void updatePropertyValues(Element propertiesElement, Properties properties) {
+        for (Element propertyElement : propertiesElement.getChildren()) {
+            propertyElement.setText(properties.getProperty(propertyElement.getName()));
+        }
+    }
+
+    private static void updateDependencyVersions(Element projectElement, Model projectModel) {
+        // dependencies section
+        {
+            Element dependenciesElement = projectElement.getChild("dependencies");
+            if (dependenciesElement != null) {
+                updateDependencyVersions(dependenciesElement, projectModel.getDependencies());
+            }
+        }
+        // dependencyManagement section
+        {
+            Element dependencyManagementElement = projectElement.getChild("dependencyManagement");
+            if (dependencyManagementElement != null) {
+                Element dependenciesElement = dependencyManagementElement.getChild("dependencies");
+                if (dependenciesElement != null) {
+                    updateDependencyVersions(dependenciesElement, projectModel.getDependencyManagement().getDependencies());
+                }
+            }
+        }
+        // profiles section
+        Element profilesElement = projectElement.getChild("profiles");
+        if (profilesElement != null) {
+            Map<String, Profile> profileMap = projectModel.getProfiles().stream()
+                    .collect(toMap(Profile::getId, it -> it));
+            for (Element profileElement : profilesElement.getChildren("profile")) {
+                Profile profile = profileMap.get(profileElement.getChild("id").getText());
+                // dependencies section
+                {
+                    Element dependenciesElement = profileElement.getChild("dependencies");
+                    if (dependenciesElement != null) {
+                        updateDependencyVersions(dependenciesElement, profile.getDependencies());
+                    }
+                }
+                // dependencyManagement section
+                {
+                    Element dependencyManagementElement = profileElement.getChild("dependencyManagement");
+                    if (dependencyManagementElement != null) {
+                        Element dependenciesElement = dependencyManagementElement.getChild("dependencies");
+                        if (dependenciesElement != null) {
+                            updateDependencyVersions(dependenciesElement, profile.getDependencyManagement().getDependencies());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private static void updateDependencyVersions(Element dependenciesElement, List<Dependency> dependencies) {
+        final Map<String, String> dependencyVersionMap = dependencies.stream()
+                .filter(it -> it.getVersion() != null)
+                .collect(toMap(it -> it.getGroupId() + ":" + it.getArtifactId(), Dependency::getVersion));
+
+        for (Element dependencyElement : dependenciesElement.getChildren()) {
+            String dependencyGroupId = dependencyElement.getChild("groupId").getText();
+            String dependencyArtifactId = dependencyElement.getChild("artifactId").getText();
+            Element dependencyVersionElement = dependencyElement.getChild("version");
+            if (dependencyVersionElement != null) {
+                dependencyVersionElement.setText(dependencyVersionMap.get(dependencyGroupId + ":" + dependencyArtifactId));
+            }
+        }
+    }
+
+    private static void updatePluginVersions(Element projectElement, Model projectModel) {
+        // build section
+        {
+            Element buildElement = projectElement.getChild("build");
+            if (buildElement != null) {
+                // plugins section
+                {
+                    Element pluginsElement = buildElement.getChild("plugins");
+                    if (pluginsElement != null) {
+                        updatePluginVersions(pluginsElement, projectModel.getBuild().getPlugins());
+                    }
+
+                }
+                // pluginManagement section
+                {
+                    Element pluginsManagementElement = buildElement.getChild("pluginsManagement");
+                    if (pluginsManagementElement != null) {
+                        Element pluginsElement = pluginsManagementElement.getChild("plugins");
+                        if (pluginsElement != null) {
+                            updatePluginVersions(pluginsElement, projectModel.getBuild().getPluginManagement().getPlugins());
+                        }
+                    }
+                }
+            }
+        }
+        // profiles section
+        Element profilesElement = projectElement.getChild("profiles");
+        if (profilesElement != null) {
+            Map<String, Profile> profileMap = projectModel.getProfiles().stream()
+                    .collect(toMap(Profile::getId, it -> it));
+            for (Element profileElement : profilesElement.getChildren("profile")) {
+                Profile profile = profileMap.get(profileElement.getChild("id").getText());
+                // build section
+                {
+                    Element buildElement = projectElement.getChild("build");
+                    if (buildElement != null) {
+                        // plugins section
+                        {
+                            Element pluginsElement = buildElement.getChild("plugins");
+                            if (pluginsElement != null) {
+                                updatePluginVersions(pluginsElement, profile.getBuild().getPlugins());
+                            }
+
+                        }
+                        // pluginManagement section
+                        {
+                            Element pluginsManagementElement = buildElement.getChild("pluginsManagement");
+                            if (pluginsManagementElement != null) {
+                                Element pluginsElement = pluginsManagementElement.getChild("plugins");
+                                if (pluginsElement != null) {
+                                    updatePluginVersions(pluginsElement, profile.getBuild().getPluginManagement().getPlugins());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private static void updatePluginVersions(Element pluginsElement, List<Plugin> plugins) {
+        final Map<String, String> pluginVersionMap = plugins.stream()
+                .filter(it -> it.getVersion() != null)
+                .collect(toMap(it -> it.getGroupId() + ":" + it.getArtifactId(), Plugin::getVersion));
+
+        for (Element pluginElement : pluginsElement.getChildren()) {
+            String pluginGroupId = pluginElement.getChild("groupId").getText();
+            String pluginArtifactId = pluginElement.getChild("artifactId").getText();
+            Element pluginVersionElement = pluginElement.getChild("version");
+            if (pluginVersionElement != null) {
+                pluginVersionElement.setText(pluginVersionMap.get(pluginGroupId + ":" + pluginArtifactId));
             }
         }
     }
@@ -460,9 +812,6 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             projectModel.setBuild(new Build());
         }
         projectModel.getBuild().getPlugins().add(plugin);
-
-        // add plugin properties
-        projectModel.getProperties().setProperty(propertyKeyUpdatePom, Boolean.toString(updatePomOption));
     }
 
     private static List<Dependency> getProjectDependencies(Model projectModel) {
@@ -553,14 +902,6 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         return modules;
     }
 
-    private static List<PropertyDescription> convertPropertyDescription(
-            List<Configuration.PropertyDescription> confPropertyDescription) {
-        return confPropertyDescription.stream()
-                .map(prop -> new PropertyDescription(
-                        prop.pattern, new PropertyValueDescription(prop.valuePattern, prop.valueFormat)))
-                .collect(toList());
-    }
-
     private static File findMvnDirectory(File baseDirectory) throws IOException {
         File searchDirectory = baseDirectory;
         while (searchDirectory != null) {
@@ -587,10 +928,6 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         return null;
     }
 
-    private static File findGitDir(File baseDirectory) {
-        return new FileRepositoryBuilder().findGitDir(baseDirectory).getGitDir();
-    }
-
     private String getCommandOption(final String name) {
         String value = mavenSession.getUserProperties().getProperty(name);
         if (value == null) {
@@ -612,43 +949,39 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     }
 
     private boolean getPreferTagsOption(final Configuration config) {
-        final boolean preferTagsOption;
         final String preferTagsCommandOption = getCommandOption(OPTION_PREFER_TAGS);
         if (preferTagsCommandOption != null) {
-            preferTagsOption = parseBoolean(preferTagsCommandOption);
-        } else if (config.preferTags != null) {
-            preferTagsOption = config.preferTags;
-        } else {
-            preferTagsOption = false;
+            return parseBoolean(preferTagsCommandOption);
         }
-        return preferTagsOption;
+
+        if (config.preferTags != null) {
+            return config.preferTags;
+        }
+
+        return false;
     }
 
-    private boolean getUpdatePomOption(final Configuration config, final GitVersionDetails gitVersionDetails) {
-        String updatePomCommandOption = getCommandOption(OPTION_UPDATE_POM);
+    private boolean getUpdatePomOption(final Configuration config, final VersionDescription gitRefConfig) {
+        final String updatePomCommandOption = getCommandOption(OPTION_UPDATE_POM);
         if (updatePomCommandOption != null) {
             return parseBoolean(updatePomCommandOption);
         }
 
-        boolean updatePomOption = config.updatePom != null && config.updatePom;
-        if (gitVersionDetails.getCommitRefType().equals("tag")) {
-            updatePomOption = config.tag.stream()
-                    .filter(it -> Pattern.matches(it.pattern, gitVersionDetails.getCommitRefName()))
-                    .findFirst()
-                    .map(it -> it.updatePom)
-                    .orElse(updatePomOption);
-        } else if (gitVersionDetails.getCommitRefType().equals("branch")) {
-            updatePomOption = config.branch.stream()
-                    .filter(it -> Pattern.matches(it.pattern, gitVersionDetails.getCommitRefName()))
-                    .findFirst()
-                    .map(it -> it.updatePom)
-                    .orElse(updatePomOption);
-        } else if (config.commit != null) {
-            updatePomOption = Optional.ofNullable(config.commit.updatePom)
-                    .orElse(updatePomOption);
+        if (gitRefConfig.updatePom != null) {
+            return gitRefConfig.updatePom;
         }
 
-        return updatePomOption;
+        if (config.updatePom != null) {
+            return config.updatePom;
+        }
+
+        return false;
+    }
+
+    private static String slugify(String value) {
+        return value
+                .replace("/", "-")
+                .toLowerCase();
     }
 
     private static String extensionLogFormat(String extensionId) {
@@ -660,13 +993,34 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                 + buffer().strong(repeat("-", extensionIdPaddingRight));
     }
 
-    private static String toTimestampDateTime(long timestamp) {
-        if (timestamp == 0) {
-            return "0000-00-00T00:00:00Z";
+    private static class GitVersionDetails {
+        private final String commit;
+        private final GitRefType refType;
+        private final String refName;
+        private final VersionDescription config;
+
+        public GitVersionDetails(String commit, GitRefType refType, String refName, VersionDescription config) {
+
+            this.commit = checkNotNull(commit);
+            this.refType = checkNotNull(refType);
+            this.refName = checkNotNull(refName);
+            this.config = checkNotNull(config);
         }
 
-        return DateTimeFormatter.ISO_DATE_TIME
-                .withZone(ZoneOffset.UTC)
-                .format(Instant.ofEpochSecond(timestamp));
+        public String getCommit() {
+            return commit;
+        }
+
+        public GitRefType getRefType() {
+            return refType;
+        }
+
+        public String getRefName() {
+            return refName;
+        }
+
+        public VersionDescription getConfig() {
+            return config;
+        }
     }
 }

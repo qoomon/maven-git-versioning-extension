@@ -99,23 +99,20 @@ class ConfigurationTest {
                 "        <pattern>branch1-pattern</pattern>\n" +
                 "        <versionFormat>branch1-format</versionFormat>\n" +
                 "        <property>\n" +
-                "            <pattern>my.property</pattern>\n" +
-                "              <valuePattern>my.property.pattern</valuePattern>\n" +
-                "              <valueFormat>my.property.format</valueFormat>\n" +
+                "            <name>my.property</name>\n" +
+                "            <valueFormat>my.property.format</valueFormat>\n" +
                 "        </property>\n" +
                 "    </branch>\n" +
                 "    <branch>\n" +
                 "        <pattern>branch2-pattern</pattern>\n" +
                 "        <versionFormat>branch2-format</versionFormat>\n" +
                 "        <property>\n" +
-                "            <pattern>my.first.property</pattern>\n" +
-                "              <valuePattern>my.first.property.pattern</valuePattern>\n" +
-                "              <valueFormat>my.first.property.format</valueFormat>\n" +
+                "            <name>my.first.property</name>\n" +
+                "            <valueFormat>my.first.property.format</valueFormat>\n" +
                 "        </property>\n" +
                 "        <property>\n" +
-                "            <pattern>my.second.property</pattern>\n" +
-                "              <valuePattern>my.second.property.pattern</valuePattern>\n" +
-                "              <valueFormat>my.second.property.format</valueFormat>\n" +
+                "            <name>my.second.property</name>\n" +
+                "            <valueFormat>my.second.property.format</valueFormat>\n" +
                 "        </property>\n" +
                 "    </branch>\n" +
                 "</gitVersioning>\n";
@@ -135,8 +132,7 @@ class ConfigurationTest {
                                         () -> assertThat(branchConfig.versionFormat).isEqualTo("branch1-format"),
                                         () -> assertThat(branchConfig.property).hasSize(1),
                                         () -> assertThat(branchConfig.property.get(0)).satisfies(branchPropertyConfig -> assertAll(
-                                                () -> assertThat(branchPropertyConfig.pattern).isEqualTo("my.property"),
-                                                () -> assertThat(branchPropertyConfig.valuePattern).isEqualTo("my.property.pattern"),
+                                                () -> assertThat(branchPropertyConfig.name).isEqualTo("my.property"),
                                                 () -> assertThat(branchPropertyConfig.valueFormat).isEqualTo("my.property.format")
                                         ))
                                 )),
@@ -145,13 +141,11 @@ class ConfigurationTest {
                                         () -> assertThat(branchConfig.versionFormat).isEqualTo("branch2-format"),
                                         () -> assertThat(branchConfig.property).hasSize(2),
                                         () -> assertThat(branchConfig.property.get(0)).satisfies(branchPropertyConfig -> assertAll(
-                                                () -> assertThat(branchPropertyConfig.pattern).isEqualTo("my.first.property"),
-                                                () -> assertThat(branchPropertyConfig.valuePattern).isEqualTo("my.first.property.pattern"),
+                                                () -> assertThat(branchPropertyConfig.name).isEqualTo("my.first.property"),
                                                 () -> assertThat(branchPropertyConfig.valueFormat).isEqualTo("my.first.property.format")
                                         )),
                                         () -> assertThat(branchConfig.property.get(1)).satisfies(branchPropertyConfig -> assertAll(
-                                                () -> assertThat(branchPropertyConfig.pattern).isEqualTo("my.second.property"),
-                                                () -> assertThat(branchPropertyConfig.valuePattern).isEqualTo("my.second.property.pattern"),
+                                                () -> assertThat(branchPropertyConfig.name).isEqualTo("my.second.property"),
                                                 () -> assertThat(branchPropertyConfig.valueFormat).isEqualTo("my.second.property.format")
                                         ))
                                 ))

@@ -4,9 +4,8 @@
         <pattern>master</pattern>
         <versionFormat>${version.release}-master</versionFormat>
         <property>
-            <pattern>foo</pattern>
+            <name>foo</name>
             <valueFormat>new_new_new</valueFormat>
-            <valuePattern>.*</valuePattern>
         </property>
     </branch>
     <branch>
@@ -23,9 +22,8 @@
     </tag>
     <commit>
         <property>
-            <pattern>foo</pattern>
+            <name>foo</name>
             <valueFormat>new_new_new</valueFormat>
-            <valuePattern>.*</valuePattern>
         </property>
     </commit>
 </gitVersioning>
