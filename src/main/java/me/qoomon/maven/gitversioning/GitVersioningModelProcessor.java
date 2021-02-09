@@ -468,7 +468,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             GAV parentGAV = GAV.of(parent);
             if (relatedProjects.contains(parentGAV)) {
                 String gitVersion = getGitVersion(parentGAV);
-                logger.info("update parent version: " + parentGAV.getProjectId() + ":" + gitVersion);
+                logger.debug("update parent version: " + parentGAV.getProjectId() + ":" + gitVersion);
                 parent.setVersion(getGitVersion(parentGAV));
             }
         }
