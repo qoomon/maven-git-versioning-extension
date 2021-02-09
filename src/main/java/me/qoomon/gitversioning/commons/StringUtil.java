@@ -1,4 +1,4 @@
-package me.qoomon.gitversionng.commons;
+package me.qoomon.gitversioning.commons;
 
 import java.util.HashMap;
 import java.util.HashSet;

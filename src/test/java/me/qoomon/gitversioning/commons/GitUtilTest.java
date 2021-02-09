@@ -1,4 +1,4 @@
-package me.qoomon.gitversionng.commons;
+package me.qoomon.gitversioning.commons;
 
 
 import org.eclipse.jgit.api.Git;
@@ -14,7 +14,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 
-import static me.qoomon.gitversionng.commons.GitUtil.NO_COMMIT;
+import static me.qoomon.gitversioning.commons.GitUtil.NO_COMMIT;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
 import static org.eclipse.jgit.lib.Constants.HEAD;

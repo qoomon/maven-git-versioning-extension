@@ -1,4 +1,4 @@
-package me.qoomon.gitversionng.commons;
+package me.qoomon.gitversioning.commons;
 
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.Status;
