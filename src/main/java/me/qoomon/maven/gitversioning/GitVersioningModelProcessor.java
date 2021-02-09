@@ -50,6 +50,7 @@ import static me.qoomon.maven.gitversioning.BuildProperties.projectArtifactId;
 import static me.qoomon.maven.gitversioning.GitVersioningMojo.GOAL;
 import static me.qoomon.maven.gitversioning.GitVersioningMojo.asPlugin;
 import static me.qoomon.maven.gitversioning.MavenUtil.*;
+import static org.apache.maven.shared.utils.StringUtils.leftPad;
 import static org.apache.maven.shared.utils.StringUtils.repeat;
 import static org.apache.maven.shared.utils.logging.MessageUtils.buffer;
 
@@ -526,13 +527,13 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         placeholderMap.put("commit.short", headCommit.substring(0, 7));
 
         ZonedDateTime headCommitDateTime = gitSituation.getHeadCommitDateTime();
-        placeholderMap.put("commit.timestamp", Long.toString(headCommitDateTime.toEpochSecond()));
-        placeholderMap.put("commit.timestamp.year", Long.toString(headCommitDateTime.getYear()));
-        placeholderMap.put("commit.timestamp.month", Long.toString(headCommitDateTime.getMonthValue()));
-        placeholderMap.put("commit.timestamp.day", Long.toString(headCommitDateTime.getDayOfMonth()));
-        placeholderMap.put("commit.timestamp.hour", Long.toString(headCommitDateTime.getHour()));
-        placeholderMap.put("commit.timestamp.minute", Long.toString(headCommitDateTime.getMinute()));
-        placeholderMap.put("commit.timestamp.second", Long.toString(headCommitDateTime.getSecond()));
+        placeholderMap.put("commit.timestamp", String.valueOf(headCommitDateTime.toEpochSecond()));
+        placeholderMap.put("commit.timestamp.year", String.valueOf(headCommitDateTime.getYear()));
+        placeholderMap.put("commit.timestamp.month", leftPad(String.valueOf(headCommitDateTime.getMonthValue()), 2, "0"));
+        placeholderMap.put("commit.timestamp.day", leftPad(String.valueOf(headCommitDateTime.getDayOfMonth()), 2, "0"));
+        placeholderMap.put("commit.timestamp.hour", leftPad(String.valueOf(headCommitDateTime.getHour()), 2, "0"));
+        placeholderMap.put("commit.timestamp.minute", leftPad(String.valueOf(headCommitDateTime.getMinute()), 2, "0"));
+        placeholderMap.put("commit.timestamp.second", leftPad(String.valueOf(headCommitDateTime.getSecond()), 2, "0"));
         placeholderMap.put("commit.timestamp.datetime", formatPlaceholderDateTime(headCommitDateTime));
 
         String refTypeName = gitVersionDetails.getRefType().name().toLowerCase();
@@ -572,7 +573,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         properties.put("git.commit", gitVersionDetails.getCommit());
 
         ZonedDateTime headCommitDateTime = gitSituation.getHeadCommitDateTime();
-        properties.put("git.commit.timestamp", Long.toString(headCommitDateTime.toEpochSecond()));
+        properties.put("git.commit.timestamp", String.valueOf(headCommitDateTime.toEpochSecond()));
         properties.put("git.commit.timestamp.datetime", headCommitDateTime.toEpochSecond() > 0
                 ? headCommitDateTime.format(ISO_INSTANT) : "0000-00-00T00:00:00Z");
 
