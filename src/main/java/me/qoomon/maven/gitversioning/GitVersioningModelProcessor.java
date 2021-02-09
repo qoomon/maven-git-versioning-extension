@@ -486,8 +486,11 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     private void updatePropertyValues(Model projectModel, GAV originalProjectGAV) {
         // properties section
         for (Entry<String, String> property : Maps.fromProperties(projectModel.getProperties()).entrySet()) {
-            String propertyValue = getGitProjectPropertyValue(property.getKey(), property.getValue(), originalProjectGAV);
-            projectModel.addProperty(property.getKey(), propertyValue);
+            String gitPropertyValue = getGitProjectPropertyValue(property.getKey(), property.getValue(), originalProjectGAV);
+            if (!gitPropertyValue.equals(property.getValue())) {
+                logger.info("update property '" + property.getKey() + "': " + gitPropertyValue);
+                projectModel.addProperty(property.getKey(), gitPropertyValue);
+            }
         }
 
         // profile section
@@ -495,8 +498,11 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
             // properties section
             for (Entry<String, String> property : Maps.fromProperties(profile.getProperties()).entrySet()) {
-                String propertyValue = getGitProjectPropertyValue(property.getKey(), property.getValue(), originalProjectGAV);
-                profile.addProperty(property.getKey(), propertyValue);
+                String gitPropertyValue = getGitProjectPropertyValue(property.getKey(), property.getValue(), originalProjectGAV);
+                if (!gitPropertyValue.equals(property.getValue())) {
+                    logger.info("update property '" + property.getKey() + "': " + gitPropertyValue + " within profile '" + profile.getId() + "'");
+                    profile.addProperty(property.getKey(), gitPropertyValue);
+                }
             }
         }
     }

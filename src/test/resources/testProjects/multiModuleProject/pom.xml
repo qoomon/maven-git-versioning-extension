@@ -44,6 +44,11 @@
     <profiles>
         <profile>
             <id>foo</id>
+            <properties>
+                <foo>${basedir}</foo>
+                <bar>${basedir}/src/main/fuxx</bar>
+                <moo>${skipTests}</moo>
+            </properties>
         </profile>
     </profiles>
 </project>
