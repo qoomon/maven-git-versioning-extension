@@ -1,15 +1,19 @@
 package me.qoomon.maven.gitversioning;
 
+import org.apache.maven.model.Dependency;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;
+import org.apache.maven.model.Plugin;
+
+import java.util.Objects;
 
 /**
- * Maven artifact identifier consisting of groupId / artifactId / getVersion.
+ * Maven artifact identifier consisting of groupId, artifactId and version.
  */
 public class GAV {
-    private String groupId;
-    private String artifactId;
-    private String version;
+    private final String groupId;
+    private final String artifactId;
+    private final String version;
 
     /**
      * Builds an immutable GAV object.
@@ -23,7 +27,6 @@ public class GAV {
         this.artifactId = artifactId;
         this.version = version;
     }
-
 
     public String getGroupId() {
         return groupId;
@@ -39,6 +42,26 @@ public class GAV {
 
     public String getProjectId() {
         return getGroupId() + ":" + getArtifactId();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        GAV gav = (GAV) o;
+        return Objects.equals(groupId, gav.groupId) &&
+                Objects.equals(artifactId, gav.artifactId) &&
+                Objects.equals(version, gav.version);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(groupId, artifactId, version);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s:%s:%s", groupId, artifactId, version);
     }
 
     public static GAV of(Model model) {
@@ -69,34 +92,22 @@ public class GAV {
         return new GAV(groupId, artifactId, version);
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (o == null || getClass() != o.getClass())
-            return false;
+    public static GAV of(Dependency dependency) {
 
-        GAV gav = (GAV) o;
+        String groupId = dependency.getGroupId();
+        String artifactId = dependency.getArtifactId();
+        String version = dependency.getVersion();
 
-        if (!groupId.equals(gav.groupId))
-            return false;
-        if (!artifactId.equals(gav.artifactId))
-            return false;
-        return version.equals(gav.version);
+        return new GAV(groupId, artifactId, version);
     }
 
-    @Override
-    public int hashCode() {
-        int result = groupId.hashCode();
-        result = 31 * result + artifactId.hashCode();
-        result = 31 * result + version.hashCode();
-        return result;
-    }
+    public static GAV of(Plugin plugin) {
 
-    @Override
-    public String toString() {
-        return String.format("%s:%s:%s", groupId, artifactId, version);
-    }
+        String groupId = plugin.getGroupId();
+        String artifactId = plugin.getArtifactId();
+        String version = plugin.getVersion();
 
+        return new GAV(groupId, artifactId, version);
+    }
 
 }

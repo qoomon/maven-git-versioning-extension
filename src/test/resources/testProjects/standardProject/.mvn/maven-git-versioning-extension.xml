@@ -3,9 +3,8 @@
         <pattern>master</pattern>
         <versionFormat>${version.release}</versionFormat>
         <property>
-            <pattern>foo</pattern>
+            <name>foo</name>
             <valueFormat>new_new_new</valueFormat>
-            <valuePattern>.*</valuePattern>
         </property>
     </branch>
     <branch>

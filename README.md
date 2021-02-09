@@ -1,7 +1,7 @@
 # Maven Git Versioning Extension
 
 [![Maven Central](https://img.shields.io/maven-central/v/me.qoomon/maven-git-versioning-extension.svg)](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22me.qoomon%22%20AND%20a%3A%22maven-git-versioning-extension%22)
-[![Changelog](https://badgen.net/badge/changelog/%E2%98%85/blue)](#changelog)
+[![Changelog](https://badgen.net/badge/changelog/%E2%98%85/blue)](CHANGELOG.md)
 
 [![Build Workflow](https://github.com/qoomon/maven-git-versioning-extension/workflows/Build/badge.svg)](https://github.com/qoomon/maven-git-versioning-extension/actions?query=workflow%3ABuild)
 [![LGTM Grade](https://img.shields.io/lgtm/grade/java/github/qoomon/maven-git-versioning-extension)](https://lgtm.com/projects/g/qoomon/maven-git-versioning-extension)
@@ -71,7 +71,11 @@ Create `${basedir}/.mvn/maven-git-versioning-extension.xml`.
 </gitVersioning>
 ```
 
+- *optional* `<disable>` global disable(`true`)/enable(`false`) extension.
+    - Can be overridden by command option, see (Parameters & Environment Variables)[#parameters-&-environment-variables].
+
 - *optional* `<updatePom>` global enable(`true`)/disable(`false`) version update in original pom file.
+    - Can be overridden by command option, see (Parameters & Environment Variables)[#parameters-&-environment-variables].
 
 - *optional* `<preferTags>` global enable(`true`)/disable(`false`) prefer tag rules over branch rules if both match.
 
@@ -79,9 +83,8 @@ Create `${basedir}/.mvn/maven-git-versioning-extension.xml`.
     - `<pattern>` An arbitrary regex to match branch names (has to be a **full match pattern** e.g. `feature/.+` )
     - `<versionFormat>` An arbitrary string, see [Version Format & Placeholders](#version-format--placeholders)
     - `<property>` A property definition to update the value of a property
-        - `<pattern>` An arbitrary regex to match property names
+        - `<name>` The property name
         - `<valueFormat>` The new value format of the property, see [Version Format & Placeholders](#version-format--placeholders)
-        - *optional* `<valuePattern>` An arbitrary regex to match and use capture group values of property value
     - *optional* `<updatePom>` Enable(`true`) or disable(`false`) version update in original pom fill (will override global `<updatePom>` value)
     - ⚠ **considered if...**
         * HEAD attached to a branch `git checkout <BRANCH>`<br>
@@ -91,9 +94,8 @@ Create `${basedir}/.mvn/maven-git-versioning-extension.xml`.
     - `<pattern>` An arbitrary regex to match tag names (has to be a **full match pattern** e.g. `v[0-9].*` )
     - `<versionFormat>` An arbitrary string, see [Version Format & Placeholders](#version-format--placeholders)
     - `<property>` A property definition to update the value of a property
-        - `<pattern>` An arbitrary regex to match property names
+        - `<name>` The property name
         - `<valueFormat>` The new value format of the property, see [Version Format & Placeholders](#version-format--placeholders)
-        - *optional* `<valuePattern>` An arbitrary regex to match and use capture group values of property value
     - *optional* `<updatePom>` Enable(`true`) or disable(`false`) version update in original pom fill (will override global `<updatePom>` value)
     - ⚠ **considered if...**
         * HEAD is detached `git checkout <TAG>`<br>
@@ -102,30 +104,32 @@ Create `${basedir}/.mvn/maven-git-versioning-extension.xml`.
 - `<commit>` specific version format definition.
     - `<versionFormat>` An arbitrary string, see [Version Format & Placeholders](#version-format--placeholders)
     - `<property>` A property definition to update the value of a property
-        - `<pattern>` An arbitrary regex to match property names
+        - `<name>` The property name
         - `<valueFormat>` The new value format of the property, see [Version Format & Placeholders](#version-format--placeholders)
-        - *optional* `<valuePattern>` An arbitrary regex to match and use capture group values of property value
     - ⚠ **considered if...**
         * HEAD is detached `git checkout <COMMIT>` and no matching version tag is pointing to HEAD<br>
 
-#### Version Format & Placeholders
+#### Format Placeholders
 
-ℹ `/` characters within final version will be replaced by `-`**
+ℹ whole `versionFormat` will be slugified automatically, that means all `/` characters are replaced by `-`
 
 - `${ref}`
     - current ref name (branch name, tag name or commit hash)
-    
 - `${ref.slug}`
     - like `${ref}` with all `/` replaced by `-`
 
 - `${branch}` (only available within branch configuration)
     - The branch name of `HEAD`
     - e.g. 'master', 'feature/next-big-thing', ...
-
+- `${branch.slug}`
+    - like `${branch}` with all `/` replaced by `-`    
+ 
 - `${tag}` (only available within tag configuration)
     - The tag name that points at `HEAD`, if multiple tags point at `HEAD` latest version is selected
     - e.g. 'version/1.0.1', 'v1.2.3', ...
-
+- `${tag.slug}`
+    - like `${tag}` with all `/` replaced by `-`    
+    
 - `${commit}`
     - The `HEAD` commit hash
     - e.g. '0fc20459a8eceb2c4abb9bf0af45a6e8af17b94b'
@@ -137,39 +141,57 @@ Create `${basedir}/.mvn/maven-git-versioning-extension.xml`.
 - `${commit.timestamp}`
     - The `HEAD` commit timestamp (epoch seconds)
     - e.g. '1560694278'
-    
+- `${commit.timestamp.year}`
+    - The `HEAD` commit year
+    - e.g. '2021'
+- `${commit.timestamp.month}`
+    - The `HEAD` commit month of year
+    - e.g. '01'
+- `${commit.timestamp.day}`
+    - The `HEAD` commit day of month
+    - e.g. '01'
+- `${commit.timestamp.hour}`
+    - The `HEAD` commit hour of day (24h)
+    - e.g. '01'
+- `${commit.timestamp.minutes}`
+    - The `HEAD` commit minutes of hour
+    - e.g. '01'
+- `${commit.timestamp.seconds}`
+    - The `HEAD` commit seconds of minute
+    - e.g. '01'
 - `${commit.timestamp.datetime}`
     - The `HEAD` commit timestamp formatted as `yyyyMMdd.HHmmss`
     - e.g. '20190616.161442'
 
 - `Pattern Groups`
-    - Contents of group in the regex pattern can be addressed by `group name` or `group index` e.g.
-    - Named Group Example
-        ```groovy
-        pattern = 'feature/(?<feature>.+)'
-        versionFormat = '${feature}-SNAPSHOT'    
-        ```
-    - Group Index Example
-        ```groovy
-        pattern = 'v([0-9].*)'
-        versionFormat = '${1}'
-        ```
+    - Contents of group in the regex pattern can be addressed `${GROUP_NAME}` or `${GROUP_INDEX}`
+    - `${GROUP_NAME.slug}` or `${GROUP_INDEX.slug}`
+        - like `${GROUP_NAME}` or `${GROUP_INDEX}` with all `/` replaced by `-`  
+    - Examples
+      - Named Group
+          ```xml
+          <branch>
+            <pattern><![CDATA[feature/(?<feature>.+)]]></pattern>
+            <versionFormat>${feature}-SNAPSHOT</versionFormat>
+          </branch>
+          ```
+      - Group Index
+          ```xml
+          <tag>
+            <pattern>v([0-9].*)'</pattern>
+            <versionFormat>${1}</versionFormat>
+          </tag>
+          ```
         
 - `${version}`
     - `version` set in `pom.xml`
     - e.g. '1.0.0-SNAPSHOT'
-    
 - `${version.release}`
-    - `version` set in `pom.xml` without `-SNAPSHOT` postfix
+    - like `${version}` without `-SNAPSHOT` postfix
     - e.g. '1.0.0'
-
-- `${property.name}`
-    - name of matching property
-    - Only available within property format.
-    
-- `${property.value}`
+  
+- `${value}` - Only available within property format
     - value of matching property
-    - Only available within property format.
       
 ### Parameters & Environment Variables
 
@@ -178,13 +200,6 @@ Create `${basedir}/.mvn/maven-git-versioning-extension.xml`.
         - `export VERSIONING_DISABLE=true`
     - **Command Line Parameters**
         - `maven ... -Dversioning.disable=true`
-    - **Maven property**
-        - `<versioning.disable>true</versioning.disable>`
-        - Enabling Extension On Demand
-          - **Environment Variables**
-            - `export VERSIONING_DISABLE=false`
-          - **Command Line Parameters**
-            - `maven ... -Dversioning.disable=false`
             
 - Provide **branch** or **tag** name
     - **Environment Variables**
@@ -217,7 +232,7 @@ Create `${basedir}/.mvn/maven-git-versioning-extension.xml`.
   - `git.tag` e.g. 'v1.2.3', only set for tag versioning
 - `git.commit.timestamp` e.g. '1560694278'
 - `git.commit.timestamp.datetime` e.g. '2019-11-16T14:37:10Z'
-- `git.dirty` repository dirty state indictor `true` or `false`
+- `git.dirty` repository's dirty state indicator `true` or `false`
 
 # Miscellaneous Hints
 
@@ -277,107 +292,3 @@ fi
   # integration tests will run with LATEST version of extension installed
   - mvn failsafe:integration-test
 ```
-
-# Changelog
-## 5.3.0
-* Add feature to disable extension by default and enaable on demand
-
-## 5.2.1
-* ⚠️ minimal required maven version is now `3.6.3`
-* remove workaround for maven `3.6.2` compatibility
-
-## 5.2.0
-* **BREAKING** minimal required maven version set to `3.6.3`
-* new version format placeholder `${ref.slug}` alike `${ref}` with all `/` replaced by `-`
-* new property `git.ref.slug`  alike `git.ref` with all `/` replaced by `-`
-
-## 5.1.0
-* ⚠️ accidentally bump minimal required maven version to `3.6.3`
-* prevent maven from failing, if project is not part of a git repository. Instead a warning is logged.
-
-## 5.0.2
-* fix incompatibility with maven version `3.6.2`
-
-## 5.0.0
-#### Features
-* simplify `<property>` replacement configuration
-#### Fixes
-* add missing dependency vor maven version 3.3
-#### Breaking Changes
-* simplify `<property>` replacement configuration
-    
-    new config
-    ```xml
-    <gitVersioning>
-        <branch>
-            <pattern>master</pattern>
-            <versionFormat>${version}</versionFormat>
-            <property>
-                <pattern>revision</pattern>
-                <valueFormat>${branch-SNAPSHOT}</valueFormat>
-            </property>
-        </branch>
-    </gitVersioning>
-    ```
-    old config
-    ```xml
-    <gitVersioning>
-        <branch>
-            <pattern>master</pattern>
-            <versionFormat>${version}</versionFormat>
-            <property>
-                <pattern>revision</pattern>
-                <value>
-                    <format>${branch-SNAPSHOT}</format>
-                </value>
-            </property>
-        </branch>
-    </gitVersioning>
-    ```
-
-## 4.10.2
-* fix verbose logging when disabling extension by flag
-* restrict project versioning to root- and sub-projects
-
-## 4.10.0
-* provide `${git.dirty}` project property
-   
-## 4.8.0
-* set execution phase to INITIALIZE
-  * Fix IntelliJ multi-modules project handling.
-
-## 4.7.0
-* New Provided properties, see [Provided Project Properties](#provided-roject-roperties)
-  * `git.commit.timestamp`
-  * `git.commit.timestamp.datetime`
-
-## 4.5.0
-* Add parameters and environment variable to disable extension. see [Parameters & Environment Variables](#parameters--environment-variables)
-
-## 4.1.0
-* Add config option(`<update>`) to update version in original pom file. see [Configure Extension](#configure-extension)
-
-## 4.0.0
-* Major Refactoring, Simplification
-* Also available as [Gradle Plugin](https://github.com/qoomon/gradle-git-versioning-plugin) 
-* **New Provided Project Properties**
-  * `git.ref` value of branch of tag name, always set
-
-### Breaking Changes
-* **Restructured XML Config**
-  * renamed root tag `<configuration>` -> `<gitVersioning>`
-  * removed nested structure
-  * see [Configure Extension](#configure-extension)
-* **Renamed Environment Variables**
-  * `MAVEN_PROJECT_BRANCH` ->  `VERSIONING_GIT_BRANCH`
-  * `MAVEN_PROJECT_TAG` -> `VERSIONING_GIT_TAG`
-* **Renamed Maven Parameters**
-  * `-Dproject.branch` -> `-Dgit.branch`
-  * `-Dproject.tag` -> `-Dgit.tag`
-* **Removed Maven Parameters**
-  * `-DgitVersioning` - disable the extension by a parameter is no longer supported
-* **Renamed Provided Project Properties**
-  * `project.branch` -> `git.branch`
-  * `project.tag` -> `git.tag`
-  * `project.commit` -> `git.commit`
-

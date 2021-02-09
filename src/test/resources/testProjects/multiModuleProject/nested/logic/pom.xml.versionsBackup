@@ -6,13 +6,13 @@
 
     <parent>
         <groupId>multi-module-project</groupId>
-        <artifactId>main</artifactId>
-        <version>0.0.0</version>
+        <artifactId>nested-main</artifactId>
+        <version>1.0.0</version>
     </parent>
 
     <groupId>multi-module-project</groupId>
-    <artifactId>logic</artifactId>
-    <version>0.0.0</version>
+    <artifactId>nested-logic</artifactId>
+    <version>1.0.0</version>
 
     <properties>
         <foo>xxxxx</foo>
@@ -23,7 +23,6 @@
         <dependency>
             <groupId>multi-module-project</groupId>
             <artifactId>api</artifactId>
-            <version>0.0.0</version>
         </dependency>
     </dependencies>
 

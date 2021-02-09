@@ -7,7 +7,7 @@
 
     <groupId>me.qoomon</groupId>
     <artifactId>maven-git-versioning-extension</artifactId>
-    <version>5.3.0</version>
+    <version>6.0.0</version>
     <packaging>maven-plugin</packaging>
 
     <name>Maven Git Versioning Extension</name>
@@ -47,10 +47,16 @@
 
     <dependencies>
 
+<!--        <dependency>-->
+<!--            <groupId>me.qoomon</groupId>-->
+<!--            <artifactId>git-versioning</artifactId>-->
+<!--            <version>1.0.0</version>-->
+<!--        </dependency>-->
+
         <dependency>
-            <groupId>me.qoomon</groupId>
-            <artifactId>git-versioning</artifactId>
-            <version>1.0.0</version>
+            <groupId>org.eclipse.jgit</groupId>
+            <artifactId>org.eclipse.jgit</artifactId>
+            <version>5.2.1.201812262042-r</version>
         </dependency>
 
         <dependency>
@@ -63,12 +69,6 @@
             <groupId>de.pdark</groupId>
             <artifactId>decentxml</artifactId>
             <version>1.4</version>
-        </dependency>
-
-        <dependency>
-            <groupId>me.qoomon</groupId>
-            <artifactId>unchecked-exceptions</artifactId>
-            <version>1.0.0</version>
         </dependency>
 
         <dependency>

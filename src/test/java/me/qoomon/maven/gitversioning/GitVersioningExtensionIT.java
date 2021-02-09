@@ -19,9 +19,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import static me.qoomon.gitversioning.GitConstants.NO_COMMIT;
 import static me.qoomon.maven.gitversioning.MavenUtil.readModel;
-import static me.qoomon.maven.gitversioning.VersioningMojo.GIT_VERSIONING_POM_NAME;
+import static me.qoomon.maven.gitversioning.GitVersioningModelProcessor.GIT_VERSIONING_POM_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
@@ -48,15 +47,16 @@ class GitVersioningExtensionIT {
 
         // When
         Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath());
+        verifier.setMavenDebug(true);
         verifier.executeGoal("verify");
 
         // Then
         String log = getLog(verifier);
         assertThat(log).doesNotContain("[ERROR]", "[FATAL]");
-        String expectedVersion = NO_COMMIT;
+        String expectedVersion = "master-SNAPSHOT";
         assertThat(log).contains("Building " + pomModel.getArtifactId() + " " + expectedVersion);
 
-        Model gitVersionedPomModel = readModel(projectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile());
+        Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
         assertThat(gitVersionedPomModel).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.getModelVersion()).isEqualTo(pomModel.getModelVersion());
             softly.assertThat(it.getGroupId()).isEqualTo(pomModel.getGroupId());
@@ -94,7 +94,7 @@ class GitVersioningExtensionIT {
         assertThat(log).doesNotContain("[ERROR]", "[FATAL]");
         String expectedVersion = givenBranch.replace("/", "-") + "-gitVersioning";
         assertThat(log).contains("Building " + pomModel.getArtifactId() + " " + expectedVersion);
-        Model gitVersionedPomModel = readModel(projectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile());
+        Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
         assertThat(gitVersionedPomModel).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.getModelVersion()).isEqualTo(pomModel.getModelVersion());
             softly.assertThat(it.getGroupId()).isEqualTo(pomModel.getGroupId());
@@ -126,7 +126,7 @@ class GitVersioningExtensionIT {
         String expectedVersion = "0.0.0";
         assertThat(log).contains("Building " + pomModel.getArtifactId() + " " + expectedVersion);
 
-        assertThat(projectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile().exists()).isEqualTo(false);
+        assertThat(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile().exists()).isEqualTo(false);
         assertThat(log).contains("[WARNING] skip - project is not part of a git repository");
     }
 
@@ -158,7 +158,7 @@ class GitVersioningExtensionIT {
         assertThat(log).doesNotContain("[ERROR]", "[FATAL]");
         String expectedVersion = givenTag + "-gitVersioning";
         assertThat(log).contains("Building " + pomModel.getArtifactId() + " " + expectedVersion);
-        Model gitVersionedPomModel = readModel(projectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile());
+        Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
         assertThat(gitVersionedPomModel).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.getModelVersion()).isEqualTo(pomModel.getModelVersion());
             softly.assertThat(it.getGroupId()).isEqualTo(pomModel.getGroupId());
@@ -199,7 +199,7 @@ class GitVersioningExtensionIT {
         assertThat(log).doesNotContain("[ERROR]", "[FATAL]");
         String expectedVersion = givenTag + "-gitVersioning";
         assertThat(log).contains("Building " + pomModel.getArtifactId() + " " + expectedVersion);
-        Model gitVersionedPomModel = readModel(projectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile());
+        Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
         assertThat(gitVersionedPomModel).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.getModelVersion()).isEqualTo(pomModel.getModelVersion());
             softly.assertThat(it.getGroupId()).isEqualTo(pomModel.getGroupId());
@@ -237,7 +237,7 @@ class GitVersioningExtensionIT {
         assertThat(log).doesNotContain("[ERROR]", "[FATAL]");
         String expectedVersion = givenTag + "-gitVersioning";
         assertThat(log).contains("Building " + pomModel.getArtifactId() + " " + expectedVersion);
-        Model gitVersionedPomModel = readModel(projectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile());
+        Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
         assertThat(gitVersionedPomModel).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.getModelVersion()).isEqualTo(pomModel.getModelVersion());
             softly.assertThat(it.getGroupId()).isEqualTo(pomModel.getGroupId());
@@ -278,7 +278,7 @@ class GitVersioningExtensionIT {
         assertThat(log).doesNotContain("[ERROR]", "[FATAL]");
         String expectedVersion = givenTag + "-gitVersioning";
         assertThat(log).contains("Building " + pomModel.getArtifactId() + " " + expectedVersion);
-        Model gitVersionedPomModel = readModel(projectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile());
+        Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
         assertThat(gitVersionedPomModel).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.getModelVersion()).isEqualTo(pomModel.getModelVersion());
             softly.assertThat(it.getGroupId()).isEqualTo(pomModel.getGroupId());
@@ -320,7 +320,7 @@ class GitVersioningExtensionIT {
         assertThat(log).doesNotContain("[ERROR]", "[FATAL]");
         String expectedVersion = "master-gitVersioning";
         assertThat(log).contains("Building " + pomModel.getArtifactId() + " " + expectedVersion);
-        Model gitVersionedPomModel = readModel(projectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile());
+        Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
         assertThat(gitVersionedPomModel).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.getModelVersion()).isEqualTo(pomModel.getModelVersion());
             softly.assertThat(it.getGroupId()).isEqualTo(pomModel.getGroupId());
@@ -360,7 +360,7 @@ class GitVersioningExtensionIT {
         assertThat(log).doesNotContain("[ERROR]", "[FATAL]");
         String expectedVersion = givenTag + "-gitVersioning";
         assertThat(log).contains("Building " + pomModel.getArtifactId() + " " + expectedVersion);
-        Model gitVersionedPomModel = readModel(projectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile());
+        Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
         assertThat(gitVersionedPomModel).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.getModelVersion()).isEqualTo(pomModel.getModelVersion());
             softly.assertThat(it.getGroupId()).isEqualTo(pomModel.getGroupId());
@@ -399,7 +399,7 @@ class GitVersioningExtensionIT {
         assertThat(log).doesNotContain("[ERROR]", "[FATAL]");
         String expectedVersion = givenTag + "-gitVersioning";
         assertThat(log).contains("Building " + pomModel.getArtifactId() + " " + expectedVersion);
-        Model gitVersionedPomModel = readModel(projectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile());
+        Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
         assertThat(gitVersionedPomModel).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.getModelVersion()).isEqualTo(pomModel.getModelVersion());
             softly.assertThat(it.getGroupId()).isEqualTo(pomModel.getGroupId());
@@ -467,9 +467,9 @@ class GitVersioningExtensionIT {
         // Then
         String log = getLog(verifier);
         assertThat(log).doesNotContain("[ERROR]", "[FATAL]");
-        String expectedVersion = NO_COMMIT;
+        String expectedVersion = "master-SNAPSHOT";
         assertThat(log).contains("Building " + pomModel.getArtifactId() + " " + expectedVersion);
-        Model gitVersionedPomModel = readModel(projectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile());
+        Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
         assertThat(gitVersionedPomModel).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.getModelVersion()).isEqualTo(pomModel.getModelVersion());
             softly.assertThat(it.getGroupId()).isEqualTo(pomModel.getGroupId());
@@ -481,7 +481,7 @@ class GitVersioningExtensionIT {
             );
         }));
 
-        Model apiGitVersionedPomModel = readModel(apiProjectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile());
+        Model apiGitVersionedPomModel = readModel(apiProjectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
         assertThat(apiGitVersionedPomModel).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.getModelVersion()).isEqualTo(apiPomModel.getModelVersion());
             softly.assertThat(it.getGroupId()).isEqualTo(apiPomModel.getGroupId());
@@ -493,7 +493,7 @@ class GitVersioningExtensionIT {
             );
         }));
 
-        Model logicGitVersionedPomModel = readModel(logicProjectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile());
+        Model logicGitVersionedPomModel = readModel(logicProjectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
         assertThat(logicGitVersionedPomModel).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.getModelVersion()).isEqualTo(logicPomModel.getModelVersion());
             softly.assertThat(it.getGroupId()).isEqualTo(logicPomModel.getGroupId());
@@ -548,9 +548,9 @@ class GitVersioningExtensionIT {
         // Then
         String log = getLog(verifier);
         assertThat(log).doesNotContain("[ERROR]", "[FATAL]");
-        String expectedVersion = NO_COMMIT;
+        String expectedVersion = "master-SNAPSHOT";
         assertThat(log).contains("Building " + pomModel.getArtifactId() + " " + expectedVersion);
-        Model gitVersionedPomModel = readModel(projectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile());
+        Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
         assertThat(gitVersionedPomModel).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.getModelVersion()).isEqualTo(pomModel.getModelVersion());
             softly.assertThat(it.getGroupId()).isEqualTo(pomModel.getGroupId());
@@ -562,7 +562,7 @@ class GitVersioningExtensionIT {
             );
         }));
 
-        Model apiGitVersionedPomModelLogic = readModel(logicProjectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile());
+        Model apiGitVersionedPomModelLogic = readModel(logicProjectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
         assertThat(apiGitVersionedPomModelLogic).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.getModelVersion()).isEqualTo(logicPomModel.getModelVersion());
             softly.assertThat(it.getGroupId()).isEqualTo(logicPomModel.getGroupId());
@@ -574,7 +574,7 @@ class GitVersioningExtensionIT {
             );
         }));
 
-        Model duplicateArtifactidGitVersionedPomModelLogic = readModel(anotherGroupLogicProjectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile());
+        Model duplicateArtifactidGitVersionedPomModelLogic = readModel(anotherGroupLogicProjectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
         assertThat(duplicateArtifactidGitVersionedPomModelLogic).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.getModelVersion()).isEqualTo(anotherGroupLogicPomModel.getModelVersion());
             softly.assertThat(it.getGroupId()).isEqualTo(anotherGroupLogicPomModel.getGroupId());
@@ -623,7 +623,7 @@ class GitVersioningExtensionIT {
             assertThat(log).doesNotContain("[ERROR]", "[FATAL]");
             String expectedVersion = givenBranch.replace("/", "-") + "-gitVersioning";
             //        assertThat(log).contains("Building " + logicPomModel.getArtifactId() + " " + expectedVersion);
-            Model gitVersionedLogicPomModel = readModel(logicProjectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile());
+            Model gitVersionedLogicPomModel = readModel(logicProjectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
             assertThat(gitVersionedLogicPomModel).satisfies(it -> assertSoftly(softly -> {
                 softly.assertThat(it.getModelVersion()).isEqualTo(logicPomModel.getModelVersion());
                 softly.assertThat(it.getGroupId()).isEqualTo(logicPomModel.getGroupId());
@@ -690,7 +690,7 @@ class GitVersioningExtensionIT {
             assertThat(log).doesNotContain("[ERROR]", "[FATAL]");
             String expectedVersion = givenBranch.replace("/", "-") + "-gitVersioning";
             //        assertThat(log).contains("Building " + logicPomModel.getArtifactId() + " " + expectedVersion);
-            Model gitVersionedLogicPomModel = readModel(logicProjectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile());
+            Model gitVersionedLogicPomModel = readModel(logicProjectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
             assertThat(gitVersionedLogicPomModel).satisfies(it -> assertSoftly(softly -> {
                 softly.assertThat(it.getModelVersion()).isEqualTo(logicPomModel.getModelVersion());
                 softly.assertThat(it.getGroupId()).isEqualTo(logicPomModel.getGroupId());
@@ -760,7 +760,7 @@ class GitVersioningExtensionIT {
             assertThat(getLog(verifier)).doesNotContain("[ERROR]", "[FATAL]");
             String expectedVersion = givenBranch.replace("/", "-") + "-gitVersioning";
             //        assertThat(log).contains("Building " + logicPomModel.getArtifactId() + " " + expectedVersion);
-            Model gitVersionedLogicPomModel = readModel(logicProjectDir.resolve("target/").resolve(GIT_VERSIONING_POM_NAME).toFile());
+            Model gitVersionedLogicPomModel = readModel(logicProjectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
             assertThat(gitVersionedLogicPomModel).satisfies(it -> assertSoftly(softly -> {
                 softly.assertThat(it.getModelVersion()).isEqualTo(logicPomModel.getModelVersion());
                 softly.assertThat(it.getGroupId()).isEqualTo(logicPomModel.getGroupId());

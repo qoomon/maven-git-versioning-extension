@@ -8,23 +8,9 @@
         <groupId>multi-module-project</groupId>
         <artifactId>main</artifactId>
         <version>0.0.0</version>
+        <relativePath>..</relativePath>
     </parent>
 
-    <groupId>multi-module-project</groupId>
-    <artifactId>logic</artifactId>
-    <version>0.0.0</version>
-
-    <properties>
-        <foo>xxxxx</foo>
-        <bar>xxxxx</bar>
-    </properties>
-
-    <dependencies>
-        <dependency>
-            <groupId>multi-module-project</groupId>
-            <artifactId>api</artifactId>
-            <version>0.0.0</version>
-        </dependency>
-    </dependencies>
+    <artifactId>api</artifactId>
 
 </project>

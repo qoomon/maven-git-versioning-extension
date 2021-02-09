@@ -11,17 +11,19 @@ import java.util.List;
 @JacksonXmlRootElement(localName = "gitVersioning")
 public class Configuration {
 
+    public Boolean disable;
+
     public Boolean updatePom;
 
     public Boolean preferTags;
-
-    public CommitVersionDescription commit = null;
 
     @JacksonXmlElementWrapper(useWrapping = false)
     public List<VersionDescription> branch = new ArrayList<>();
 
     @JacksonXmlElementWrapper(useWrapping = false)
     public List<VersionDescription> tag = new ArrayList<>();
+
+    public VersionDescription commit;
 
     public static class VersionDescription {
 
@@ -32,18 +34,9 @@ public class Configuration {
         public Boolean updatePom;
     }
 
-    public static class CommitVersionDescription {
-
-        public String versionFormat;
-        @JacksonXmlElementWrapper(useWrapping = false)
-        public List<PropertyDescription> property = new ArrayList<>();
-        public Boolean updatePom;
-    }
-
     public static class PropertyDescription {
 
-        public String pattern;
+        public String name;
         public String valueFormat;
-        public String valuePattern;
     }
 }
