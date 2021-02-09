@@ -758,7 +758,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                 Profile profile = profileMap.get(profileElement.getChild("id").getText());
                 // build section
                 {
-                    Element buildElement = projectElement.getChild("build");
+                    Element buildElement = profileElement.getChild("build");
                     if (buildElement != null) {
                         // plugins section
                         {
