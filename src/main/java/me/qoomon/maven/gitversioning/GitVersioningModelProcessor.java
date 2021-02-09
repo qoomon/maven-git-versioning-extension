@@ -599,7 +599,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             GAV pluginGAV = GAV.of(plugin);
             if (relatedProjects.contains(pluginGAV)) {
                 String gitVersion = getGitVersion(pluginGAV);
-                logger.info("update plugin version: " + pluginGAV.getProjectId() + ":" + gitVersion);
+                logger.debug("update plugin version: " + pluginGAV.getProjectId() + ":" + gitVersion);
                 plugin.setVersion(gitVersion);
             }
         }
@@ -610,7 +610,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             GAV dependencyGAV = GAV.of(dependency);
             if (relatedProjects.contains(dependencyGAV)) {
                 String gitVersion = getGitVersion(dependencyGAV);
-                logger.info("update dependency version: " + dependencyGAV.getProjectId() + ":" + gitVersion);
+                logger.debug("update dependency version: " + dependencyGAV.getProjectId() + ":" + gitVersion);
                 dependency.setVersion(gitVersion);
             }
         }
