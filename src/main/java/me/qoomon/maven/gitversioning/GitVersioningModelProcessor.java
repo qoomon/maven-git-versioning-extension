@@ -1,7 +1,6 @@
 package me.qoomon.maven.gitversioning;
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Key;
 import com.google.inject.OutOfScopeException;
@@ -244,7 +243,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         // log project header
         logger.info(buffer().strong("--- ") + buffer().project(GAV.of(projectModel)).toString() + buffer().strong(" ---"));
 
-        updateModelVersions(projectModel);
+        updateModel(projectModel);
 
         addGitProperties(projectModel);
 
@@ -272,41 +271,30 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         return projectModel;
     }
 
-    private void updateModelVersions(Model projectModel) {
+    private void updateModel(Model projectModel) {
         GAV originalProjectGAV = GAV.of(projectModel);
 
-        updateParentVersion(projectModel);
-
+        updateVersion(projectModel.getParent());
         updateVersion(projectModel);
-
         updatePropertyValues(projectModel, originalProjectGAV);
-
         updateDependencyVersions(projectModel);
+        updatePluginVersions(projectModel.getBuild());
 
-        updatePluginVersions(projectModel);
+        // profile section
+        updateProfiles(projectModel.getProfiles(), originalProjectGAV);
     }
 
-    private File writePomFile(Model projectModel) throws IOException {
-        logger.info("generate " + GIT_VERSIONING_POM_NAME);
-
-        // read original pom file
-        Document gitVersionedPomDocument = readXml(projectModel.getPomFile());
-        Element projectElement = gitVersionedPomDocument.getChild("project");
-
-        updateParentVersion(projectElement, projectModel);
-
-        updateVersion(projectElement, projectModel);
-
-        updatePropertyValues(projectElement, projectModel);
-
-        updateDependencyVersions(projectElement, projectModel);
-
-        updatePluginVersions(projectElement, projectModel);
-
-        File gitVersionedPomFile = new File(projectModel.getProjectDirectory(), GIT_VERSIONING_POM_NAME);
-        writeXml(gitVersionedPomFile, gitVersionedPomDocument);
-
-        return gitVersionedPomFile;
+    private void updateProfiles(List<Profile> profiles, GAV originalProjectGAV) {
+        // profile section
+        if (!profiles.isEmpty()) {
+            logger.info("profiles:");
+            for (Profile profile : profiles) {
+                logger.info("profile: " + profile.getId());
+                updatePropertyValues(profile, originalProjectGAV);
+                updateDependencyVersions(profile);
+                updatePluginVersions(profile.getBuild());
+            }
+        }
     }
 
     private static GitVersionDetails getGitVersionDetails(GitSituation gitSituation, Configuration config, boolean preferTags) {
@@ -462,8 +450,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                 .replace("/", "-");
     }
 
-    private void updateParentVersion(Model projectModel) {
-        final Parent parent = projectModel.getParent();
+    private void updateVersion(Parent parent) {
         if (parent != null) {
             GAV parentGAV = GAV.of(parent);
             if (relatedProjects.contains(parentGAV)) {
@@ -483,26 +470,13 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         }
     }
 
-    private void updatePropertyValues(Model projectModel, GAV originalProjectGAV) {
+    private void updatePropertyValues(ModelBase model, GAV originalProjectGAV) {
         // properties section
-        for (Entry<String, String> property : Maps.fromProperties(projectModel.getProperties()).entrySet()) {
+        for (Entry<String, String> property : Maps.fromProperties(model.getProperties()).entrySet()) {
             String gitPropertyValue = getGitProjectPropertyValue(property.getKey(), property.getValue(), originalProjectGAV);
             if (!gitPropertyValue.equals(property.getValue())) {
-                logger.info("update property '" + property.getKey() + "': " + gitPropertyValue);
-                projectModel.addProperty(property.getKey(), gitPropertyValue);
-            }
-        }
-
-        // profile section
-        for (Profile profile : projectModel.getProfiles()) {
-
-            // properties section
-            for (Entry<String, String> property : Maps.fromProperties(profile.getProperties()).entrySet()) {
-                String gitPropertyValue = getGitProjectPropertyValue(property.getKey(), property.getValue(), originalProjectGAV);
-                if (!gitPropertyValue.equals(property.getValue())) {
-                    logger.info("update property '" + property.getKey() + "': " + gitPropertyValue + " within profile '" + profile.getId() + "'");
-                    profile.addProperty(property.getKey(), gitPropertyValue);
-                }
+                logger.info("update property " + property.getKey() + ": " + gitPropertyValue);
+                model.addProperty(property.getKey(), gitPropertyValue);
             }
         }
     }
@@ -600,33 +574,115 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         gitProjectProperties.forEach(projectModel::addProperty);
     }
 
-    private void updatePluginVersions(Model projectModel) {
-        for (Plugin plugin : getProjectPlugins(projectModel)) {
+    private void updatePluginVersions(BuildBase build) {
+        if (build == null) {
+            return;
+        }
+        // plugins section
+        {
+            List<Plugin> relatedPlugins = filterRelatedPlugins(build.getPlugins());
+            if (!relatedPlugins.isEmpty()) {
+                logger.debug("plugins:");
+                for (Plugin plugin : relatedPlugins) {
+                    updateVersion(plugin);
+                }
+            }
+        }
+
+        // plugin management section
+        PluginManagement pluginManagement = build.getPluginManagement();
+        if (pluginManagement != null) {
+            List<Plugin> relatedPlugins = filterRelatedPlugins(pluginManagement.getPlugins());
+            if (!relatedPlugins.isEmpty()) {
+                logger.debug("plugin management:");
+                for (Plugin plugin : relatedPlugins) {
+                    updateVersion(plugin);
+                }
+            }
+        }
+    }
+
+    private void updateVersion(Plugin plugin) {
+        if (plugin.getVersion() != null) {
             GAV pluginGAV = GAV.of(plugin);
-            if (relatedProjects.contains(pluginGAV)) {
-                String gitVersion = getGitVersion(pluginGAV);
-                logger.debug("update plugin version: " + pluginGAV.getProjectId() + ":" + gitVersion);
-                plugin.setVersion(gitVersion);
+            String gitVersion = getGitVersion(pluginGAV);
+            logger.debug("update plugin version: " + pluginGAV.getProjectId() + ":" + gitVersion);
+            plugin.setVersion(gitVersion);
+        }
+    }
+
+    public List<Plugin> filterRelatedPlugins(List<Plugin> plugins) {
+        return plugins.stream()
+                .filter(it -> relatedProjects.contains(GAV.of(it)))
+                .collect(toList());
+    }
+
+    private void updateDependencyVersions(ModelBase model) {
+        // dependencies section
+        {
+            List<Dependency> relatedDependencies = filterRelatedDependencies(model.getDependencies());
+            if (!relatedDependencies.isEmpty()) {
+                logger.debug("dependencies:");
+                for (Dependency dependency : relatedDependencies) {
+                    updateVersion(dependency);
+                }
+            }
+        }
+        // dependency management section
+        DependencyManagement dependencyManagement = model.getDependencyManagement();
+        if (dependencyManagement != null) {
+            List<Dependency> relatedDependencies = filterRelatedDependencies(model.getDependencies());
+            if (!relatedDependencies.isEmpty()) {
+                logger.debug("dependency management:");
+                for (Dependency dependency : relatedDependencies) {
+                    updateVersion(dependency);
+                }
             }
         }
     }
 
-    private void updateDependencyVersions(Model projectModel) {
-        for (Dependency dependency : getProjectDependencies(projectModel)) {
+    private void updateVersion(Dependency dependency) {
+        if (dependency.getVersion() != null) {
             GAV dependencyGAV = GAV.of(dependency);
-            if (relatedProjects.contains(dependencyGAV)) {
-                String gitVersion = getGitVersion(dependencyGAV);
-                logger.debug("update dependency version: " + dependencyGAV.getProjectId() + ":" + gitVersion);
-                dependency.setVersion(gitVersion);
-            }
+            String gitVersion = getGitVersion(dependencyGAV);
+            logger.debug("update dependency version: " + dependencyGAV.getProjectId() + ":" + gitVersion);
+            dependency.setVersion(gitVersion);
         }
     }
 
-    private void updateParentVersion(Element projectElement, Model projectModel) {
+    public List<Dependency> filterRelatedDependencies(List<Dependency> dependencies) {
+        return dependencies.stream()
+                .filter(it -> relatedProjects.contains(GAV.of(it)))
+                .collect(toList());
+    }
+
+    private File writePomFile(Model projectModel) throws IOException {
+        File gitVersionedPomFile = new File(projectModel.getProjectDirectory(), GIT_VERSIONING_POM_NAME);
+        logger.debug("generate " + gitVersionedPomFile);
+
+        // read original pom file
+        Document gitVersionedPomDocument = readXml(projectModel.getPomFile());
+        Element projectElement = gitVersionedPomDocument.getChild("project");
+
+        // update project
+        updateParentVersion(projectElement, projectModel.getParent());
+        updateVersion(projectElement, projectModel);
+        updatePropertyValues(projectElement, projectModel);
+        updateDependencyVersions(projectElement, projectModel);
+        updatePluginVersions(projectElement, projectModel.getBuild());
+
+        updateProfiles(projectElement, projectModel.getProfiles());
+
+        writeXml(gitVersionedPomFile, gitVersionedPomDocument);
+
+        return gitVersionedPomFile;
+    }
+
+    private void updateParentVersion(Element projectElement, Parent parent) {
         Element parentElement = projectElement.getChild("parent");
         if (parentElement != null) {
             Element parentVersionElement = parentElement.getChild("version");
-            parentVersionElement.setText(projectModel.getParent().getVersion());
+            parentVersionElement.setText(parent.getVersion());
         }
     }
 
@@ -637,29 +693,11 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         }
     }
 
-    private static void updatePropertyValues(Element projectElement, Model projectModel) {
+    private static void updatePropertyValues(Element element, ModelBase model) {
         // properties section
-        {
-            Element propertiesElement = projectElement.getChild("properties");
-            if (propertiesElement != null) {
-                updatePropertyValues(propertiesElement, projectModel.getProperties());
-            }
-        }
-        // profiles section
-        Element profilesElement = projectElement.getChild("profiles");
-        if (profilesElement != null) {
-            Map<String, Profile> profileMap = projectModel.getProfiles().stream()
-                    .collect(toMap(Profile::getId, it -> it));
-            for (Element profileElement : profilesElement.getChildren()) {
-                Profile profile = profileMap.get(profileElement.getChild("id").getText());
-                // properties section
-                {
-                    Element propertiesElement = profileElement.getChild("properties");
-                    if (propertiesElement != null) {
-                        updatePropertyValues(propertiesElement, profile.getProperties());
-                    }
-                }
-            }
+        Element propertiesElement = element.getChild("properties");
+        if (propertiesElement != null) {
+            updatePropertyValues(propertiesElement, model.getProperties());
         }
     }
 
@@ -669,48 +707,20 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         }
     }
 
-    private static void updateDependencyVersions(Element projectElement, Model projectModel) {
+    private static void updateDependencyVersions(Element element, ModelBase model) {
         // dependencies section
         {
-            Element dependenciesElement = projectElement.getChild("dependencies");
+            Element dependenciesElement = element.getChild("dependencies");
             if (dependenciesElement != null) {
-                updateDependencyVersions(dependenciesElement, projectModel.getDependencies());
+                updateDependencyVersions(dependenciesElement, model.getDependencies());
             }
         }
         // dependencyManagement section
-        {
-            Element dependencyManagementElement = projectElement.getChild("dependencyManagement");
-            if (dependencyManagementElement != null) {
-                Element dependenciesElement = dependencyManagementElement.getChild("dependencies");
-                if (dependenciesElement != null) {
-                    updateDependencyVersions(dependenciesElement, projectModel.getDependencyManagement().getDependencies());
-                }
-            }
-        }
-        // profiles section
-        Element profilesElement = projectElement.getChild("profiles");
-        if (profilesElement != null) {
-            Map<String, Profile> profileMap = projectModel.getProfiles().stream()
-                    .collect(toMap(Profile::getId, it -> it));
-            for (Element profileElement : profilesElement.getChildren("profile")) {
-                Profile profile = profileMap.get(profileElement.getChild("id").getText());
-                // dependencies section
-                {
-                    Element dependenciesElement = profileElement.getChild("dependencies");
-                    if (dependenciesElement != null) {
-                        updateDependencyVersions(dependenciesElement, profile.getDependencies());
-                    }
-                }
-                // dependencyManagement section
-                {
-                    Element dependencyManagementElement = profileElement.getChild("dependencyManagement");
-                    if (dependencyManagementElement != null) {
-                        Element dependenciesElement = dependencyManagementElement.getChild("dependencies");
-                        if (dependenciesElement != null) {
-                            updateDependencyVersions(dependenciesElement, profile.getDependencyManagement().getDependencies());
-                        }
-                    }
-                }
+        Element dependencyManagementElement = element.getChild("dependencyManagement");
+        if (dependencyManagementElement != null) {
+            Element dependenciesElement = dependencyManagementElement.getChild("dependencies");
+            if (dependenciesElement != null) {
+                updateDependencyVersions(dependenciesElement, model.getDependencyManagement().getDependencies());
             }
         }
     }
@@ -730,61 +740,23 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         }
     }
 
-    private static void updatePluginVersions(Element projectElement, Model projectModel) {
+    private static void updatePluginVersions(Element projectElement, BuildBase build) {
         // build section
-        {
-            Element buildElement = projectElement.getChild("build");
-            if (buildElement != null) {
-                // plugins section
-                {
-                    Element pluginsElement = buildElement.getChild("plugins");
-                    if (pluginsElement != null) {
-                        updatePluginVersions(pluginsElement, projectModel.getBuild().getPlugins());
-                    }
-
-                }
-                // pluginManagement section
-                {
-                    Element pluginsManagementElement = buildElement.getChild("pluginsManagement");
-                    if (pluginsManagementElement != null) {
-                        Element pluginsElement = pluginsManagementElement.getChild("plugins");
-                        if (pluginsElement != null) {
-                            updatePluginVersions(pluginsElement, projectModel.getBuild().getPluginManagement().getPlugins());
-                        }
-                    }
+        Element buildElement = projectElement.getChild("build");
+        if (buildElement != null) {
+            // plugins section
+            {
+                Element pluginsElement = buildElement.getChild("plugins");
+                if (pluginsElement != null) {
+                    updatePluginVersions(pluginsElement, build.getPlugins());
                 }
             }
-        }
-        // profiles section
-        Element profilesElement = projectElement.getChild("profiles");
-        if (profilesElement != null) {
-            Map<String, Profile> profileMap = projectModel.getProfiles().stream()
-                    .collect(toMap(Profile::getId, it -> it));
-            for (Element profileElement : profilesElement.getChildren("profile")) {
-                Profile profile = profileMap.get(profileElement.getChild("id").getText());
-                // build section
-                {
-                    Element buildElement = profileElement.getChild("build");
-                    if (buildElement != null) {
-                        // plugins section
-                        {
-                            Element pluginsElement = buildElement.getChild("plugins");
-                            if (pluginsElement != null) {
-                                updatePluginVersions(pluginsElement, profile.getBuild().getPlugins());
-                            }
-
-                        }
-                        // pluginManagement section
-                        {
-                            Element pluginsManagementElement = buildElement.getChild("pluginsManagement");
-                            if (pluginsManagementElement != null) {
-                                Element pluginsElement = pluginsManagementElement.getChild("plugins");
-                                if (pluginsElement != null) {
-                                    updatePluginVersions(pluginsElement, profile.getBuild().getPluginManagement().getPlugins());
-                                }
-                            }
-                        }
-                    }
+            // pluginManagement section
+            Element pluginsManagementElement = buildElement.getChild("pluginsManagement");
+            if (pluginsManagementElement != null) {
+                Element pluginsElement = pluginsManagementElement.getChild("plugins");
+                if (pluginsElement != null) {
+                    updatePluginVersions(pluginsElement, build.getPluginManagement().getPlugins());
                 }
             }
         }
@@ -808,6 +780,20 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         }
     }
 
+    private static void updateProfiles(Element projectElement, List<Profile> profiles) {
+        Element profilesElement = projectElement.getChild("profiles");
+        if (profilesElement != null) {
+            Map<String, Profile> profileMap = profiles.stream()
+                    .collect(toMap(Profile::getId, it -> it));
+            for (Element profileElement : profilesElement.getChildren("profile")) {
+                Profile profile = profileMap.get(profileElement.getChild("id").getText());
+                updatePropertyValues(profileElement, profile);
+                updateDependencyVersions(profileElement, profile);
+                updatePluginVersions(profileElement, profile.getBuild());
+            }
+        }
+    }
+
     private void addBuildPlugin(Model projectModel) {
         logger.debug("add version build plugin");
 
@@ -822,74 +808,6 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             projectModel.setBuild(new Build());
         }
         projectModel.getBuild().getPlugins().add(plugin);
-    }
-
-    private static List<Dependency> getProjectDependencies(Model projectModel) {
-        final List<Dependency> dependencies = Lists.newArrayList();
-        {
-            // dependencies section
-            dependencies.addAll(projectModel.getDependencies());
-
-            // dependency management section
-            DependencyManagement dependencyManagement = projectModel.getDependencyManagement();
-            if (dependencyManagement != null) {
-                dependencies.addAll(dependencyManagement.getDependencies());
-            }
-        }
-
-        // profiles section
-        for (Profile profile : projectModel.getProfiles()) {
-
-            // dependencies section
-            dependencies.addAll(profile.getDependencies());
-
-            // dependency management section
-            DependencyManagement profileDependencyManagement = profile.getDependencyManagement();
-            if (profileDependencyManagement != null) {
-                dependencies.addAll(profileDependencyManagement.getDependencies());
-            }
-        }
-
-        return dependencies;
-    }
-
-    private static List<Plugin> getProjectPlugins(Model projectModel) {
-        final List<Plugin> plugins = Lists.newArrayList();
-        {
-            // build section
-            Build build = projectModel.getBuild();
-            if (build != null) {
-
-                // plugins section
-                plugins.addAll(build.getPlugins());
-
-                // plugin management section
-                PluginManagement pluginManagement = build.getPluginManagement();
-                if (pluginManagement != null) {
-                    plugins.addAll(pluginManagement.getPlugins());
-                }
-            }
-        }
-
-        // profiles section
-        for (Profile profile : projectModel.getProfiles()) {
-
-            // build section
-            BuildBase build = profile.getBuild();
-            if (build != null) {
-
-                // plugins section
-                plugins.addAll(build.getPlugins());
-
-                // plugin management section
-                PluginManagement pluginManagement = build.getPluginManagement();
-                if (pluginManagement != null) {
-                    plugins.addAll(pluginManagement.getPlugins());
-                }
-            }
-        }
-
-        return plugins;
     }
 
     private static Set<File> getProjectModules(Model projectModel) {
