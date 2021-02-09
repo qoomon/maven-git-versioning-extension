@@ -190,7 +190,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         // add session root project as initial module
         projectModules.add(projectModel.getPomFile());
 
-        gitFormatPlaceholderMap = generateGitPlaceholderMap(gitSituation, gitVersionDetails);
+        gitFormatPlaceholderMap = generateGitFormatPlaceholderMap(gitSituation, gitVersionDetails);
         gitProjectProperties = generateGitProjectProperties(gitSituation, gitVersionDetails);
 
         logger.info("");
@@ -246,6 +246,8 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
         updateModelVersions(projectModel);
 
+        addGitProperties(projectModel);
+
         File gitVersionedPomFile = writePomFile(projectModel);
         if (updatePomOption) {
             logger.debug("updating original POM file");
@@ -278,8 +280,6 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         updateVersion(projectModel);
 
         updatePropertyValues(projectModel, originalProjectGAV);
-
-        addGitProperties(projectModel);
 
         updateDependencyVersions(projectModel);
 
@@ -519,7 +519,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         return placeholderMap;
     }
 
-    private static Map<String, String> generateGitPlaceholderMap(GitSituation gitSituation, GitVersionDetails gitVersionDetails) {
+    private static Map<String, String> generateGitFormatPlaceholderMap(GitSituation gitSituation, GitVersionDetails gitVersionDetails) {
         final Map<String, String> placeholderMap = new HashMap<>();
 
         String headCommit = gitSituation.getHeadCommit();
@@ -790,10 +790,13 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                 .collect(toMap(it -> it.getGroupId() + ":" + it.getArtifactId(), Plugin::getVersion));
 
         for (Element pluginElement : pluginsElement.getChildren()) {
-            String pluginGroupId = pluginElement.getChild("groupId").getText();
-            String pluginArtifactId = pluginElement.getChild("artifactId").getText();
+            Element pluginGroupIdElement = pluginElement.getChild("groupId");
+            Element pluginArtifactIdElement = pluginElement.getChild("artifactId");
             Element pluginVersionElement = pluginElement.getChild("version");
             if (pluginVersionElement != null) {
+                //  a plugin definition is valid even without groupId specified, therefore groupId element might not be present.
+                String pluginGroupId = pluginGroupIdElement != null ? pluginGroupIdElement.getText() : null;
+                String pluginArtifactId = pluginArtifactIdElement.getText();
                 pluginVersionElement.setText(pluginVersionMap.get(pluginGroupId + ":" + pluginArtifactId));
             }
         }

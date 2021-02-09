@@ -13,9 +13,9 @@ public class Configuration {
 
     public Boolean disable;
 
-    public Boolean updatePom;
-
     public Boolean preferTags;
+
+    public Boolean updatePom;
 
     @JacksonXmlElementWrapper(useWrapping = false)
     public List<VersionDescription> branch = new ArrayList<>();
