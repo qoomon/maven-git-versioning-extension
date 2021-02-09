@@ -46,13 +46,6 @@
 
 
     <dependencies>
-
-<!--        <dependency>-->
-<!--            <groupId>me.qoomon</groupId>-->
-<!--            <artifactId>git-versioning</artifactId>-->
-<!--            <version>1.0.0</version>-->
-<!--        </dependency>-->
-
         <dependency>
             <groupId>org.eclipse.jgit</groupId>
             <artifactId>org.eclipse.jgit</artifactId>
