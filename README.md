@@ -12,10 +12,10 @@
 
 This extension will virtually set project versions, based on current **Git branch** or **Git tag**.
 
-ℹ **The pom files will not be modified, versions are modified in memory only.**
+ℹ **No POM files will be modified, versions are modified in memory only.**
 * Get rid of...
     * editing `pom.xml`
-    * managing version by git and within files
+    * managing project versions with Git tags and within files
     * Git merge conflicts
 * Highly customizable version configuration, see example below.
 ![Example](doc/MavenGitVersioningExtension.png)
@@ -111,7 +111,7 @@ Create `${basedir}/.mvn/maven-git-versioning-extension.xml`.
 
 #### Format Placeholders
 
-ℹ whole `versionFormat` will be slugified automatically, that means all `/` characters are replaced by `-`
+ℹ whole `versionFormat` will be slugified automatically, that means all `/` characters replaced by `-`
 
 - `${ref}`
     - current ref name (branch name, tag name or commit hash)
@@ -168,20 +168,20 @@ Create `${basedir}/.mvn/maven-git-versioning-extension.xml`.
     - `${GROUP_NAME.slug}` or `${GROUP_INDEX.slug}`
         - like `${GROUP_NAME}` or `${GROUP_INDEX}` with all `/` replaced by `-`  
     - Examples
-      - Named Group
-          ```xml
-          <branch>
-            <pattern><![CDATA[feature/(?<feature>.+)]]></pattern>
-            <versionFormat>${feature}-SNAPSHOT</versionFormat>
-          </branch>
-          ```
-      - Group Index
-          ```xml
-          <tag>
-            <pattern>v([0-9].*)'</pattern>
-            <versionFormat>${1}</versionFormat>
-          </tag>
-          ```
+        - Named Group
+            ```xml
+            <branch>
+                <pattern><![CDATA[feature/(?<feature>.+)]]></pattern>
+                <versionFormat>${feature}-SNAPSHOT</versionFormat>
+            </branch>
+            ```
+        - Group Index
+            ```xml
+            <tag>
+                <pattern>v([0-9].*)'</pattern>
+                <versionFormat>${1}</versionFormat>
+            </tag>
+            ```
         
 - `${version}`
     - `version` set in `pom.xml`
@@ -226,10 +226,12 @@ Create `${basedir}/.mvn/maven-git-versioning-extension.xml`.
 ## Provided Project Properties
 
 - `git.commit` e.g. '0fc20459a8eceb2c4abb9bf0af45a6e8af17b94b'
-- `git.ref` value of branch of tag name, always set
-  - `git.ref.slug` like `git.ref` with all `/` replaced by `-`
-  - `git.branch` e.g. 'feature/next-big-thing', only set for branch versioning
-  - `git.tag` e.g. 'v1.2.3', only set for tag versioning
+- `git.ref` value of branch or tag name or commit hash
+    - `git.ref.slug` like `git.ref` with all `/` replaced by `-`
+- `git.branch` e.g. 'feature/next-big-thing', only set for branch versioning
+    - `git.branch.slug` like `git.branch` with all `/` replaced by `-`
+- `git.tag` e.g. 'v1.2.3', only set for tag versioning
+    - `git.tag.slug` like `git.tag` with all `/` replaced by `-`
 - `git.commit.timestamp` e.g. '1560694278'
 - `git.commit.timestamp.datetime` e.g. '2019-11-16T14:37:10Z'
 - `git.dirty` repository's dirty state indicator `true` or `false`

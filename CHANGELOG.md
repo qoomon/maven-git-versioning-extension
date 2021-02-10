@@ -39,7 +39,7 @@
     * `${commit.timestamp.hour}`
     * `${commit.timestamp.minute}`
     * `${commit.timestamp.second}`
-    * Maven CLI properties e.g. `mvn ... -Dfoo=bar` will result in a `${foo}` placeholder
+    * Maven CLI properties e.g. `mvn ... -Dfoo=bar` will be accessable by `${foo}` placeholder
     
 
 * **BREAKING CHANGES**
@@ -47,7 +47,7 @@
   * Removed support for project property `versioning.disable` to disable extension by default, use config option `<disable>` instead.
   * Replace property regex pattern match with simple name match
     * old regex pattern config `<branch|tag|commit> <property> <pattern>` 
-    * new property name config `<branch|tag|commi> <property> <name>`
+    * new property name config `<branch|tag|commit> <property> <name>`
   * Remove property value pattern `<branch|tag|commit> <property> <valuePattern>`
   * Remove format placeholder `${property.name}`
   * Rename format placeholder `${property.value}` to just `${value}`
