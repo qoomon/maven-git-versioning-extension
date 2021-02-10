@@ -17,7 +17,7 @@ This extension will virtually set project versions, based on current **Git branc
     * editing `pom.xml`
     * managing version by git and within files
     * Git merge conflicts
-
+* Highly customizable version configuration, see example below.
 ![Example](doc/MavenGitVersioningExtension.png)
 
 ## Install
