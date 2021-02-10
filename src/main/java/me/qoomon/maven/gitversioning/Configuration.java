@@ -26,7 +26,6 @@ public class Configuration {
     public VersionDescription commit;
 
     public static class VersionDescription {
-
         public String pattern;
         public String versionFormat;
         @JacksonXmlElementWrapper(useWrapping = false)

@@ -68,6 +68,10 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     private static final String OPTION_UPDATE_POM = "versioning.updatePom";
     private static final String OPTION_PREFER_TAGS = "versioning.preferTags";
 
+    private static final String DEFAULT_BRANCH_VERSION_FORMAT = "${branch}-SNAPSHOT";
+    private static final String DEFAULT_TAG_VERSION_FORMAT = "${tag}";
+    private static final String DEFAULT_COMMIT_VERSION_FORMAT = "${commit}";
+
     static final String GIT_VERSIONING_POM_NAME = ".git-versioned-pom.xml";
 
     @Inject
@@ -171,7 +175,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         logger.debug("  head commit: " + gitSituation.getHeadCommit());
         logger.debug("  head commit timestamp: " + gitSituation.getHeadCommitTimestamp());
         logger.debug("  head branch: " + gitSituation.getHeadBranch());
-        logger.debug("  head tags: " + String.join(", ", gitSituation.getHeadTags()));
+        logger.debug("  head tags: " + gitSituation.getHeadTags());
 
         boolean preferTagsOption = getPreferTagsOption(config);
         logger.debug("option -  prefer tags: " + preferTagsOption);
@@ -491,8 +495,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
             // default config for detached head commit
             return new GitVersionDetails(headCommit, COMMIT, headCommit, new VersionDescription() {{
-                pattern = ".*";
-                versionFormat = "${commit}";
+                versionFormat = DEFAULT_COMMIT_VERSION_FORMAT;
             }});
         }
 
@@ -507,8 +510,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
             // default config for branch
             return new GitVersionDetails(headCommit, BRANCH, headBranch, new VersionDescription() {{
-                pattern = ".*";
-                versionFormat = "${branch}-SNAPSHOT";
+                versionFormat = DEFAULT_BRANCH_VERSION_FORMAT;
             }});
         }
     }
@@ -563,10 +565,13 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         placeholderMap.put("ref.slug", refNameSlug);
         placeholderMap.put(refTypeName, refName);
         placeholderMap.put(refTypeName + ".slug", refNameSlug);
-        Map<String, String> refNameValueGroupMap = valueGroupMap(refName, gitVersionDetails.getConfig().pattern);
-        placeholderMap.putAll(refNameValueGroupMap);
-        placeholderMap.putAll(refNameValueGroupMap.entrySet().stream()
-                .collect(toMap(entry -> entry.getKey() + ".slug", entry -> slugify(entry.getValue()))));
+        String refPattern = gitVersionDetails.getConfig().pattern;
+        if (refPattern != null) {
+            Map<String, String> refNameValueGroupMap = valueGroupMap(refName, refPattern);
+            placeholderMap.putAll(refNameValueGroupMap);
+            placeholderMap.putAll(refNameValueGroupMap.entrySet().stream()
+                    .collect(toMap(entry -> entry.getKey() + ".slug", entry -> slugify(entry.getValue()))));
+        }
 
         placeholderMap.put("dirty", gitSituation.isClean() ? "" : "-DIRTY");
 
@@ -621,7 +626,23 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     }
 
     private static Configuration readConfig(File configFile) throws IOException {
-        return new XmlMapper().readValue(configFile, Configuration.class);
+        Configuration config = new XmlMapper().readValue(configFile, Configuration.class);
+
+        for (VersionDescription versionDescription : config.branch) {
+            if (versionDescription.versionFormat == null) {
+                versionDescription.versionFormat = DEFAULT_BRANCH_VERSION_FORMAT;
+            }
+        }
+        for (VersionDescription versionDescription : config.tag) {
+            if (versionDescription.versionFormat == null) {
+                versionDescription.versionFormat = DEFAULT_TAG_VERSION_FORMAT;
+            }
+        }
+        if (config.commit.versionFormat == null) {
+            config.commit.versionFormat = DEFAULT_COMMIT_VERSION_FORMAT;
+        }
+
+        return config;
     }
 
     private String getCommandOption(final String name) {
