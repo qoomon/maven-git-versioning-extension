@@ -5,6 +5,10 @@
 # Changelog
 ## 6.0.5
 * **Fixes** 
+  * fixed `NullPointerException` when no `<commit>` config tag exists. 
+  
+## 6.0.5
+* **Fixes** 
   * fixed `NullPointerException` when no `versionFormat` is set. 
   
 ## 6.0.4

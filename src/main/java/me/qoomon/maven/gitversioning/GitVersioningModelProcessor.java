@@ -638,8 +638,10 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                 versionDescription.versionFormat = DEFAULT_TAG_VERSION_FORMAT;
             }
         }
-        if (config.commit.versionFormat == null) {
-            config.commit.versionFormat = DEFAULT_COMMIT_VERSION_FORMAT;
+        if (config.commit != null) {
+            if (config.commit.versionFormat == null) {
+                config.commit.versionFormat = DEFAULT_COMMIT_VERSION_FORMAT;
+            }
         }
 
         return config;
