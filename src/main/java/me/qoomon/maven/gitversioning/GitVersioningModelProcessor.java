@@ -197,7 +197,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         // add session root project as initial module
         projectModules.add(projectModel.getPomFile());
 
-        formatPlaceholderMap = generateFormatPlaceholder(gitSituation, gitVersionDetails);
+        formatPlaceholderMap = generateFormatPlaceholderMapFromGit(gitSituation, gitVersionDetails);
         gitProjectProperties = generateGitProjectProperties(gitSituation, gitVersionDetails);
 
         logger.info("");
@@ -420,7 +420,6 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                 .collect(toList());
     }
 
-
     private void addGitProperties(Model projectModel) {
         gitProjectProperties.forEach(projectModel::addProperty);
     }
@@ -540,7 +539,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         return placeholderMap;
     }
 
-    private static Map<String, String> generateFormatPlaceholder(GitSituation gitSituation, GitVersionDetails gitVersionDetails) {
+    private static Map<String, String> generateFormatPlaceholderMapFromGit(GitSituation gitSituation, GitVersionDetails gitVersionDetails) {
         final Map<String, String> placeholderMap = new HashMap<>();
 
         String headCommit = gitSituation.getHeadCommit();
