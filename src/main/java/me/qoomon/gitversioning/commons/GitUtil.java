@@ -13,7 +13,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.eclipse.jgit.lib.Constants.*;
+import static org.eclipse.jgit.lib.Constants.HEAD;
+import static org.eclipse.jgit.lib.Constants.R_TAGS;
 
 public final class GitUtil {
 

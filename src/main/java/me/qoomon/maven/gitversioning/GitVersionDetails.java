@@ -2,7 +2,7 @@ package me.qoomon.maven.gitversioning;
 
 import me.qoomon.gitversioning.commons.GitRefType;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class GitVersionDetails {
     private final String commit;
@@ -12,10 +12,10 @@ public class GitVersionDetails {
 
     public GitVersionDetails(String commit, GitRefType refType, String refName, Configuration.VersionDescription config) {
 
-        this.commit = checkNotNull(commit);
-        this.refType = checkNotNull(refType);
-        this.refName = checkNotNull(refName);
-        this.config = checkNotNull(config);
+        this.commit = requireNonNull(commit);
+        this.refType = requireNonNull(refType);
+        this.refName = requireNonNull(refName);
+        this.config = requireNonNull(config);
     }
 
     public String getCommit() {

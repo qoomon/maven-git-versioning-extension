@@ -1,7 +1,6 @@
 package me.qoomon.maven.gitversioning;
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import com.google.common.collect.Maps;
 import com.google.inject.Key;
 import com.google.inject.OutOfScopeException;
 import de.pdark.decentxml.Document;
@@ -29,7 +28,6 @@ import java.nio.file.StandardCopyOption;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.Map.Entry;
 
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.Math.ceil;
@@ -329,13 +327,13 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
     private void updatePropertyValues(ModelBase model, GAV originalProjectGAV) {
         // properties section
-        for (Entry<String, String> property : Maps.fromProperties(model.getProperties()).entrySet()) {
-            String gitPropertyValue = getGitProjectPropertyValue(property.getKey(), property.getValue(), originalProjectGAV);
-            if (!gitPropertyValue.equals(property.getValue())) {
-                logger.info("update property " + property.getKey() + ": " + gitPropertyValue);
-                model.addProperty(property.getKey(), gitPropertyValue);
+        model.getProperties().forEach((key, value) -> {
+            String gitPropertyValue = getGitProjectPropertyValue((String) key, (String) value, originalProjectGAV);
+            if (!gitPropertyValue.equals(value)) {
+                logger.info("update property " + key + ": " + gitPropertyValue);
+                model.addProperty((String) key, gitPropertyValue);
             }
-        }
+        });
     }
 
     private void updatePluginVersions(BuildBase build) {
@@ -535,7 +533,9 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         final Map<String, String> placeholderMap = new HashMap<>();
         placeholderMap.putAll(formatPlaceholderMap);
         placeholderMap.putAll(generateFormatPlaceholderMapFromVersion(originalProjectGAV));
-        placeholderMap.putAll(Maps.fromProperties(mavenSession.getUserProperties()));
+        mavenSession.getUserProperties().forEach((key, value) -> {
+            placeholderMap.put((String) key, (String) value);
+        });
         return placeholderMap;
     }
 
