@@ -28,10 +28,6 @@ public final class GitUtil {
     }
 
     public static String branch(Repository repository) throws IOException {
-        ObjectId head = repository.resolve(HEAD);
-        if (head == null) {
-            return MASTER;
-        }
         String branch = repository.getBranch();
         if (ObjectId.isId(branch)) {
             return null;
