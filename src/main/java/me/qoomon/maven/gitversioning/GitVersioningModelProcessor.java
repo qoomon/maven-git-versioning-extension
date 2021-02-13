@@ -533,9 +533,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         final Map<String, String> placeholderMap = new HashMap<>();
         placeholderMap.putAll(formatPlaceholderMap);
         placeholderMap.putAll(generateFormatPlaceholderMapFromVersion(originalProjectGAV));
-        mavenSession.getUserProperties().forEach((key, value) -> {
-            placeholderMap.put((String) key, (String) value);
-        });
+        mavenSession.getUserProperties().forEach((key, value) -> placeholderMap.put((String) key, (String) value));
         return placeholderMap;
     }
 
@@ -841,17 +839,22 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         }
     }
 
-    private static void updatePropertyValues(Element element, ModelBase model) {
+    private void updatePropertyValues(Element element, ModelBase model) {
         // properties section
         Element propertiesElement = element.getChild("properties");
         if (propertiesElement != null) {
-            updatePropertyValues(propertiesElement, model.getProperties());
-        }
-    }
-
-    private static void updatePropertyValues(Element propertiesElement, Properties properties) {
-        for (Element propertyElement : propertiesElement.getChildren()) {
-            propertyElement.setText(properties.getProperty(propertyElement.getName()));
+            Properties modelProperties = model.getProperties();
+            gitVersionDetails.getConfig().property.forEach(property -> {
+                String propertyName = property.name;
+                Element propertyElement = propertiesElement.getChild(propertyName);
+                if (propertyElement != null) {
+                    String pomPropertyValue = propertyElement.getText();
+                    String modelPropertyValue = (String) modelProperties.get(propertyName);
+                    if (!Objects.equals(modelPropertyValue, pomPropertyValue)) {
+                        propertyElement.setText(modelPropertyValue);
+                    }
+                }
+            });
         }
     }
 
@@ -928,7 +931,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         }
     }
 
-    private static void updateProfiles(Element projectElement, List<Profile> profiles) {
+    private void updateProfiles(Element projectElement, List<Profile> profiles) {
         Element profilesElement = projectElement.getChild("profiles");
         if (profilesElement != null) {
             Map<String, Profile> profileMap = profiles.stream()
