@@ -74,7 +74,7 @@ Create `${basedir}/.mvn/maven-git-versioning-extension.xml`.
 - *optional* `<disable>` global disable(`true`)/enable(`false`) extension.
     - Can be overridden by command option, see (Parameters & Environment Variables)[#parameters-&-environment-variables].
 
-- *optional* `<updatePom>` global enable(`true`)/disable(`false`) version update in original pom file.
+- *optional* `<updatePom>` global enable(`true`)/disable(`false`) version and properties update in original pom file.
     - Can be overridden by command option, see (Parameters & Environment Variables)[#parameters-&-environment-variables].
 
 - *optional* `<preferTags>` global enable(`true`)/disable(`false`) prefer tag rules over branch rules if both match.
@@ -85,7 +85,7 @@ Create `${basedir}/.mvn/maven-git-versioning-extension.xml`.
     - `<property>` A property definition to update the value of a property
         - `<name>` The property name
         - `<valueFormat>` The new value format of the property, see [Version Format & Placeholders](#version-format--placeholders)
-    - *optional* `<updatePom>` Enable(`true`) or disable(`false`) version update in original pom fill (will override global `<updatePom>` value)
+    - *optional* `<updatePom>` Enable(`true`) or disable(`false`) version and properties update in original pom fill (will override global `<updatePom>` value)
     - ⚠ **considered if...**
         * HEAD attached to a branch `git checkout <BRANCH>`<br>
         * Or branch name is provided by environment variable or command line parameter
