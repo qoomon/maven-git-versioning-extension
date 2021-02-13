@@ -570,7 +570,8 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                     .collect(toMap(entry -> entry.getKey() + ".slug", entry -> slugify(entry.getValue()))));
         }
 
-        placeholderMap.put("dirty", gitSituation.isClean() ? "" : "-DIRTY");
+        placeholderMap.put("dirty", !gitSituation.isClean() ? "-DIRTY" : "");
+        placeholderMap.put("dirty.snapshot", !gitSituation.isClean() ? "-SNAPSHOT" : "");
 
         return placeholderMap;
     }
