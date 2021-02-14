@@ -393,7 +393,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         // dependency management section
         DependencyManagement dependencyManagement = model.getDependencyManagement();
         if (dependencyManagement != null) {
-            List<Dependency> relatedDependencies = filterRelatedDependencies(model.getDependencies());
+            List<Dependency> relatedDependencies = filterRelatedDependencies(dependencyManagement.getDependencies());
             if (!relatedDependencies.isEmpty()) {
                 logger.debug("dependency management:");
                 for (Dependency dependency : relatedDependencies) {

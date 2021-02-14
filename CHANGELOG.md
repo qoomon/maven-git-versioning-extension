@@ -3,6 +3,11 @@
 [![Maven Central](https://img.shields.io/maven-central/v/me.qoomon/maven-git-versioning-extension.svg)](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22me.qoomon%22%20AND%20a%3A%22maven-git-versioning-extension%22)
 
 # Changelog
+
+## 6.1.1
+* **Fixes**
+  * * fixed wrong dependency management version updates.
+  
 ## 6.1.0
 * **Features**
   * add `${dirty.snapshot}` placeholder that resolves to `-SNAPSHOT` if repository is in a dirty state.
