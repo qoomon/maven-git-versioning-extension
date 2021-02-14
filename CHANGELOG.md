@@ -6,7 +6,7 @@
 
 ## 6.1.1
 * **Fixes**
-  * * fixed wrong dependency management version updates.
+  * fixed wrong dependency management version updates.
   
 ## 6.1.0
 * **Features**
