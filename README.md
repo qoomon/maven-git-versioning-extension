@@ -10,14 +10,14 @@
 **ℹ Also available as [Gradle Plugin](https://github.com/qoomon/gradle-git-versioning-plugin)**
 
 
-This extension will virtually set project versions, based on current **Git branch** or **Git tag**.
+This extension can virtually set project version and properties, based on current **Git status**.
 
-ℹ **No POM files will be modified, versions are modified in memory only.**
+ℹ **No POM files will be modified, version and properties are modified in memory only.**
 * Get rid of...
     * editing `pom.xml`
-    * managing project versions with Git tags and within files
-    * Git merge conflicts
-* Highly customizable version configuration, see example below.
+    * managing project versions with within files and Git tags.
+    * Git merge conflicts.
+* Highly customizable configuration, see example below.
 ![Example](doc/MavenGitVersioningExtension.png)
 
 ## Install
