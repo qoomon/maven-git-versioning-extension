@@ -244,7 +244,7 @@ Create `${basedir}/.mvn/maven-git-versioning-extension.xml`.
 # Miscellaneous Hints
 
 ### Commandline To Print Project Version
-`mvn --non-recursive exec:exec -Dexec.executable='echo' -Dexec.args='${project.version}' -q`
+`mvn help:evaluate -Dexpression=project.version -q -DforceStdout`
 
 ### Reproducible builds ###
 The reproducible builds feature (https://maven.apache.org/guides/mini/guide-reproducible-builds.html) newly introduced in maven can be easily supported with this extension by using the latest commit timestamp as build timestamps.
