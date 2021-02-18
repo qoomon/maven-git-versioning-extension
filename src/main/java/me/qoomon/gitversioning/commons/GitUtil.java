@@ -37,21 +37,18 @@ public final class GitUtil {
     }
 
     public static List<String> tag_pointsAt(Repository repository, String revstr) throws IOException {
-        ObjectId rev = repository.resolve(revstr);
-
+        ObjectId revObjectId = repository.resolve(revstr);
         List<String> tagNames = new ArrayList<>();
         for (Ref ref : repository.getRefDatabase().getRefsByPrefix(R_TAGS)) {
-            ref = repository.getRefDatabase().peel(ref);
-            ObjectId refObjectId;
-            if (ref.isPeeled() && ref.getPeeledObjectId() != null) {
-                refObjectId = ref.getPeeledObjectId();
-            } else {
-                refObjectId = ref.getObjectId();
-            }
-            if (refObjectId.equals(rev)) {
+            Ref peeledRef = repository.getRefDatabase().peel(ref);
+            ObjectId targetObjectId = peeledRef.getPeeledObjectId() != null
+                    ? peeledRef.getPeeledObjectId()
+                    : peeledRef.getObjectId();
+            if (targetObjectId.equals(revObjectId)) {
                 String tagName = ref.getName().replaceFirst("^" + R_TAGS, "");
                 tagNames.add(tagName);
             }
+            System.out.println("");
         }
         return tagNames;
     }
