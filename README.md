@@ -1,4 +1,4 @@
-# Maven Git Versioning Extension
+# Maven Git Versioning Extension [![Sparkline](https://stars.medv.io/qoomon/maven-git-versioning-extension.svg?)](https://stars.medv.io/qoomon/maven-git-versioning-extension)
 
 [![Maven Central](https://img.shields.io/maven-central/v/me.qoomon/maven-git-versioning-extension.svg)](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22me.qoomon%22%20AND%20a%3A%22maven-git-versioning-extension%22)
 [![Changelog](https://badgen.net/badge/changelog/%E2%98%85/blue)](CHANGELOG.md)
@@ -113,6 +113,12 @@ Create `${basedir}/.mvn/maven-git-versioning-extension.xml`.
 
 ℹ whole `versionFormat` will be slugified automatically, that means all `/` characters replaced by `-`
 
+ℹ define placeholder default value (placeholder is not defined) like this `${name:-default_value}`<br>
+  e.g `${buildNumber:-0}` or `${buildNumber:-local}` 
+
+ℹ define placeholder overwrite value (placeholder is defined) like this `${name:+overwrite_value}`<br>
+  e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
+ 
 - `${ref}`
     - current ref name (branch name, tag name or commit hash)
 - `${ref.slug}`

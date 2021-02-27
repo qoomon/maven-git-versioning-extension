@@ -9,20 +9,30 @@ import java.util.regex.Pattern;
 
 public final class StringUtil {
 
-    public static String substituteText(String text, Map<String, String> substitutionMap) {
-        String result = text;
-
-        final Pattern placeholderPattern = Pattern.compile("\\$\\{(.+?)}");
-        final Matcher placeholderMatcher = placeholderPattern.matcher(text);
+    public static String substituteText(String text, Map<String, String> replacements) {
+        StringBuffer result = new StringBuffer();
+        Pattern placeholderPattern = Pattern.compile("\\$\\{(?<key>[^}:]+)(?::(?<modifier>[-+])(?<value>[^}]*))?}");
+        Matcher placeholderMatcher = placeholderPattern.matcher(text);
         while (placeholderMatcher.find()) {
-            String substitutionKey = placeholderMatcher.group(1);
-            String substitutionValue = substitutionMap.get(substitutionKey);
-            if(substitutionValue != null) {
-                result = result.replaceAll("\\$\\{" + substitutionKey + "}", substitutionValue.replace("$", "\\$"));
+            String placeholderKey = placeholderMatcher.group("key");
+            String replacement = replacements.get(placeholderKey);
+            String placeholderModifier = placeholderMatcher.group("modifier");
+            if(placeholderModifier != null){
+                if (placeholderModifier.equals("-") && replacement == null) {
+                    replacement = placeholderMatcher.group("value");
+                }
+                if (placeholderModifier.equals("+") && replacement != null) {
+                    replacement = placeholderMatcher.group("value");
+                }
+            }
+            if (replacement != null) {
+                // avoid group name replacement behaviour of replacement parameter value
+                placeholderMatcher.appendReplacement(result, "");
+                result.append(replacement);
             }
         }
-
-        return result;
+        placeholderMatcher.appendTail(result);
+        return result.toString();
     }
 
     /**

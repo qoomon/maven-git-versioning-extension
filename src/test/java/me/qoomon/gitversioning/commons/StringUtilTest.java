@@ -2,9 +2,11 @@ package me.qoomon.gitversioning.commons;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 
@@ -39,7 +41,7 @@ class StringUtilTest {
     }
 
     @Test
-    void substituteText_escape_replacement_value() {
+    void substituteText_handle_replacement_value_with_placeholder_syntax() {
 
         // Given
         String givenText = "${version}";
@@ -51,6 +53,35 @@ class StringUtilTest {
 
         // Then
         assertThat(outputText).isEqualTo("${something}");
+    }
+
+    @Test
+    void substituteText_default_value() {
+
+        // Given
+        String givenText = "${foo:-xxx}";
+        Map<String, String> givenSubstitutionMap = emptyMap();
+
+        // When
+        String outputText = StringUtil.substituteText(givenText, givenSubstitutionMap);
+
+        // Then
+        assertThat(outputText).isEqualTo("xxx");
+    }
+
+    @Test
+    void substituteText_overwrite_value() {
+
+        // Given
+        String givenText = "${foo:+xxx}";
+        Map<String, String> givenSubstitutionMap = new HashMap<>();
+        givenSubstitutionMap.put("foo", "aaa");
+
+        // When
+        String outputText = StringUtil.substituteText(givenText, givenSubstitutionMap);
+
+        // Then
+        assertThat(outputText).isEqualTo("xxx");
     }
 
 

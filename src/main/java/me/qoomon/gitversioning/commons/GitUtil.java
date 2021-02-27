@@ -48,7 +48,6 @@ public final class GitUtil {
                 String tagName = ref.getName().replaceFirst("^" + R_TAGS, "");
                 tagNames.add(tagName);
             }
-            System.out.println("");
         }
         return tagNames;
     }
