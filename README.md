@@ -20,13 +20,13 @@ This extension can virtually set project version and properties, based on curren
 * Highly customizable configuration, see example below.
 ![Example](doc/MavenGitVersioningExtension.png)
 
-## Install
+## Usage
 
 ⚠️ minimal required maven version is `3.6.3`
 
 ### Add Extension
 
-create or update `${rotProjectDir}/.mvn/extensions.xml` file
+create or update `${rootProjectDir}/.mvn/extensions.xml` file
 
 ```xml
 <extensions xmlns="http://maven.apache.org/EXTENSIONS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
