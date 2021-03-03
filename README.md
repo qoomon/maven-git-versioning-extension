@@ -24,7 +24,7 @@ This extension can virtually set project version and properties, based on curren
 
 ⚠️ minimal required maven version is `3.6.3`
 
-### Add Extension
+### Add Extension to Project
 
 create or update `${rootProjectDir}/.mvn/extensions.xml` file
 
