@@ -267,13 +267,12 @@ Most CI/CD systems do checkouts in a detached HEAD state so no branch informatio
 #### GitHub Actions Setup
 execute this snippet before running your `maven` command
 ```shell
-if [[ "$GITHUB_REF" = refs/heads/* ]]; then
-    export VERSIONING_GIT_BRANCH=${GITHUB_REF#refs/heads/};
-elif [[ "$GITHUB_REF" = refs/tags/* ]]; then
+if  [[ "$GITHUB_REF" = refs/tags/* ]]; then
     export VERSIONING_GIT_TAG=${GITHUB_REF#refs/tags/};
+elif [[ "$GITHUB_REF" = refs/heads/* ]]; then
+    export VERSIONING_GIT_BRANCH=${GITHUB_REF#refs/heads/};
 elif [[ "$GITHUB_REF" = refs/pull/*/merge ]]; then
-    export VERSIONING_GIT_BRANCH=${GITHUB_REF#refs/};
-    VERSIONING_GIT_BRANCH=${VERSIONING_GIT_BRANCH%/merge};
+    export VERSIONING_GIT_BRANCH=${GITHUB_REF#refs/pull/};
 fi
 ```
 
@@ -281,11 +280,8 @@ fi
 execute this snippet before running your `maven` command
 ```shell
 before_script:
-  - if [ -n "$CI_COMMIT_TAG" ]; then
-       export VERSIONING_GIT_TAG=$CI_COMMIT_TAG;
-    else
-       export VERSIONING_GIT_BRANCH=$CI_COMMIT_REF_NAME;
-    fi
+  - export VERSIONING_GIT_TAG=$CI_COMMIT_TAG;
+    export VERSIONING_GIT_BRANCH=$CI_COMMIT_BRANCH;
 ```
 
 #### Jenkins Setup
