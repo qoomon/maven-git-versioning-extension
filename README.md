@@ -26,7 +26,7 @@ This extension can virtually set project version and properties, based on curren
 
 ### Add Extension
 
-create or update `${basedir}/.mvn/extensions.xml` file
+create or update `${rotProjectDir}/.mvn/extensions.xml` file
 
 ```xml
 <extensions xmlns="http://maven.apache.org/EXTENSIONS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -47,7 +47,7 @@ create or update `${basedir}/.mvn/extensions.xml` file
 
 You can configure the final version format for specific branches and tags separately.
 
-Create `${basedir}/.mvn/maven-git-versioning-extension.xml`.
+Create `${rootProjectDir}/.mvn/maven-git-versioning-extension.xml`.
 
 **Example:** `maven-git-versioning-extension.xml`
 
