@@ -54,20 +54,17 @@ Create `${rootProjectDir}/.mvn/maven-git-versioning-extension.xml`.
 ```xml
 <gitVersioning>
     <branch>
-        <pattern>master</pattern>
+        <pattern>main</pattern>
         <versionFormat>${version}</versionFormat>
     </branch>
     <branch>
-         <pattern><![CDATA[feature/(?<feature>.+)]]></pattern>
-         <versionFormat>${feature}-SNAPSHOT</versionFormat>
+         <pattern>feature/(.+)></pattern>
+         <versionFormat>${1}-SNAPSHOT</versionFormat>
      </branch>
     <tag>
-        <pattern><![CDATA[v(?<tagVersion>[0-9].*)]]></pattern>
-        <versionFormat>${tagVersion}</versionFormat>
+        <pattern>v([0-9].*)></pattern>
+        <versionFormat>${1}</versionFormat>
     </tag>
-    <commit>
-        <versionFormat>${commit.short}</versionFormat>
-    </commit>
 </gitVersioning>
 ```
 
