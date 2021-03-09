@@ -885,9 +885,14 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         for (Element dependencyElement : dependenciesElement.getChildren()) {
             String dependencyGroupId = dependencyElement.getChild("groupId").getText();
             String dependencyArtifactId = dependencyElement.getChild("artifactId").getText();
+            String dependencyType = dependencyElement.getChild("type") != null ? dependencyElement.getChild("type").getText() : "jar";
+            String dependencyClassifier = dependencyElement.getChild("classifier") != null ? dependencyElement.getChild("classifier").getText() : null;
             Element dependencyVersionElement = dependencyElement.getChild("version");
             if (dependencyVersionElement != null) {
-                dependencyVersionElement.setText(dependencyVersionMap.get(dependencyGroupId + ":" + dependencyArtifactId));
+                dependencyVersionElement.setText(dependencyVersionMap.get(dependencyGroupId + ":" +
+                                                                          dependencyArtifactId + ":" +
+                                                                          dependencyType +
+                                                                          (dependencyClassifier != null ? ":" + dependencyClassifier : "")));
             }
         }
     }
