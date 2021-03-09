@@ -880,7 +880,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     private static void updateDependencyVersions(Element dependenciesElement, List<Dependency> dependencies) {
         final Map<String, String> dependencyVersionMap = dependencies.stream()
                 .filter(it -> it.getVersion() != null)
-                .collect(toMap(it -> it.getGroupId() + ":" + it.getArtifactId(), Dependency::getVersion));
+                .collect(toMap(Dependency::getManagementKey, Dependency::getVersion));
 
         for (Element dependencyElement : dependenciesElement.getChildren()) {
             String dependencyGroupId = dependencyElement.getChild("groupId").getText();
