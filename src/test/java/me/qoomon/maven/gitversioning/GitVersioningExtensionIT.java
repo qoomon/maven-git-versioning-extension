@@ -640,7 +640,6 @@ class GitVersioningExtensionIT {
     @Test
     void branchVersioning_multiModuleProject_withExternalParent() throws Exception {
         // Given
-
         try (Git git = Git.init().setDirectory(projectDir.toFile()).call()) {
             RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
             String givenBranch = "feature/test";
@@ -707,7 +706,6 @@ class GitVersioningExtensionIT {
     @Test
     void branchVersioning_multiModuleProject_withAggregationAndParent() throws Exception {
         // Given
-
         try (Git git = Git.init().setDirectory(projectDir.toFile()).call()) {
             RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
             String givenBranch = "feature/test";
@@ -770,6 +768,72 @@ class GitVersioningExtensionIT {
                         "git.commit",
                         "git.ref"
                 );
+            }));
+        }
+    }
+
+    @Test
+    void dependencyUpdates_multiModuleProject() throws Exception {
+        // Given
+        try (Git git = Git.init().setDirectory(projectDir.toFile()).call()) {
+            RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+            String givenBranch = "test";
+            git.branchCreate().setName(givenBranch).call();
+            git.checkout().setName(givenBranch).call();
+
+            pomModel.setPackaging("pom");
+            pomModel.addModule("api");
+            pomModel.addModule("logic");
+
+            writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
+            writeExtensionsFile(projectDir);
+
+            Configuration extensionConfig = new Configuration();
+            extensionConfig.branch.add(createBranchVersionDescription());
+            writeExtensionConfigFile(projectDir, extensionConfig);
+
+            Path apiProjectDir = Files.createDirectories(projectDir.resolve("api"));
+            Model apiPomModel = writeModel(apiProjectDir.resolve("pom.xml").toFile(), new Model() {{
+                setModelVersion(pomModel.getModelVersion());
+                setParent(new Parent() {{
+                    setGroupId(pomModel.getGroupId());
+                    setArtifactId(pomModel.getArtifactId());
+                    setVersion(pomModel.getVersion());
+                }});
+                setArtifactId("api");
+            }});
+
+            Path logicProjectDir = Files.createDirectories(projectDir.resolve("logic"));
+            Model logicPomModel = writeModel(logicProjectDir.resolve("pom.xml").toFile(), new Model() {{
+                setModelVersion(pomModel.getModelVersion());
+                setParent(new Parent() {{
+                    setGroupId(pomModel.getGroupId());
+                    setArtifactId(pomModel.getArtifactId());
+                    setVersion(pomModel.getVersion());
+                }});
+                setArtifactId("logic");
+                addDependency(new Dependency() {{
+                    setGroupId(pomModel.getGroupId());
+                    setArtifactId("api");
+                    setVersion(pomModel.getVersion());
+                }});
+            }});
+
+            // When
+            Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath());
+            verifier.executeGoal("verify");
+
+            // Then
+            String log = getLog(verifier);
+            assertThat(log).doesNotContain("[ERROR]", "[FATAL]");
+            String expectedVersion = "test-gitVersioning";
+            assertThat(log).contains("Building " + logicPomModel.getArtifactId() + " " + expectedVersion);
+            Model gitVersionedLogicPomModel = readModel(logicProjectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
+            assertThat(gitVersionedLogicPomModel).satisfies(it -> assertSoftly(softly -> {
+                softly.assertThat(it.getDependencies().get(0)).satisfies(dependency -> {
+                    softly.assertThat(dependency.getArtifactId()).isEqualTo(apiPomModel.getArtifactId());
+                    softly.assertThat(dependency.getVersion()).isEqualTo(expectedVersion);
+                });
             }));
         }
     }

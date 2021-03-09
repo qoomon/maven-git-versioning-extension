@@ -28,6 +28,7 @@ import java.nio.file.StandardCopyOption;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.BiConsumer;
 
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.Math.ceil;
@@ -878,18 +879,28 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     }
 
     private static void updateDependencyVersions(Element dependenciesElement, List<Dependency> dependencies) {
-        final Map<String, String> dependencyVersionMap = dependencies.stream()
-                .filter(it -> it.getVersion() != null)
-                .collect(toMap(it -> it.getGroupId() + ":" + it.getArtifactId(), Dependency::getVersion));
+        forEachPair(dependenciesElement.getChildren(), dependencies, (dependencyElement, dependency) -> {
+            // sanity check
+            if (!Objects.equals(dependency.getManagementKey(), getDependencyManagementKey(dependencyElement))) {
+                throw new IllegalArgumentException("Unexpected difference of xml and model dependencies order");
+            }
 
-        for (Element dependencyElement : dependenciesElement.getChildren()) {
-            String dependencyGroupId = dependencyElement.getChild("groupId").getText();
-            String dependencyArtifactId = dependencyElement.getChild("artifactId").getText();
             Element dependencyVersionElement = dependencyElement.getChild("version");
             if (dependencyVersionElement != null) {
-                dependencyVersionElement.setText(dependencyVersionMap.get(dependencyGroupId + ":" + dependencyArtifactId));
+                dependencyVersionElement.setText(dependency.getVersion());
             }
-        }
+        });
+    }
+
+    private static String getDependencyManagementKey(Element element) {
+        Element groupId = element.getChild("groupId");
+        Element artifactId = element.getChild("artifactId");
+        Element type = element.getChild("type");
+        Element classifier = element.getChild("classifier");
+        return (groupId != null ? groupId.getText().trim() : "")
+                + ":" + (artifactId != null ? artifactId.getText().trim() : "")
+                + ":" + (type != null ? type.getText().trim() : "jar")
+                + (classifier != null ? ":" + classifier.getText().trim() : "");
     }
 
     private static void updatePluginVersions(Element projectElement, BuildBase build) {
@@ -915,21 +926,24 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     }
 
     private static void updatePluginVersions(Element pluginsElement, List<Plugin> plugins) {
-        final Map<String, String> pluginVersionMap = plugins.stream()
-                .filter(it -> it.getVersion() != null)
-                .collect(toMap(it -> it.getGroupId() + ":" + it.getArtifactId(), Plugin::getVersion));
+        forEachPair(pluginsElement.getChildren(), plugins, (pluginElement, plugin) -> {
+            // sanity check
+            if (!Objects.equals(plugin.getKey(), getPluginKey(pluginElement))) {
+                throw new IllegalArgumentException("Unexpected difference of xml and model plugin order");
+            }
 
-        for (Element pluginElement : pluginsElement.getChildren()) {
-            Element pluginGroupIdElement = pluginElement.getChild("groupId");
-            Element pluginArtifactIdElement = pluginElement.getChild("artifactId");
             Element pluginVersionElement = pluginElement.getChild("version");
             if (pluginVersionElement != null) {
-                //  a plugin definition is valid even without groupId specified, therefore groupId element might not be present.
-                String pluginGroupId = pluginGroupIdElement != null ? pluginGroupIdElement.getText() : null;
-                String pluginArtifactId = pluginArtifactIdElement.getText();
-                pluginVersionElement.setText(pluginVersionMap.get(pluginGroupId + ":" + pluginArtifactId));
+                pluginVersionElement.setText(plugin.getVersion());
             }
-        }
+        });
+    }
+
+    private static String getPluginKey(Element element) {
+        Element groupId = element.getChild("groupId");
+        Element artifactId = element.getChild("artifactId");
+        return (groupId != null ? groupId.getText().trim() : "")
+                + ":" + (artifactId != null ? artifactId.getText().trim() : "");
     }
 
     private void updateProfiles(Element projectElement, List<Profile> profiles) {
@@ -962,5 +976,20 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         return value
                 .replace("/", "-")
                 .toLowerCase();
+    }
+
+
+    // ---- utils ------------------------------------------------------------------------------------------------------
+
+    public static <T1, T2> void forEachPair(Collection<T1> collection1, Collection<T2> collection2, BiConsumer<T1, T2> consumer) {
+        if (collection1.size() != collection2.size()) {
+            throw new IllegalArgumentException("Collections sizes are not equals");
+        }
+
+        Iterator<T1> iter1 = collection1.iterator();
+        Iterator<T2> iter2 = collection2.iterator();
+        while (iter1.hasNext() && iter2.hasNext()) {
+            consumer.accept(iter1.next(), iter2.next());
+        }
     }
 }
