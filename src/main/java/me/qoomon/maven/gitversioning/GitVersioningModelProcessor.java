@@ -196,7 +196,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         // add session root project as initial module
         projectModules.add(projectModel.getPomFile());
 
-        formatPlaceholderMap = generateFormatPlaceholderMapFromGit(gitSituation, gitVersionDetails);
+        formatPlaceholderMap = generateFormatPlaceholderMapFromGit(gitSituation, gitVersionDetails, mavenSession);
         gitProjectProperties = generateGitProjectProperties(gitSituation, gitVersionDetails);
 
         logger.info("");
@@ -534,11 +534,10 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         final Map<String, String> placeholderMap = new HashMap<>();
         placeholderMap.putAll(formatPlaceholderMap);
         placeholderMap.putAll(generateFormatPlaceholderMapFromVersion(originalProjectGAV));
-        mavenSession.getUserProperties().forEach((key, value) -> placeholderMap.put((String) key, (String) value));
         return placeholderMap;
     }
 
-    private static Map<String, String> generateFormatPlaceholderMapFromGit(GitSituation gitSituation, GitVersionDetails gitVersionDetails) {
+    private static Map<String, String> generateFormatPlaceholderMapFromGit(GitSituation gitSituation, GitVersionDetails gitVersionDetails, MavenSession mavenSession) {
         final Map<String, String> placeholderMap = new HashMap<>();
 
         String headCommit = gitSituation.getHeadCommit();
@@ -573,6 +572,12 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
         placeholderMap.put("dirty", !gitSituation.isClean() ? "-DIRTY" : "");
         placeholderMap.put("dirty.snapshot", !gitSituation.isClean() ? "-SNAPSHOT" : "");
+
+        // command parameters e.g. mvn -Dfoo=123 will be available as ${foo}
+        mavenSession.getUserProperties().forEach((key, value) -> placeholderMap.put((String) key, (String) value));
+
+        // environment variables e.g. BUILD_NUMBER=123 will be available as ${env.BUILD_NUMBER}
+        System.getenv().forEach((key, value) -> placeholderMap.put("env." + key, (String) value));
 
         return placeholderMap;
     }
