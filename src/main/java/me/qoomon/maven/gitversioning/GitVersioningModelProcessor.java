@@ -92,7 +92,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     private boolean updatePomOption = false;
     private GitVersionDetails gitVersionDetails;
     private Map<String, PropertyDescription> gitVersioningPropertyDescriptionMap;
-    private Map<String, String> formatPlaceholderMap;
+    private Map<String, String> globalFormatPlaceholderMap;
     private Map<String, String> gitProjectProperties;
     private Set<GAV> relatedProjects;
 
@@ -196,7 +196,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         // add session root project as initial module
         projectModules.add(projectModel.getPomFile());
 
-        formatPlaceholderMap = generateFormatPlaceholderMapFromGit(gitSituation, gitVersionDetails, mavenSession);
+        globalFormatPlaceholderMap = generateGlobalFormatPlaceholderMap(gitSituation, gitVersionDetails, mavenSession);
         gitProjectProperties = generateGitProjectProperties(gitSituation, gitVersionDetails);
 
         logger.info("");
@@ -532,12 +532,12 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
     private Map<String, String> generateFormatPlaceholderMap(GAV originalProjectGAV) {
         final Map<String, String> placeholderMap = new HashMap<>();
-        placeholderMap.putAll(formatPlaceholderMap);
+        placeholderMap.putAll(globalFormatPlaceholderMap);
         placeholderMap.putAll(generateFormatPlaceholderMapFromVersion(originalProjectGAV));
         return placeholderMap;
     }
 
-    private static Map<String, String> generateFormatPlaceholderMapFromGit(GitSituation gitSituation, GitVersionDetails gitVersionDetails, MavenSession mavenSession) {
+    private static Map<String, String> generateGlobalFormatPlaceholderMap(GitSituation gitSituation, GitVersionDetails gitVersionDetails, MavenSession mavenSession) {
         final Map<String, String> placeholderMap = new HashMap<>();
 
         String headCommit = gitSituation.getHeadCommit();
@@ -577,7 +577,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         mavenSession.getUserProperties().forEach((key, value) -> placeholderMap.put((String) key, (String) value));
 
         // environment variables e.g. BUILD_NUMBER=123 will be available as ${env.BUILD_NUMBER}
-        System.getenv().forEach((key, value) -> placeholderMap.put("env." + key, (String) value));
+        System.getenv().forEach((key, value) -> placeholderMap.put("env." + key, value));
 
         return placeholderMap;
     }
