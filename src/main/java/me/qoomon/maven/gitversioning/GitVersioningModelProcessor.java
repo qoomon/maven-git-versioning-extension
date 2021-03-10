@@ -942,7 +942,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     private static String getPluginKey(Element element) {
         Element groupId = element.getChild("groupId");
         Element artifactId = element.getChild("artifactId");
-        return (groupId != null ? groupId.getText().trim() : "")
+        return (groupId != null ? groupId.getText().trim() : "org.apache.maven.plugins")
                 + ":" + (artifactId != null ? artifactId.getText().trim() : "");
     }
 
