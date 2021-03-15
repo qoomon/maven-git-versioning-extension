@@ -156,11 +156,11 @@ Create `${rootProjectDir}/.mvn/maven-git-versioning-extension.xml`.
 - `${commit.timestamp.hour}`
     - The `HEAD` commit hour of day (24h)
     - e.g. '01'
-- `${commit.timestamp.minutes}`
-    - The `HEAD` commit minutes of hour
+- `${commit.timestamp.minute}`
+    - The `HEAD` commit minute of hour
     - e.g. '01'
-- `${commit.timestamp.seconds}`
-    - The `HEAD` commit seconds of minute
+- `${commit.timestamp.second}`
+    - The `HEAD` commit second of minute
     - e.g. '01'
 - `${commit.timestamp.datetime}`
     - The `HEAD` commit timestamp formatted as `yyyyMMdd.HHmmss`
