@@ -1,6 +1,8 @@
 package me.qoomon.maven.gitversioning;
 
+import org.apache.maven.model.Build;
 import org.apache.maven.model.Plugin;
+import org.apache.maven.model.PluginExecution;
 import org.apache.maven.model.building.ModelProcessor;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -29,6 +31,10 @@ public class GitVersioningMojo extends AbstractMojo {
     public synchronized void execute() {
         File gitVersionedPomFile = new File(project.getBasedir(), GitVersioningModelProcessor.GIT_VERSIONING_POM_NAME);
         project.setPomFile(gitVersionedPomFile);
+
+        getLog().debug("remove version build plugin");
+        project.getModel().getBuild().getPlugins().remove(asPlugin());
+        project.getOriginalModel().getBuild().getPlugins().remove(asPlugin());
     }
 
     static Plugin asPlugin() {

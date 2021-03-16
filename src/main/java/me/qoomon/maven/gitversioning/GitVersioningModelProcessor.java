@@ -431,6 +431,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         PluginExecution execution = new PluginExecution();
         execution.setId(GOAL);
         execution.getGoals().add(GOAL);
+
         plugin.getExecutions().add(execution);
 
         if (projectModel.getBuild() == null) {
