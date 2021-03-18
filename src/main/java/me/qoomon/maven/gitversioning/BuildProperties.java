@@ -35,4 +35,8 @@ public final class BuildProperties {
     public static String projectVersion() {
         return property("project.version");
     }
+
+    public static GAV projectGAV() {
+        return new GAV(projectGroupId(), projectArtifactId(), projectVersion());
+    }
 }

@@ -3,7 +3,10 @@ package me.qoomon.maven.gitversioning;
 import de.pdark.decentxml.Document;
 import de.pdark.decentxml.XMLParser;
 import de.pdark.decentxml.XMLStringSource;
+import org.apache.maven.model.BuildBase;
 import org.apache.maven.model.Model;
+import org.apache.maven.model.ModelBase;
+import org.apache.maven.model.Profile;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
@@ -69,5 +72,12 @@ final class MavenUtil {
         String pomXml = new String(Files.readAllBytes(file.toPath()));
         XMLParser parser = new XMLParser();
         return parser.parse(new XMLStringSource(pomXml));
+    }
+
+    public static BuildBase getBuild(ModelBase model) {
+        if (model instanceof Profile) {
+            return ((Profile) model).getBuild();
+        }
+        return ((Model) model).getBuild();
     }
 }
