@@ -16,7 +16,7 @@ import org.apache.maven.model.*;
 import org.apache.maven.model.building.DefaultModelProcessor;
 import org.apache.maven.model.building.ModelProcessor;
 import org.apache.maven.session.scope.internal.SessionScope;
-import org.codehaus.plexus.logging.Logger;
+import org.slf4j.Logger;
 
 import javax.enterprise.inject.Typed;
 import javax.inject.Inject;
@@ -49,6 +49,7 @@ import static me.qoomon.maven.gitversioning.MavenUtil.*;
 import static org.apache.maven.shared.utils.StringUtils.leftPad;
 import static org.apache.maven.shared.utils.StringUtils.repeat;
 import static org.apache.maven.shared.utils.logging.MessageUtils.buffer;
+import static org.slf4j.LoggerFactory.getLogger;
 
 // TODO add option to throw an error if git has non clean state
 
@@ -73,15 +74,12 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
     static final String GIT_VERSIONING_POM_NAME = ".git-versioned-pom.xml";
 
-    @Inject
-    private Logger logger;
+    final private Logger logger = getLogger(GitVersioningModelProcessor.class);
 
     @Inject
     private SessionScope sessionScope;
 
-
     private boolean initialized = false;
-
     // --- following fields will be initialized by init() method -------------------------------------------------------
 
     private MavenSession mavenSession; // can't be injected, cause it's not available before model read

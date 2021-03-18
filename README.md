@@ -249,6 +249,9 @@ Create `${rootProjectDir}/.mvn/maven-git-versioning-extension.xml`.
 
 # Miscellaneous Hints
 
+### Enable Debug/Trace Logging for extension
+`mvn ... -Dorg.slf4j.simpleLogger.log.me.qoomon.maven.gitversioning=debug`
+
 ### Commandline To Print Project Version
 `mvn help:evaluate -Dexpression=project.version -q -DforceStdout`
 
