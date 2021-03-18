@@ -39,7 +39,7 @@ class GitVersioningExtensionIT {
     @Test
     void commitVersioning() throws Exception {
         // Given
-        Git.init().setDirectory(projectDir.toFile()).call();
+        Git.init().setInitialBranch("master").setDirectory(projectDir.toFile()).call();
 
         writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
         writeExtensionsFile(projectDir);
@@ -72,7 +72,7 @@ class GitVersioningExtensionIT {
     @Test
     void branchVersioning() throws Exception {
         // Given
-        Git git = Git.init().setDirectory(projectDir.toFile()).call();
+        Git git = Git.init().setInitialBranch("master").setDirectory(projectDir.toFile()).call();
         RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
         String givenBranch = "feature/test";
         git.branchCreate().setName(givenBranch).call();
@@ -133,7 +133,7 @@ class GitVersioningExtensionIT {
     @Test
     void tagVersioning_annotated_detached() throws Exception {
         // Given
-        Git git = Git.init().setDirectory(projectDir.toFile()).call();
+        Git git = Git.init().setInitialBranch("master").setDirectory(projectDir.toFile()).call();
         RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
         String givenTag = "v1";
 
@@ -175,7 +175,7 @@ class GitVersioningExtensionIT {
     @Test
     void tagVersioning_nonAnnotatedTagNotDetached() throws Exception {
         // Given
-        Git git = Git.init().setDirectory(projectDir.toFile()).call();
+        Git git = Git.init().setInitialBranch("master").setDirectory(projectDir.toFile()).call();
         RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
         String givenTag = "v1";
 
@@ -216,7 +216,7 @@ class GitVersioningExtensionIT {
     @Test
     void tagVersioning_cliOption_gitTag() throws Exception {
         // Given
-        Git git = Git.init().setDirectory(projectDir.toFile()).call();
+        Git git = Git.init().setInitialBranch("master").setDirectory(projectDir.toFile()).call();
         RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
         String givenTag = "v1";
 
@@ -254,7 +254,7 @@ class GitVersioningExtensionIT {
     @Test
     void tagVersioning_cliOption_preferTags_true() throws Exception {
         // Given
-        Git git = Git.init().setDirectory(projectDir.toFile()).call();
+        Git git = Git.init().setInitialBranch("master").setDirectory(projectDir.toFile()).call();
         RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
         String givenTag = "v1";
 
@@ -295,7 +295,7 @@ class GitVersioningExtensionIT {
     @Test
     void tagVersioning_cliOption_preferTags_false() throws Exception {
         // Given
-        Git git = Git.init().setDirectory(projectDir.toFile()).call();
+        Git git = Git.init().setInitialBranch("master").setDirectory(projectDir.toFile()).call();
         RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
         String givenTag = "v1";
 
@@ -337,7 +337,7 @@ class GitVersioningExtensionIT {
     @Test
     void tagVersioning_cliOption_conflictingTag() throws Exception {
         // Given
-        Git git = Git.init().setDirectory(projectDir.toFile()).call();
+        Git git = Git.init().setInitialBranch("master").setDirectory(projectDir.toFile()).call();
         RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
         String givenTag = "v1";
 
@@ -377,7 +377,7 @@ class GitVersioningExtensionIT {
     @Test
     void tagVersioning_cliOption_withBranch() throws Exception {
         // Given
-        Git git = Git.init().setDirectory(projectDir.toFile()).call();
+        Git git = Git.init().setInitialBranch("master").setDirectory(projectDir.toFile()).call();
         RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
         String givenTag = "v1";
 
@@ -416,7 +416,7 @@ class GitVersioningExtensionIT {
     @Test
     void commitVersioning_multiModuleProject() throws Exception {
         // Given
-        Git.init().setDirectory(projectDir.toFile()).call();
+        Git.init().setInitialBranch("master").setDirectory(projectDir.toFile()).call();
 
         pomModel.setPackaging("pom");
         pomModel.addModule("api");
@@ -509,7 +509,7 @@ class GitVersioningExtensionIT {
     @Test
     void commitVersioning_multiModuleProject_ambiguous_artifactId() throws Exception {
         // Given
-        Git.init().setDirectory(projectDir.toFile()).call();
+        Git.init().setInitialBranch("master").setDirectory(projectDir.toFile()).call();
 
         pomModel.setPackaging("pom");
         pomModel.addModule("logic");
@@ -590,7 +590,7 @@ class GitVersioningExtensionIT {
     @Test
     void branchVersioning_multiModuleProject_noParent() throws Exception {
         // Given
-        try (Git git = Git.init().setDirectory(projectDir.toFile()).call()) {
+        try (Git git = Git.init().setInitialBranch("master").setDirectory(projectDir.toFile()).call()) {
             RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
             String givenBranch = "feature/test";
             git.branchCreate().setName(givenBranch).call();
@@ -640,7 +640,7 @@ class GitVersioningExtensionIT {
     @Test
     void branchVersioning_multiModuleProject_withExternalParent() throws Exception {
         // Given
-        try (Git git = Git.init().setDirectory(projectDir.toFile()).call()) {
+        try (Git git = Git.init().setInitialBranch("master").setDirectory(projectDir.toFile()).call()) {
             RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
             String givenBranch = "feature/test";
             git.branchCreate().setName(givenBranch).call();
@@ -706,7 +706,7 @@ class GitVersioningExtensionIT {
     @Test
     void branchVersioning_multiModuleProject_withAggregationAndParent() throws Exception {
         // Given
-        try (Git git = Git.init().setDirectory(projectDir.toFile()).call()) {
+        try (Git git = Git.init().setInitialBranch("master").setDirectory(projectDir.toFile()).call()) {
             RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
             String givenBranch = "feature/test";
             git.branchCreate().setName(givenBranch).call();
@@ -775,7 +775,7 @@ class GitVersioningExtensionIT {
     @Test
     void dependencyUpdates_multiModuleProject() throws Exception {
         // Given
-        try (Git git = Git.init().setDirectory(projectDir.toFile()).call()) {
+        try (Git git = Git.init().setInitialBranch("master").setDirectory(projectDir.toFile()).call()) {
             RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
             String givenBranch = "test";
             git.branchCreate().setName(givenBranch).call();

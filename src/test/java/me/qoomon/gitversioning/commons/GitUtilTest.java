@@ -29,7 +29,7 @@ class GitUtilTest {
     void status_clean() throws GitAPIException {
 
         // given
-        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+        Git git = Git.init().setInitialBranch("master").setDirectory(tempDir.toFile()).call();
 
         // when
         Status status = GitUtil.status(git.getRepository());
@@ -42,7 +42,7 @@ class GitUtilTest {
     void status_dirty() throws GitAPIException, IOException {
 
         // given
-        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+        Git git = Git.init().setInitialBranch("master").setDirectory(tempDir.toFile()).call();
 
         boolean dummyFileCreated = new File(tempDir.toFile(), "README.md").createNewFile();
         assertThat(dummyFileCreated).isTrue();
@@ -58,7 +58,7 @@ class GitUtilTest {
     void branch_emptyRepo() throws GitAPIException, IOException {
 
         // given
-        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+        Git git = Git.init().setInitialBranch("master").setDirectory(tempDir.toFile()).call();
 
         // when
         String branch = GitUtil.branch(git.getRepository());
@@ -71,7 +71,7 @@ class GitUtilTest {
     void branch_nonEmptyRepo() throws GitAPIException, IOException {
 
         // given
-        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+        Git git = Git.init().setInitialBranch("master").setDirectory(tempDir.toFile()).call();
         RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
         String givenBranchName = "feature";
         git.branchCreate().setName(givenBranchName).setStartPoint(givenCommit).call();
@@ -88,7 +88,7 @@ class GitUtilTest {
     void tag_pointsAt_emptyRepo() throws GitAPIException, IOException {
 
         // given
-        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+        Git git = Git.init().setInitialBranch("master").setDirectory(tempDir.toFile()).call();
 
         // when
         List<String> tags = GitUtil.tag_pointsAt(git.getRepository(), HEAD);
@@ -101,7 +101,7 @@ class GitUtilTest {
     void tag_pointsAt_noTags() throws GitAPIException, IOException {
 
         // given
-        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+        Git git = Git.init().setInitialBranch("master").setDirectory(tempDir.toFile()).call();
 
         git.commit().setMessage("initial commit").setAllowEmpty(true).call();
 
@@ -116,7 +116,7 @@ class GitUtilTest {
     void tag_pointsAt_oneTag() throws GitAPIException, IOException {
 
         // given
-        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+        Git git = Git.init().setInitialBranch("master").setDirectory(tempDir.toFile()).call();
 
         RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
         String givenTagName = "v1.0.0";
@@ -133,7 +133,7 @@ class GitUtilTest {
     void tag_pointsAt_multipleTags() throws GitAPIException, IOException {
 
         // given
-        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+        Git git = Git.init().setInitialBranch("master").setDirectory(tempDir.toFile()).call();
 
         RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
         String givenTagName1 = "111";
@@ -154,7 +154,7 @@ class GitUtilTest {
     void tag_pointsAt_lightweightTag() throws GitAPIException, IOException {
 
         // given
-        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+        Git git = Git.init().setInitialBranch("master").setDirectory(tempDir.toFile()).call();
 
         RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
 
@@ -172,7 +172,7 @@ class GitUtilTest {
     void revParse_emptyRepo() throws GitAPIException, IOException {
 
         // given
-        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+        Git git = Git.init().setInitialBranch("master").setDirectory(tempDir.toFile()).call();
 
         // when
         String ref = GitUtil.revParse(git.getRepository(), HEAD);
@@ -185,7 +185,7 @@ class GitUtilTest {
     void revParse_nonEmptyRepo() throws GitAPIException, IOException {
 
         // given
-        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+        Git git = Git.init().setInitialBranch("master").setDirectory(tempDir.toFile()).call();
 
         RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
 
@@ -200,7 +200,7 @@ class GitUtilTest {
     void headSituation_emptyRepo() throws GitAPIException, IOException {
 
         // Given
-        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+        Git git = Git.init().setInitialBranch("master").setDirectory(tempDir.toFile()).call();
 
         // When
         GitSituation gitSituation = GitUtil.situation(git.getRepository().getDirectory());
@@ -218,7 +218,7 @@ class GitUtilTest {
     void headSituation_onBranch() throws GitAPIException, IOException {
 
         // Given
-        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+        Git git = Git.init().setInitialBranch("master").setDirectory(tempDir.toFile()).call();
         RevCommit givenCommit = git.commit().setMessage("init").setAllowEmpty(true).call();
 
         // When
@@ -237,7 +237,7 @@ class GitUtilTest {
     void headSituation_onBranchWithTag() throws GitAPIException, IOException {
 
         // Given
-        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+        Git git = Git.init().setInitialBranch("master").setInitialBranch("master").setDirectory(tempDir.toFile()).call();
         RevCommit givenCommit = git.commit().setMessage("init").setAllowEmpty(true).call();
         String givenTag = "v1";
         git.tag().setName(givenTag).setObjectId(givenCommit).call();
@@ -258,7 +258,7 @@ class GitUtilTest {
     void headSituation_detachedHead() throws GitAPIException, IOException {
 
         // Given
-        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+        Git git = Git.init().setInitialBranch("master").setDirectory(tempDir.toFile()).call();
         RevCommit givenCommit = git.commit().setMessage("init").setAllowEmpty(true).call();
         git.checkout().setName(givenCommit.getName()).call();
 
@@ -278,7 +278,7 @@ class GitUtilTest {
     void headSituation_detachedHeadWithTag() throws GitAPIException, IOException {
 
         // Given
-        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+        Git git = Git.init().setInitialBranch("master").setDirectory(tempDir.toFile()).call();
         RevCommit givenCommit = git.commit().setMessage("init").setAllowEmpty(true).call();
         String givenTag = "v1";
         git.tag().setName(givenTag).setObjectId(givenCommit).call();
@@ -300,7 +300,7 @@ class GitUtilTest {
     void situation_annotatedTagOnMaster() throws Exception, IOException {
 
         // Given
-        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+        Git git = Git.init().setInitialBranch("master").setDirectory(tempDir.toFile()).call();
         RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
 
         String givenTag = "v1";
@@ -322,7 +322,7 @@ class GitUtilTest {
     void situation_annotatedTagDetached() throws Exception {
 
         // Given
-        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+        Git git = Git.init().setInitialBranch("master").setDirectory(tempDir.toFile()).call();
         RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
 
         String givenTag = "v1";
@@ -345,7 +345,7 @@ class GitUtilTest {
     void situation_lightweightTagOnMaster() throws Exception {
 
         // Given
-        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+        Git git = Git.init().setInitialBranch("master").setDirectory(tempDir.toFile()).call();
         RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
 
         String givenTag = "v1";
@@ -367,7 +367,7 @@ class GitUtilTest {
     void situation_lightweightTagDetached() throws Exception {
 
         // Given
-        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+        Git git = Git.init().setInitialBranch("master").setDirectory(tempDir.toFile()).call();
         RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
 
         String givenTag = "v1";
@@ -390,7 +390,7 @@ class GitUtilTest {
     void situation_multipleTags() throws Exception {
 
         // Given
-        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+        Git git = Git.init().setInitialBranch("master").setDirectory(tempDir.toFile()).call();
         git.commit().setMessage("initial commit").setAllowEmpty(true).call();
 
         String givenTag1 = "v2";
