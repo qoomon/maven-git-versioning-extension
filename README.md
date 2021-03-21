@@ -18,7 +18,7 @@ This extension can virtually set project version and properties, based on curren
     * managing project versions with within files and Git tags.
     * Git merge conflicts.
 * Highly customizable configuration, see example below.
-![Example](doc/MavenGitVersioningExtension.png)
+![Example](docs/MavenGitVersioningExtension.png)
 
 ## Usage
 
