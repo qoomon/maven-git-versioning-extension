@@ -4,6 +4,14 @@
 
 # Changelog
 
+## 6.4.0
+* **Features**
+  * Improved Logging
+  
+## 6.3.0
+* **Features**
+  * Add support for environment variables in version formats e.g. `${env.BUILD_NUMBER}`
+
 ## 6.2.0
 * **Features**
   * add ability to define default or overwrite values for version and property format.
