@@ -13,8 +13,8 @@ class ConfigurationTest {
     @Test
     void xmlUnmarshaller_empty() throws IOException {
         // given
-        String configXml =   "<gitVersioning>\n" +
-                "</gitVersioning>\n";
+        String configXml =   "<configuration>\n" +
+                "</configuration>\n";
 
         // when
         Configuration config = new XmlMapper()
@@ -33,11 +33,11 @@ class ConfigurationTest {
     void xmlUnmarshaller_commitConfigOnly() throws IOException {
         // given
         String configXml = "" +
-                "<gitVersioning>\n" +
+                "<configuration>\n" +
                 "    <commit>\n" +
                 "        <versionFormat>commit1-format</versionFormat>\n" +
                 "    </commit>\n" +
-                "</gitVersioning>\n";
+                "</configuration>\n";
 
         // when
         Configuration config = new XmlMapper()
@@ -56,7 +56,7 @@ class ConfigurationTest {
     void xmlUnmarshaller_branchConfigsOnly() throws IOException {
         // given
         String configXml = "" +
-                "<gitVersioning>\n" +
+                "<configuration>\n" +
                 "    <branch>\n" +
                 "        <pattern>branch1-pattern</pattern>\n" +
                 "        <versionFormat>branch1-format</versionFormat>\n" +
@@ -65,7 +65,7 @@ class ConfigurationTest {
                 "        <pattern>branch2-pattern</pattern>\n" +
                 "        <versionFormat>branch2-format</versionFormat>\n" +
                 "    </branch>\n" +
-                "</gitVersioning>\n";
+                "</configuration>\n";
 
         // when
         Configuration config = new XmlMapper()
@@ -94,7 +94,7 @@ class ConfigurationTest {
     void xmlUnmarshaller_branchConfigsOnlyWithProperties() throws IOException {
         // given
         String configXml = "" +
-                "<gitVersioning>\n" +
+                "<configuration>\n" +
                 "    <branch>\n" +
                 "        <pattern>branch1-pattern</pattern>\n" +
                 "        <versionFormat>branch1-format</versionFormat>\n" +
@@ -115,7 +115,7 @@ class ConfigurationTest {
                 "            <valueFormat>my.second.property.format</valueFormat>\n" +
                 "        </property>\n" +
                 "    </branch>\n" +
-                "</gitVersioning>\n";
+                "</configuration>\n";
 
         // when
         Configuration config = new XmlMapper()
@@ -158,7 +158,7 @@ class ConfigurationTest {
     void xmlUnmarshaller_tagsConfigsOnly() throws IOException {
         // given
         String configXml = "" +
-                "<gitVersioning>\n" +
+                "<configuration>\n" +
                 "    <tag>\n" +
                 "        <pattern>tag1-pattern</pattern>\n" +
                 "        <versionFormat>tag1-format</versionFormat>\n" +
@@ -167,7 +167,7 @@ class ConfigurationTest {
                 "        <pattern>tag2-pattern</pattern>\n" +
                 "        <versionFormat>tag2-format</versionFormat>\n" +
                 "    </tag>\n" +
-                "</gitVersioning>\n";
+                "</configuration>\n";
 
         // when
         Configuration config = new XmlMapper()
@@ -196,7 +196,7 @@ class ConfigurationTest {
     void xmlUnmarshaller() throws IOException {
         // given
         String configXml = "" +
-                "<gitVersioning>\n" +
+                "<configuration>\n" +
                 "    <preferTags>true</preferTags>\n" +
                 "    <commit>\n" +
                 "        <versionFormat>commit1-format</versionFormat>\n" +
@@ -217,7 +217,7 @@ class ConfigurationTest {
                 "        <pattern>tag2-pattern</pattern>\n" +
                 "        <versionFormat>tag2-format</versionFormat>\n" +
                 "    </tag>\n" +
-                "</gitVersioning>\n";
+                "</configuration>\n";
 
         // when
         Configuration config = new XmlMapper()

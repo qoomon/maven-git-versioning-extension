@@ -1,0 +1,136 @@
+<?xml version="1.1" encoding="UTF-8" ?>
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="https://github.com/qoomon/maven-git-versioning-extension"
+           xmlns="https://github.com/qoomon/maven-git-versioning-extension"
+           elementFormDefault="qualified">
+    <xs:element name="configuration">
+        <xs:complexType>
+            <xs:all>
+                <xs:element name="disable" type="xs:boolean" minOccurs="0"/>
+                <xs:element name="updatePom" type="xs:boolean" minOccurs="0"/>
+                <xs:element name="preferTags" type="xs:boolean" minOccurs="0"/>
+
+                <!-- repeat "branch" element to simulate maxOccurs="unbounded" -->
+                <xs:element name="branch" type="refDescription" minOccurs="0"/>
+                <xs:element name="branch" type="refDescription" minOccurs="0"/>
+                <xs:element name="branch" type="refDescription" minOccurs="0"/>
+                <xs:element name="branch" type="refDescription" minOccurs="0"/>
+                <xs:element name="branch" type="refDescription" minOccurs="0"/>
+                <xs:element name="branch" type="refDescription" minOccurs="0"/>
+                <xs:element name="branch" type="refDescription" minOccurs="0"/>
+                <xs:element name="branch" type="refDescription" minOccurs="0"/>
+                <xs:element name="branch" type="refDescription" minOccurs="0"/>
+                <xs:element name="branch" type="refDescription" minOccurs="0"/>
+                <xs:element name="branch" type="refDescription" minOccurs="0"/>
+                <xs:element name="branch" type="refDescription" minOccurs="0"/>
+                <xs:element name="branch" type="refDescription" minOccurs="0"/>
+                <xs:element name="branch" type="refDescription" minOccurs="0"/>
+                <xs:element name="branch" type="refDescription" minOccurs="0"/>
+                <xs:element name="branch" type="refDescription" minOccurs="0"/>
+                <xs:element name="branch" type="refDescription" minOccurs="0"/>
+                <xs:element name="branch" type="refDescription" minOccurs="0"/>
+                <xs:element name="branch" type="refDescription" minOccurs="0"/>
+                <xs:element name="branch" type="refDescription" minOccurs="0"/>
+                <xs:element name="branch" type="refDescription" minOccurs="0"/>
+                <xs:element name="branch" type="refDescription" minOccurs="0"/>
+                <xs:element name="branch" type="refDescription" minOccurs="0"/>
+                <xs:element name="branch" type="refDescription" minOccurs="0"/>
+                <xs:element name="branch" type="refDescription" minOccurs="0"/>
+                <xs:element name="branch" type="refDescription" minOccurs="0"/>
+                <xs:element name="branch" type="refDescription" minOccurs="0"/>
+                <xs:element name="branch" type="refDescription" minOccurs="0"/>
+                <xs:element name="branch" type="refDescription" minOccurs="0"/>
+                <xs:element name="branch" type="refDescription" minOccurs="0"/>
+                <xs:element name="branch" type="refDescription" minOccurs="0"/>
+                <xs:element name="branch" type="refDescription" minOccurs="0"/>
+
+                <!-- repeat "tag" element to simulate maxOccurs="unbounded" -->
+                <xs:element name="tag" type="refDescription" minOccurs="0"/>
+                <xs:element name="tag" type="refDescription" minOccurs="0"/>
+                <xs:element name="tag" type="refDescription" minOccurs="0"/>
+                <xs:element name="tag" type="refDescription" minOccurs="0"/>
+                <xs:element name="tag" type="refDescription" minOccurs="0"/>
+                <xs:element name="tag" type="refDescription" minOccurs="0"/>
+                <xs:element name="tag" type="refDescription" minOccurs="0"/>
+                <xs:element name="tag" type="refDescription" minOccurs="0"/>
+                <xs:element name="tag" type="refDescription" minOccurs="0"/>
+                <xs:element name="tag" type="refDescription" minOccurs="0"/>
+                <xs:element name="tag" type="refDescription" minOccurs="0"/>
+                <xs:element name="tag" type="refDescription" minOccurs="0"/>
+                <xs:element name="tag" type="refDescription" minOccurs="0"/>
+                <xs:element name="tag" type="refDescription" minOccurs="0"/>
+                <xs:element name="tag" type="refDescription" minOccurs="0"/>
+                <xs:element name="tag" type="refDescription" minOccurs="0"/>
+                <xs:element name="tag" type="refDescription" minOccurs="0"/>
+                <xs:element name="tag" type="refDescription" minOccurs="0"/>
+                <xs:element name="tag" type="refDescription" minOccurs="0"/>
+                <xs:element name="tag" type="refDescription" minOccurs="0"/>
+                <xs:element name="tag" type="refDescription" minOccurs="0"/>
+                <xs:element name="tag" type="refDescription" minOccurs="0"/>
+                <xs:element name="tag" type="refDescription" minOccurs="0"/>
+                <xs:element name="tag" type="refDescription" minOccurs="0"/>
+                <xs:element name="tag" type="refDescription" minOccurs="0"/>
+                <xs:element name="tag" type="refDescription" minOccurs="0"/>
+                <xs:element name="tag" type="refDescription" minOccurs="0"/>
+                <xs:element name="tag" type="refDescription" minOccurs="0"/>
+                <xs:element name="tag" type="refDescription" minOccurs="0"/>
+                <xs:element name="tag" type="refDescription" minOccurs="0"/>
+                <xs:element name="tag" type="refDescription" minOccurs="0"/>
+                <xs:element name="tag" type="refDescription" minOccurs="0"/>
+
+                <xs:element name="commit" type="refDescription" minOccurs="0"/>
+            </xs:all>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:complexType name="refDescription">
+        <xs:all>
+            <xs:element name="pattern" type="xs:string" minOccurs="0"/>
+            <xs:element name="versionFormat" type="xs:string"/>
+
+            <xs:element name="updatePom" type="xs:boolean" minOccurs="0"/>
+
+            <!-- repeat "property" element to simulate maxOccurs="unbounded" -->
+            <xs:element name="property" type="propertyDescription" minOccurs="0"/>
+            <xs:element name="property" type="propertyDescription" minOccurs="0"/>
+            <xs:element name="property" type="propertyDescription" minOccurs="0"/>
+            <xs:element name="property" type="propertyDescription" minOccurs="0"/>
+            <xs:element name="property" type="propertyDescription" minOccurs="0"/>
+            <xs:element name="property" type="propertyDescription" minOccurs="0"/>
+            <xs:element name="property" type="propertyDescription" minOccurs="0"/>
+            <xs:element name="property" type="propertyDescription" minOccurs="0"/>
+            <xs:element name="property" type="propertyDescription" minOccurs="0"/>
+            <xs:element name="property" type="propertyDescription" minOccurs="0"/>
+            <xs:element name="property" type="propertyDescription" minOccurs="0"/>
+            <xs:element name="property" type="propertyDescription" minOccurs="0"/>
+            <xs:element name="property" type="propertyDescription" minOccurs="0"/>
+            <xs:element name="property" type="propertyDescription" minOccurs="0"/>
+            <xs:element name="property" type="propertyDescription" minOccurs="0"/>
+            <xs:element name="property" type="propertyDescription" minOccurs="0"/>
+            <xs:element name="property" type="propertyDescription" minOccurs="0"/>
+            <xs:element name="property" type="propertyDescription" minOccurs="0"/>
+            <xs:element name="property" type="propertyDescription" minOccurs="0"/>
+            <xs:element name="property" type="propertyDescription" minOccurs="0"/>
+            <xs:element name="property" type="propertyDescription" minOccurs="0"/>
+            <xs:element name="property" type="propertyDescription" minOccurs="0"/>
+            <xs:element name="property" type="propertyDescription" minOccurs="0"/>
+            <xs:element name="property" type="propertyDescription" minOccurs="0"/>
+            <xs:element name="property" type="propertyDescription" minOccurs="0"/>
+            <xs:element name="property" type="propertyDescription" minOccurs="0"/>
+            <xs:element name="property" type="propertyDescription" minOccurs="0"/>
+            <xs:element name="property" type="propertyDescription" minOccurs="0"/>
+            <xs:element name="property" type="propertyDescription" minOccurs="0"/>
+            <xs:element name="property" type="propertyDescription" minOccurs="0"/>
+            <xs:element name="property" type="propertyDescription" minOccurs="0"/>
+            <xs:element name="property" type="propertyDescription" minOccurs="0"/>
+        </xs:all>
+    </xs:complexType>
+
+    <xs:complexType name="propertyDescription">
+        <xs:all>
+            <xs:element name="name" type="xs:string"/>
+            <xs:element name="valueFormat" type="xs:string"/>
+        </xs:all>
+    </xs:complexType>
+</xs:schema>

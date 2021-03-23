@@ -52,7 +52,8 @@ Create `${rootProjectDir}/.mvn/maven-git-versioning-extension.xml`.
 **Example:** `maven-git-versioning-extension.xml`
 
 ```xml
-<gitVersioning>
+<configuration xmlns="https://github.com/qoomon/maven-git-versioning-extension" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="https://github.com/qoomon/maven-git-versioning-extension https://qoomon.github.io/maven-git-versioning-extension/configuration-6.4.0.xsd">
     <branch>
         <pattern>main</pattern>
         <versionFormat>${version}</versionFormat>
@@ -65,7 +66,7 @@ Create `${rootProjectDir}/.mvn/maven-git-versioning-extension.xml`.
         <pattern>v([0-9].*)></pattern>
         <versionFormat>${1}</versionFormat>
     </tag>
-</gitVersioning>
+</configuration>
 ```
 
 - *optional* `<disable>` global disable(`true`)/enable(`false`) extension.

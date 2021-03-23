@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JacksonXmlRootElement(localName = "gitVersioning")
+@JacksonXmlRootElement(localName = "configuration")
 public class Configuration {
 
     public Boolean disable;

@@ -1,4 +1,4 @@
-<gitVersioning>
+<configuration>
     <branch>
         <pattern>master</pattern>
         <versionFormat>${version.release}</versionFormat>
@@ -15,4 +15,4 @@
         <pattern>v([0-9].*)</pattern>
         <versionFormat>${1}</versionFormat>
     </tag>
-</gitVersioning>
+</configuration>
