@@ -1,9 +1,6 @@
 package me.qoomon.maven.gitversioning;
 
-import org.apache.maven.model.Dependency;
-import org.apache.maven.model.Model;
-import org.apache.maven.model.Parent;
-import org.apache.maven.model.Plugin;
+import org.apache.maven.model.*;
 
 import java.util.Objects;
 
@@ -102,6 +99,15 @@ public class GAV {
     }
 
     public static GAV of(Plugin plugin) {
+
+        String groupId = plugin.getGroupId();
+        String artifactId = plugin.getArtifactId();
+        String version = plugin.getVersion();
+
+        return new GAV(groupId, artifactId, version);
+    }
+
+    public static GAV of(ReportPlugin plugin) {
 
         String groupId = plugin.getGroupId();
         String artifactId = plugin.getArtifactId();

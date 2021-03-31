@@ -365,6 +365,18 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                 }
             }
         }
+
+        // reporting section
+        Reporting reporting = model.getReporting();
+        if (reporting != null) {
+            List<ReportPlugin> relatedPlugins = filterRelatedReportPlugins(reporting.getPlugins());
+            if (!relatedPlugins.isEmpty()) {
+                logger.debug(buffer().strong("reporting plugins:").toString());
+                for (ReportPlugin plugin : relatedPlugins) {
+                    updateVersion(plugin);
+                }
+            }
+        }
     }
 
     private void updateVersion(Plugin plugin) {
@@ -376,7 +388,22 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         }
     }
 
-    public List<Plugin> filterRelatedPlugins(List<Plugin> plugins) {
+    private void updateVersion(ReportPlugin plugin) {
+        if (plugin.getVersion() != null) {
+            GAV pluginGAV = GAV.of(plugin);
+            String gitVersion = getGitVersion(pluginGAV);
+            logger.debug(pluginGAV.getProjectId() + ": set version to " + gitVersion);
+            plugin.setVersion(gitVersion);
+        }
+    }
+
+    private List<Plugin> filterRelatedPlugins(List<Plugin> plugins) {
+        return plugins.stream()
+                .filter(it -> relatedProjects.contains(GAV.of(it)))
+                .collect(toList());
+    }
+
+    private List<ReportPlugin> filterRelatedReportPlugins(List<ReportPlugin> plugins) {
         return plugins.stream()
                 .filter(it -> relatedProjects.contains(GAV.of(it)))
                 .collect(toList());
@@ -825,7 +852,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         updateVersion(projectElement, projectModel);
         updatePropertyValues(projectElement, projectModel);
         updateDependencyVersions(projectElement, projectModel);
-        updatePluginVersions(projectElement, projectModel.getBuild());
+        updatePluginVersions(projectElement, projectModel.getBuild(), projectModel.getReporting());
 
         updateProfiles(projectElement, projectModel.getProfiles());
 
@@ -911,7 +938,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                 + (classifier != null ? ":" + classifier.getText().trim() : "");
     }
 
-    private static void updatePluginVersions(Element projectElement, BuildBase build) {
+    private static void updatePluginVersions(Element projectElement, BuildBase build, Reporting reporting) {
         // build section
         Element buildElement = projectElement.getChild("build");
         if (buildElement != null) {
@@ -931,9 +958,34 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                 }
             }
         }
+
+        Element reportingElement = projectElement.getChild("reporting");
+        if (reportingElement != null) {
+            // plugins section
+            {
+                Element pluginsElement = reportingElement.getChild("plugins");
+                if (pluginsElement != null) {
+                    updateReportPluginVersions(pluginsElement, reporting.getPlugins());
+                }
+            }
+        }
     }
 
     private static void updatePluginVersions(Element pluginsElement, List<Plugin> plugins) {
+        forEachPair(pluginsElement.getChildren(), plugins, (pluginElement, plugin) -> {
+            // sanity check
+            if (!Objects.equals(plugin.getKey(), getPluginKey(pluginElement))) {
+                throw new IllegalArgumentException("Unexpected difference of xml and model plugin order");
+            }
+
+            Element pluginVersionElement = pluginElement.getChild("version");
+            if (pluginVersionElement != null) {
+                pluginVersionElement.setText(plugin.getVersion());
+            }
+        });
+    }
+
+    private static void updateReportPluginVersions(Element pluginsElement, List<ReportPlugin> plugins) {
         forEachPair(pluginsElement.getChildren(), plugins, (pluginElement, plugin) -> {
             // sanity check
             if (!Objects.equals(plugin.getKey(), getPluginKey(pluginElement))) {
@@ -963,7 +1015,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                 Profile profile = profileMap.get(profileElement.getChild("id").getText());
                 updatePropertyValues(profileElement, profile);
                 updateDependencyVersions(profileElement, profile);
-                updatePluginVersions(profileElement, profile.getBuild());
+                updatePluginVersions(profileElement, profile.getBuild(), profile.getReporting());
             }
         }
     }
