@@ -4,6 +4,10 @@
 
 # Changelog
 
+## 6.4.1
+* **Fixes**
+  * Handle xsi:schemaLocation property in configuration file
+  
 ## 6.4.0
 * **Features**
   * Improved Logging
