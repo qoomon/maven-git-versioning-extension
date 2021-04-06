@@ -1,119 +1,125 @@
 package me.qoomon.gitversioning.commons;
 
+import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.Ref;
+import org.eclipse.jgit.lib.Repository;
 
 import java.io.File;
-import java.time.Instant;
+import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
+import java.util.regex.Pattern;
 
+import static java.time.Instant.EPOCH;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
+import static me.qoomon.gitversioning.commons.GitUtil.NO_COMMIT;
+import static org.eclipse.jgit.lib.Constants.HEAD;
+
 
 public class GitSituation {
 
-    public static String NO_COMMIT = "0000000000000000000000000000000000000000";
-
+    private final Repository repository;
     private final File rootDirectory;
-    private final String headCommit;
-    private final long headCommitTimestamp;
-    private final String headBranch;
-    private final List<String> headTags;
-    private final boolean clean;
 
-    public GitSituation(File rootDirectory, String headCommit, long headCommitTimestamp, String headBranch, List<String> headTags, boolean clean) {
-        this.rootDirectory = requireNonNull(rootDirectory);
-        this.headCommit = requireNonNull(headCommit);
-        this.headCommitTimestamp = headCommitTimestamp;
-        this.headBranch = headBranch;
-        this.headTags = requireNonNull(headTags);
-        this.clean = clean;
+    private final ObjectId head;
+    private final String hash;
+    private final Supplier<ZonedDateTime> timestamp = Lazy.by(this::timestamp);
+    private Supplier<String> branch = Lazy.by(this::branch);
+
+    private final Supplier<Map<ObjectId, List<Ref>>> reverseTagRefMap = Lazy.by(this::reverseTagRefMap);
+    private Supplier<List<String>> tags = Lazy.by(this::tags);
+
+    private final Supplier<Boolean> clean = Lazy.by(this::clean);
+
+    private Pattern describeTagPattern = Pattern.compile(".*");
+    private Supplier<GitDescription> description = Lazy.by(this::describe);
+
+    public GitSituation(Repository repository) throws IOException {
+        this.repository = repository;
+        this.rootDirectory = repository.getWorkTree();
+        this.head = repository.resolve(HEAD);
+        this.hash = head != null ? head.getName() : NO_COMMIT;
     }
+
 
     public File getRootDirectory() {
         return rootDirectory;
     }
 
-    public String getHeadCommit() {
-        return headCommit;
+    public String getHash() {
+        return hash;
     }
 
-    public long getHeadCommitTimestamp() {
-        return headCommitTimestamp;
+    public ZonedDateTime getTimestamp() {
+        return timestamp.get();
     }
 
-    public ZonedDateTime getHeadCommitDateTime() {
-        Instant headCommitTimestamp = Instant.ofEpochSecond(getHeadCommitTimestamp());
-        return ZonedDateTime.ofInstant(headCommitTimestamp, UTC);
+    public String getBranch() {
+        return branch.get();
     }
 
-    public String getHeadBranch() {
-        return headBranch;
-    }
-
-    public List<String> getHeadTags() {
-        return headTags;
-    }
-
-    public boolean isClean() {
-        return clean;
+    public void setBranch(String branch) {
+        this.branch = () -> branch;
     }
 
     public boolean isDetached() {
-        return headBranch == null;
+        return branch.get() == null;
     }
 
-    public static class Builder {
-        private File rootDirectory;
-        private String headCommit = NO_COMMIT;
-        private long headCommitTimestamp = 0;
-        private String headBranch = null;
-        private List<String> headTags = emptyList();
-        private boolean clean = true;
+    public List<String> getTags() {
+        return tags.get();
+    }
 
+    public void setTags(List<String> tags) {
+        this.tags = () -> requireNonNull(tags);
+    }
 
-        public Builder setRootDirectory(File rootDirectory) {
-            this.rootDirectory = rootDirectory;
-            return this;
-        }
+    public boolean isClean() {
+        return clean.get();
+    }
 
-        public Builder setHeadCommit(String headCommit) {
-            this.headCommit = headCommit;
-            return this;
-        }
+    public void setDescribeTagPattern(Pattern describeTagPattern) {
+        this.describeTagPattern = requireNonNull(describeTagPattern);
+        this.description = Lazy.by(this::describe);
+    }
 
-        public Builder setHeadCommitTimestamp(long headCommitTimestamp) {
-            this.headCommitTimestamp = headCommitTimestamp;
-            return this;
-        }
+    public Pattern getDescribeTagPattern() {
+        return describeTagPattern;
+    }
 
-        public Builder setHeadBranch(String headBranch) {
-            this.headBranch = headBranch;
-            return this;
-        }
+    public GitDescription getDescription() {
+        return description.get();
+    }
 
-        public Builder setHeadTags(List<String> headTags) {
-            this.headTags = headTags;
-            return this;
-        }
+    // ----- initialization methods ------------------------------------------------------------------------------------
 
-        public Builder setClean(boolean clean) {
-            this.clean = clean;
-            return this;
-        }
+    private ZonedDateTime timestamp() throws IOException {
+        return head != null
+                ? GitUtil.revTimestamp(repository, head)
+                : ZonedDateTime.ofInstant(EPOCH, UTC);
+    }
 
-        public GitSituation build() {
-            return new GitSituation(rootDirectory, headCommit, headCommitTimestamp, headBranch, headTags, clean);
-        }
+    private String branch() throws IOException {
+        return GitUtil.branch(repository);
+    }
 
-        public static Builder of(GitSituation gitSituation) {
-            return new Builder()
-                    .setRootDirectory(gitSituation.rootDirectory)
-                    .setClean(gitSituation.clean)
-                    .setHeadCommit(gitSituation.headCommit)
-                    .setHeadCommitTimestamp(gitSituation.headCommitTimestamp)
-                    .setHeadBranch(gitSituation.headBranch)
-                    .setHeadTags(gitSituation.headTags);
-        }
+    private List<String> tags() {
+        return head != null ? GitUtil.tagsPointAt(repository, head, reverseTagRefMap.get()) : emptyList();
+    }
+
+    private boolean clean() {
+        return GitUtil.status(repository).isClean();
+    }
+
+    private GitDescription describe() throws IOException {
+        return GitUtil.describe(repository, head, describeTagPattern, reverseTagRefMap.get());
+    }
+
+    private Map<ObjectId, List<Ref>> reverseTagRefMap() throws IOException {
+        return GitUtil.reverseTagRefMap(repository);
     }
 }

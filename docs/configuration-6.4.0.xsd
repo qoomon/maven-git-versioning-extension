@@ -8,8 +8,10 @@
         <xs:complexType>
             <xs:all>
                 <xs:element name="disable" type="xs:boolean" minOccurs="0"/>
-                <xs:element name="updatePom" type="xs:boolean" minOccurs="0"/>
                 <xs:element name="preferTags" type="xs:boolean" minOccurs="0"/>
+                <xs:element name="describeTagPattern" type="xs:string" minOccurs="0"/>
+
+                <xs:element name="updatePom" type="xs:boolean" minOccurs="0"/>
 
                 <!-- repeat "branch" element to simulate maxOccurs="unbounded" -->
                 <xs:element name="branch" type="refDescription" minOccurs="0"/>
@@ -87,6 +89,7 @@
     <xs:complexType name="refDescription">
         <xs:all>
             <xs:element name="pattern" type="xs:string" minOccurs="0"/>
+            <xs:element name="describeTagPattern" type="xs:string" minOccurs="0"/>
             <xs:element name="versionFormat" type="xs:string"/>
 
             <xs:element name="updatePom" type="xs:boolean" minOccurs="0"/>

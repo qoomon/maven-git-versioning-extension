@@ -2,9 +2,9 @@ package me.qoomon.gitversioning.commons;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -16,8 +16,8 @@ class StringUtilTest {
     void substituteText() {
         // Given
         String givenText = "${type}tale";
-        Map<String, String> givenSubstitutionMap = new HashMap<>();
-        givenSubstitutionMap.put("type", "fairy");
+        Map<String, Supplier<String>> givenSubstitutionMap = new HashMap<>();
+        givenSubstitutionMap.put("type", () -> "fairy");
 
         // When
         String outputText = StringUtil.substituteText(givenText, givenSubstitutionMap);
@@ -31,7 +31,7 @@ class StringUtilTest {
 
         // Given
         String givenText = "${missing}tale";
-        Map<String, String> givenSubstitutionMap = new HashMap<>();
+        Map<String, Supplier<String>> givenSubstitutionMap = new HashMap<>();
 
         // When
         String outputText = StringUtil.substituteText(givenText, givenSubstitutionMap);
@@ -45,8 +45,8 @@ class StringUtilTest {
 
         // Given
         String givenText = "${version}";
-        Map<String, String> givenSubstitutionMap = new HashMap<>();
-        givenSubstitutionMap.put("version", "${something}");
+        Map<String, Supplier<String>> givenSubstitutionMap = new HashMap<>();
+        givenSubstitutionMap.put("version", () -> "${something}");
 
         // When
         String outputText = StringUtil.substituteText(givenText, givenSubstitutionMap);
@@ -60,7 +60,7 @@ class StringUtilTest {
 
         // Given
         String givenText = "${foo:-xxx}";
-        Map<String, String> givenSubstitutionMap = emptyMap();
+        Map<String, Supplier<String>> givenSubstitutionMap = emptyMap();
 
         // When
         String outputText = StringUtil.substituteText(givenText, givenSubstitutionMap);
@@ -74,8 +74,8 @@ class StringUtilTest {
 
         // Given
         String givenText = "${foo:+xxx}";
-        Map<String, String> givenSubstitutionMap = new HashMap<>();
-        givenSubstitutionMap.put("foo", "aaa");
+        Map<String, Supplier<String>> givenSubstitutionMap = new HashMap<>();
+        givenSubstitutionMap.put("foo", () -> "aaa");
 
         // When
         String outputText = StringUtil.substituteText(givenText, givenSubstitutionMap);
@@ -93,7 +93,7 @@ class StringUtilTest {
         String givenText = "one two three";
 
         // When
-        Map<String, String> valueMap = StringUtil.valueGroupMap(givenText, givenRegex);
+        Map<String, String> valueMap = StringUtil.patternGroupValues(givenText, givenRegex);
 
         // Then
         assertThat(valueMap).contains(entry("1", "one"), entry("2", "two"), entry("3", "three"));
@@ -107,7 +107,7 @@ class StringUtilTest {
         String givenText = "one two three";
 
         // When
-        Map<String, String> valueMap = StringUtil.valueGroupMap(givenText, givenRegex);
+        Map<String, String> valueMap = StringUtil.patternGroupValues(givenText, givenRegex);
 
         // Then
         assertThat(valueMap).contains(entry("1", "one"), entry("2", "two three"), entry("3", "three"));
@@ -121,7 +121,7 @@ class StringUtilTest {
         String givenText = "one two three";
 
         // When
-        Map<String, String> valueMap = StringUtil.valueGroupMap(givenText, givenRegex);
+        Map<String, String> valueMap = StringUtil.patternGroupValues(givenText, givenRegex);
 
         // Then
         assertThat(valueMap).contains(entry("1", "one"), entry("2", "two"), entry("3", "three"));
@@ -136,7 +136,7 @@ class StringUtilTest {
         String givenText = "one two three";
 
         // When
-        Map<String, String> valueMap = StringUtil.valueGroupMap(givenText, givenRegex);
+        Map<String, String> valueMap = StringUtil.patternGroupValues(givenText, givenRegex);
 
         // Then
         assertThat(valueMap).contains(entry("1", "one"), entry("2", "two three"), entry("3", "three"));

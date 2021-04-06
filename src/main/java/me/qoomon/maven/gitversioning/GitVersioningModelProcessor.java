@@ -5,8 +5,9 @@ import com.google.inject.Key;
 import com.google.inject.OutOfScopeException;
 import de.pdark.decentxml.Document;
 import de.pdark.decentxml.Element;
+import me.qoomon.gitversioning.commons.GitDescription;
 import me.qoomon.gitversioning.commons.GitSituation;
-import me.qoomon.gitversioning.commons.GitUtil;
+import me.qoomon.gitversioning.commons.Lazy;
 import me.qoomon.maven.gitversioning.Configuration.PropertyDescription;
 import me.qoomon.maven.gitversioning.Configuration.VersionDescription;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
@@ -16,6 +17,8 @@ import org.apache.maven.model.*;
 import org.apache.maven.model.building.DefaultModelProcessor;
 import org.apache.maven.model.building.ModelProcessor;
 import org.apache.maven.session.scope.internal.SessionScope;
+import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.slf4j.Logger;
 
 import javax.enterprise.inject.Typed;
@@ -29,6 +32,8 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.function.Supplier;
+import java.util.regex.Pattern;
 
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.Math.*;
@@ -39,8 +44,7 @@ import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static me.qoomon.gitversioning.commons.GitRefType.*;
-import static me.qoomon.gitversioning.commons.StringUtil.substituteText;
-import static me.qoomon.gitversioning.commons.StringUtil.valueGroupMap;
+import static me.qoomon.gitversioning.commons.StringUtil.*;
 import static me.qoomon.maven.gitversioning.BuildProperties.projectArtifactId;
 import static me.qoomon.maven.gitversioning.GitVersioningMojo.GOAL;
 import static me.qoomon.maven.gitversioning.GitVersioningMojo.asPlugin;
@@ -86,10 +90,12 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     private GitSituation gitSituation;
 
     private boolean disabled = false;
-    private boolean updatePomOption = false;
     private GitVersionDetails gitVersionDetails;
-    private Map<String, PropertyDescription> gitVersioningPropertyDescriptionMap;
-    private Map<String, String> globalFormatPlaceholderMap;
+
+    private boolean updatePomOption = false;
+
+    private Map<String, PropertyDescription> propertyDescriptionMap;
+    private Map<String, Supplier<String>> globalFormatPlaceholderMap;
     private Map<String, String> gitProjectProperties;
     private Set<GAV> relatedProjects;
 
@@ -166,24 +172,33 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             disabled = true;
             return;
         }
-        logger.debug(buffer().strong("git situation:").toString());
-        logger.debug("  root directory: " + gitSituation.getRootDirectory());
-        logger.debug("  head commit: " + gitSituation.getHeadCommit());
-        logger.debug("  head commit timestamp: " + gitSituation.getHeadCommitTimestamp());
-        logger.debug("  head branch: " + gitSituation.getHeadBranch());
-        logger.debug("  head tags: " + gitSituation.getHeadTags());
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("git situation:");
+            logger.debug("  root directory: " + gitSituation.getRootDirectory());
+            logger.debug("  head commit: " + gitSituation.getHash());
+            logger.debug("  head commit timestamp: " + gitSituation.getTimestamp());
+            logger.debug("  head branch: " + gitSituation.getBranch());
+            logger.debug("  head tags: " + gitSituation.getTags());
+            logger.debug("  head description: " + gitSituation.getDescription());
+        }
 
         // determine git version details
         boolean preferTagsOption = getPreferTagsOption(config);
         logger.debug(buffer().strong("option:").toString() + " prefer tags: " + preferTagsOption);
+
         gitVersionDetails = getGitVersionDetails(gitSituation, config, preferTagsOption);
         logger.info("git ref: " + buffer().strong(gitVersionDetails.getRefName())
                 + " (" + gitVersionDetails.getRefType().name().toLowerCase() + ")");
-        gitVersioningPropertyDescriptionMap = gitVersionDetails.getConfig().property.stream()
+        propertyDescriptionMap = gitVersionDetails.getConfig().property.stream()
                 .collect(toMap(property -> property.name, property -> property));
 
         updatePomOption = getUpdatePomOption(config, gitVersionDetails.getConfig());
         logger.debug(buffer().strong("option:").toString() + " update pom: " + updatePomOption);
+
+        Pattern describeTagPattern = getDescribeTagPattern(config, gitVersionDetails.getConfig());
+        logger.debug(buffer().strong("option:").toString() + " describe tag pattern: " + describeTagPattern);
+        gitSituation.setDescribeTagPattern(describeTagPattern);
 
         // determine related projects
         relatedProjects = determineRelatedProjects(projectModel);
@@ -473,36 +488,36 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     // ---- versioning -------------------------------------------------------------------------------------------------
 
     private GitSituation getGitSituation(File executionRootDirectory) throws IOException {
-        GitSituation gitSituation = GitUtil.situation(executionRootDirectory);
-        if (gitSituation == null) {
+        final FileRepositoryBuilder repositoryBuilder = new FileRepositoryBuilder().findGitDir(executionRootDirectory);
+        if (repositoryBuilder.getGitDir() == null) {
             return null;
         }
-        String providedTag = getCommandOption(OPTION_NAME_GIT_TAG);
+
+        final Repository repository = repositoryBuilder.build();
+        final GitSituation gitSituation = new GitSituation(repository);
+
+        final String providedTag = getCommandOption(OPTION_NAME_GIT_TAG);
         if (providedTag != null) {
             logger.debug("set git head tag by command option: " + providedTag);
-            gitSituation = GitSituation.Builder.of(gitSituation)
-                    .setHeadBranch(null)
-                    .setHeadTags(providedTag.isEmpty() ? emptyList() : singletonList(providedTag))
-                    .build();
+            gitSituation.setBranch(null);
+            gitSituation.setTags(providedTag.isEmpty() ? emptyList() : singletonList(providedTag));
         }
-        String providedBranch = getCommandOption(OPTION_NAME_GIT_BRANCH);
+        final String providedBranch = getCommandOption(OPTION_NAME_GIT_BRANCH);
         if (providedBranch != null) {
             logger.debug("set git head branch by command option: " + providedBranch);
-            gitSituation = GitSituation.Builder.of(gitSituation)
-                    .setHeadBranch(providedBranch)
-                    .build();
+            gitSituation.setBranch(providedBranch);
         }
 
         return gitSituation;
     }
 
     private static GitVersionDetails getGitVersionDetails(GitSituation gitSituation, Configuration config, boolean preferTags) {
-        String headCommit = gitSituation.getHeadCommit();
+        final String headCommit = gitSituation.getHash();
 
         // detached tag
-        if (!gitSituation.getHeadTags().isEmpty() && (gitSituation.isDetached() || preferTags)) {
+        if (gitSituation.isDetached() || preferTags) {
             // sort tags by maven version logic
-            List<String> sortedHeadTags = gitSituation.getHeadTags().stream()
+            List<String> sortedHeadTags = gitSituation.getTags().stream()
                     .sorted(comparing(DefaultArtifactVersion::new)).collect(toList());
             for (VersionDescription tagConfig : config.tag) {
                 for (String headTag : sortedHeadTags) {
@@ -529,7 +544,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
         // branch
         {
-            String headBranch = gitSituation.getHeadBranch();
+            final String headBranch = gitSituation.getBranch();
             for (VersionDescription branchConfig : config.branch) {
                 if (branchConfig.pattern == null || headBranch.matches(branchConfig.pattern)) {
                     return new GitVersionDetails(headCommit, BRANCH, headBranch, branchConfig);
@@ -544,101 +559,116 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     }
 
     private String getGitVersion(GAV originalProjectGAV) {
-        final Map<String, String> placeholderMap = generateFormatPlaceholderMap(originalProjectGAV);
+        final Map<String, Supplier<String>> placeholderMap = generateFormatPlaceholderMap(originalProjectGAV);
         return substituteText(gitVersionDetails.getConfig().versionFormat, placeholderMap)
                 // replace invalid version characters
                 .replace("/", "-");
     }
 
     private String getGitProjectPropertyValue(GAV originalProjectGAV, String key, String originalValue) {
-        PropertyDescription propertyConfig = gitVersioningPropertyDescriptionMap.get(key);
+        final PropertyDescription propertyConfig = propertyDescriptionMap.get(key);
         if (propertyConfig == null) {
             return originalValue;
         }
-        final Map<String, String> placeholderMap = generateFormatPlaceholderMap(originalProjectGAV);
-        placeholderMap.put("value", originalValue);
+        final Map<String, Supplier<String>> placeholderMap = generateFormatPlaceholderMap(originalProjectGAV);
+        placeholderMap.put("value", () -> originalValue);
         return substituteText(propertyConfig.valueFormat, placeholderMap);
     }
 
-    private Map<String, String> generateFormatPlaceholderMap(GAV originalProjectGAV) {
-        final Map<String, String> placeholderMap = new HashMap<>();
-        placeholderMap.putAll(globalFormatPlaceholderMap);
-        placeholderMap.putAll(generateFormatPlaceholderMapFromVersion(originalProjectGAV));
+    private Map<String, Supplier<String>> generateFormatPlaceholderMap(GAV originalProjectGAV) {
+        final Map<String, Supplier<String>> placeholderMap = new HashMap<>(globalFormatPlaceholderMap);
+        final Supplier<String> originalProjectVersion = originalProjectGAV::getVersion;
+        placeholderMap.put("version", originalProjectVersion);
+        placeholderMap.put("version.release", Lazy.by(
+                () -> originalProjectVersion.get().replaceFirst("-SNAPSHOT$", "")));
         return placeholderMap;
     }
 
-    private static Map<String, String> generateGlobalFormatPlaceholderMap(GitSituation gitSituation, GitVersionDetails gitVersionDetails, MavenSession mavenSession) {
-        final Map<String, String> placeholderMap = new HashMap<>();
+    private Map<String, Supplier<String>> generateGlobalFormatPlaceholderMap(GitSituation gitSituation, GitVersionDetails gitVersionDetails, MavenSession mavenSession) {
 
-        String headCommit = gitSituation.getHeadCommit();
-        placeholderMap.put("commit", headCommit);
-        placeholderMap.put("commit.short", headCommit.substring(0, 7));
+        final Map<String, Supplier<String>> placeholderMap = new HashMap<>();
 
-        ZonedDateTime headCommitDateTime = gitSituation.getHeadCommitDateTime();
-        placeholderMap.put("commit.timestamp", String.valueOf(headCommitDateTime.toEpochSecond()));
-        placeholderMap.put("commit.timestamp.year", String.valueOf(headCommitDateTime.getYear()));
-        placeholderMap.put("commit.timestamp.month", leftPad(String.valueOf(headCommitDateTime.getMonthValue()), 2, "0"));
-        placeholderMap.put("commit.timestamp.day", leftPad(String.valueOf(headCommitDateTime.getDayOfMonth()), 2, "0"));
-        placeholderMap.put("commit.timestamp.hour", leftPad(String.valueOf(headCommitDateTime.getHour()), 2, "0"));
-        placeholderMap.put("commit.timestamp.minute", leftPad(String.valueOf(headCommitDateTime.getMinute()), 2, "0"));
-        placeholderMap.put("commit.timestamp.second", leftPad(String.valueOf(headCommitDateTime.getSecond()), 2, "0"));
-        placeholderMap.put("commit.timestamp.datetime", headCommitDateTime.toEpochSecond() > 0
-                ? headCommitDateTime.format(DateTimeFormatter.ofPattern("yyyyMMdd.HHmmss")) : "00000000.000000");
+        final Lazy<String> hash = Lazy.by(gitSituation::getHash);
+        placeholderMap.put("commit", hash);
+        placeholderMap.put("commit.short", Lazy.by(() -> hash.get().substring(0, 7)));
 
-        String refTypeName = gitVersionDetails.getRefType().name().toLowerCase();
-        String refName = gitVersionDetails.getRefName();
-        String refNameSlug = slugify(refName);
-        placeholderMap.put("ref", refName);
+        final Lazy<ZonedDateTime> headCommitDateTime = Lazy.by(gitSituation::getTimestamp);
+        placeholderMap.put("commit.timestamp", Lazy.by(() -> String.valueOf(headCommitDateTime.get().toEpochSecond())));
+        placeholderMap.put("commit.timestamp.year", Lazy.by(() -> String.valueOf(headCommitDateTime.get().getYear())));
+        placeholderMap.put("commit.timestamp.month", Lazy.by(() -> leftPad(String.valueOf(headCommitDateTime.get().getMonthValue()), 2, "0")));
+        placeholderMap.put("commit.timestamp.day", Lazy.by(() -> leftPad(String.valueOf(headCommitDateTime.get().getDayOfMonth()), 2, "0")));
+        placeholderMap.put("commit.timestamp.hour", Lazy.by(() -> leftPad(String.valueOf(headCommitDateTime.get().getHour()), 2, "0")));
+        placeholderMap.put("commit.timestamp.minute", Lazy.by(() -> leftPad(String.valueOf(headCommitDateTime.get().getMinute()), 2, "0")));
+        placeholderMap.put("commit.timestamp.second", Lazy.by(() -> leftPad(String.valueOf(headCommitDateTime.get().getSecond()), 2, "0")));
+        placeholderMap.put("commit.timestamp.datetime", Lazy.by(() -> headCommitDateTime.get().toEpochSecond() > 0
+                ? headCommitDateTime.get().format(DateTimeFormatter.ofPattern("yyyyMMdd.HHmmss")) : "00000000.000000"));
+
+        final String refName = gitVersionDetails.getRefName();
+        final Lazy<String> refNameSlug = Lazy.by(() -> slugify(refName));
+        placeholderMap.put("ref", () -> refName);
         placeholderMap.put("ref.slug", refNameSlug);
-        placeholderMap.put(refTypeName, refName);
+        final String refTypeName = gitVersionDetails.getRefType().name().toLowerCase();
+        placeholderMap.put(refTypeName, () -> refName);
         placeholderMap.put(refTypeName + ".slug", refNameSlug);
-        String refPattern = gitVersionDetails.getConfig().pattern;
+
+        // ref pattern groups
+        final String refPattern = gitVersionDetails.getConfig().pattern;
         if (refPattern != null) {
-            Map<String, String> refNameValueGroupMap = valueGroupMap(refName, refPattern);
-            placeholderMap.putAll(refNameValueGroupMap);
-            placeholderMap.putAll(refNameValueGroupMap.entrySet().stream()
-                    .collect(toMap(entry -> entry.getKey() + ".slug", entry -> slugify(entry.getValue()))));
+            for (Map.Entry<String, String> patternGroup : patternGroupValues(refName, refPattern).entrySet()) {
+                final String groupName = patternGroup.getKey();
+                final String value = patternGroup.getValue() != null ? patternGroup.getValue() : "";
+                placeholderMap.put(groupName, () -> value);
+                placeholderMap.put(groupName + ".slug", Lazy.by(() -> slugify(value)));
+            }
         }
 
-        placeholderMap.put("dirty", !gitSituation.isClean() ? "-DIRTY" : "");
-        placeholderMap.put("dirty.snapshot", !gitSituation.isClean() ? "-SNAPSHOT" : "");
+        // dirty
+        final Lazy<Boolean> dirty = Lazy.by(() -> !gitSituation.isClean());
+        placeholderMap.put("dirty", Lazy.by(() -> dirty.get() ? "-DIRTY" : ""));
+        placeholderMap.put("dirty.snapshot", Lazy.by(() -> dirty.get() ? "-SNAPSHOT" : ""));
+
+        // describe
+        final Lazy<GitDescription> description = Lazy.by(gitSituation::getDescription);
+        placeholderMap.put("describe", Lazy.by(() -> description.get().toString()));
+        final Lazy<String> descriptionTag = Lazy.by(() -> description.get().getTag());
+        placeholderMap.put("describe.tag", descriptionTag);
+        placeholderMap.put("describe.distance", Lazy.by(() -> String.valueOf(description.get().getDistance())));
+
+        // describe tag pattern groups
+        final Lazy<Map<String, String>> describeTagPatternValues = Lazy.by(
+                () -> patternGroupValues(gitSituation.getDescribeTagPattern(), descriptionTag.get()));
+        for (String groupName : patternGroups(gitSituation.getDescribeTagPattern())) {
+            Lazy<String> value = Lazy.by(() -> describeTagPatternValues.get().get(groupName));
+            placeholderMap.put("describe." + groupName, value);
+            placeholderMap.put("describe." + groupName + ".slug", Lazy.by(() -> slugify(value.get())));
+        }
 
         // command parameters e.g. mvn -Dfoo=123 will be available as ${foo}
-        mavenSession.getUserProperties().forEach((key, value) -> placeholderMap.put((String) key, (String) value));
+        mavenSession.getUserProperties().forEach((key, value) -> placeholderMap.put((String) key, () -> (String) value));
 
         // environment variables e.g. BUILD_NUMBER=123 will be available as ${env.BUILD_NUMBER}
-        System.getenv().forEach((key, value) -> placeholderMap.put("env." + key, value));
+        System.getenv().forEach((key, value) -> placeholderMap.put("env." + key, () ->value));
 
-        return placeholderMap;
-    }
-
-    private static Map<String, String> generateFormatPlaceholderMapFromVersion(GAV originalProjectGAV) {
-        Map<String, String> placeholderMap = new HashMap<>();
-        String originalProjectVersion = originalProjectGAV.getVersion();
-        placeholderMap.put("version", originalProjectVersion);
-        placeholderMap.put("version.release", originalProjectVersion.replaceFirst("-SNAPSHOT$", ""));
         return placeholderMap;
     }
 
     private static Map<String, String> generateGitProjectProperties(GitSituation gitSituation, GitVersionDetails gitVersionDetails) {
-        Map<String, String> properties = new HashMap<>();
+        final Map<String, String> properties = new HashMap<>();
 
         properties.put("git.commit", gitVersionDetails.getCommit());
 
-        ZonedDateTime headCommitDateTime = gitSituation.getHeadCommitDateTime();
+        final ZonedDateTime headCommitDateTime = gitSituation.getTimestamp();
         properties.put("git.commit.timestamp", String.valueOf(headCommitDateTime.toEpochSecond()));
         properties.put("git.commit.timestamp.datetime", headCommitDateTime.toEpochSecond() > 0
                 ? headCommitDateTime.format(ISO_INSTANT) : "0000-00-00T00:00:00Z");
 
-        String refTypeName = gitVersionDetails.getRefType().name().toLowerCase();
-        String refName = gitVersionDetails.getRefName();
-        String refNameSlug = slugify(refName);
+        final String refTypeName = gitVersionDetails.getRefType().name().toLowerCase();
+        final String refName = gitVersionDetails.getRefName();
+        final String refNameSlug = slugify(refName);
         properties.put("git.ref", refName);
         properties.put("git.ref.slug", refNameSlug);
         properties.put("git." + refTypeName, refName);
         properties.put("git." + refTypeName + ".slug", refNameSlug);
-
-        properties.put("git.dirty", Boolean.toString(!gitSituation.isClean()));
 
         return properties;
     }
@@ -660,7 +690,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     }
 
     private static Configuration readConfig(File configFile) throws IOException {
-        Configuration config = new XmlMapper().readValue(configFile, Configuration.class);
+        final Configuration config = new XmlMapper().readValue(configFile, Configuration.class);
 
         for (VersionDescription versionDescription : config.branch) {
             if (versionDescription.versionFormat == null) {
@@ -727,17 +757,29 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         return false;
     }
 
+    private Pattern getDescribeTagPattern(final Configuration config, final VersionDescription gitRefConfig) {
+
+        if (gitRefConfig.describeTagPattern != null) {
+            return Pattern.compile(gitRefConfig.describeTagPattern);
+        }
+
+        if (config.describeTagPattern != null) {
+            return Pattern.compile(config.describeTagPattern);
+        }
+
+        return Pattern.compile(".*");
+    }
 
     // ---- determine related projects ---------------------------------------------------------------------------------
 
     private Set<GAV> determineRelatedProjects(Model projectModel) throws IOException {
-        HashSet<GAV> relatedProjects = new HashSet<>();
+        final HashSet<GAV> relatedProjects = new HashSet<>();
         determineRelatedProjects(projectModel, relatedProjects);
         return relatedProjects;
     }
 
     private void determineRelatedProjects(Model projectModel, Set<GAV> relatedProjects) throws IOException {
-        GAV projectGAV = GAV.of(projectModel);
+        final GAV projectGAV = GAV.of(projectModel);
         if (relatedProjects.contains(projectGAV)) {
             return;
         }
@@ -747,11 +789,11 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
         // check for related parent project by parent tag
         if (projectModel.getParent() != null) {
-            GAV parentGAV = GAV.of(projectModel.getParent());
-            File parentProjectPomFile = getParentProjectPomFile(projectModel);
+            final GAV parentGAV = GAV.of(projectModel.getParent());
+            final File parentProjectPomFile = getParentProjectPomFile(projectModel);
             if (isRelatedPom(parentProjectPomFile)) {
-                Model parentProjectModel = readModel(parentProjectPomFile);
-                GAV parentProjectGAV = GAV.of(parentProjectModel);
+                final Model parentProjectModel = readModel(parentProjectPomFile);
+                final GAV parentProjectGAV = GAV.of(parentProjectModel);
                 if (parentProjectGAV.equals(parentGAV)) {
                     determineRelatedProjects(parentProjectModel, relatedProjects);
                 }
@@ -759,7 +801,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         }
 
         // check for related parent project within parent directory
-        Model parentProjectModel = searchParentProjectInParentDirectory(projectModel);
+        final Model parentProjectModel = searchParentProjectInParentDirectory(projectModel);
         if (parentProjectModel != null) {
             determineRelatedProjects(parentProjectModel, relatedProjects);
         }
