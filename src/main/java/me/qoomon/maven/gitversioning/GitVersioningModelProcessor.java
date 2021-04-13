@@ -36,8 +36,7 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparing;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.*;
 import static me.qoomon.gitversioning.commons.GitRefType.*;
 import static me.qoomon.gitversioning.commons.StringUtil.substituteText;
 import static me.qoomon.gitversioning.commons.StringUtil.valueGroupMap;
@@ -833,7 +832,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             }
         }
 
-        return modules;
+        return modules.stream().filter(File::exists).collect(toSet());
     }
 
 
