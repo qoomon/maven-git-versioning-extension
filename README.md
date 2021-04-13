@@ -59,11 +59,11 @@ Create `${rootProjectDir}/.mvn/maven-git-versioning-extension.xml`.
         <versionFormat>${version}</versionFormat>
     </branch>
     <branch>
-         <pattern>feature/(.+)></pattern>
+         <pattern>feature/(.+)</pattern>
          <versionFormat>${1}-SNAPSHOT</versionFormat>
      </branch>
     <tag>
-        <pattern>v([0-9].*)></pattern>
+        <pattern>v([0-9].*)</pattern>
         <versionFormat>${1}</versionFormat>
     </tag>
 </configuration>
@@ -182,7 +182,7 @@ Create `${rootProjectDir}/.mvn/maven-git-versioning-extension.xml`.
         - Group Index
             ```xml
             <tag>
-                <pattern>v([0-9].*)'</pattern>
+                <pattern>v([0-9].*)</pattern>
                 <versionFormat>${1}</versionFormat>
             </tag>
             ```
