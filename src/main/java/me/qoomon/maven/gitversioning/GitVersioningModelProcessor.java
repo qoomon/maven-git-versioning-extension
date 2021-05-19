@@ -1060,6 +1060,9 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     }
 
     private static String slugify(String value) {
+        if(value == null) {
+            return "";
+        }
         return value
                 .replace("/", "-")
                 .toLowerCase();
