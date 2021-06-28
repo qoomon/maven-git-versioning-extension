@@ -305,3 +305,6 @@ fi
   # integration tests will run with LATEST version of extension installed
   - mvn failsafe:integration-test
 ```
+
+#### Debug
+`mvn help:evaluate -Dexpression=project.version -Dorg.slf4j.simpleLogger.log.me.qoomon.maven.gitversioning=debug`
