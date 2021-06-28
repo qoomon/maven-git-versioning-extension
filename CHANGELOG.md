@@ -4,6 +4,10 @@
 
 # Changelog
 
+## 6.4.6
+* **Fixes**
+  * Fix parent project version handling
+
 ## 6.4.1
 * **Fixes**
   * Handle xsi:schemaLocation property in configuration file
