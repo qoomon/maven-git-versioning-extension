@@ -95,7 +95,6 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
     // ---- other fields -----------------------------------------------------------------------------------------------
 
-    private final Set<File> projectModules = new HashSet<>();
     private final Map<File, Model> sessionModelCache = new HashMap<>();
 
 
@@ -189,9 +188,6 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         logger.debug(buffer().strong("related projects:").toString());
         relatedProjects.forEach(gav -> logger.debug("  " + gav));
 
-        // add session root project as initial module
-        projectModules.add(projectModel.getPomFile());
-
         globalFormatPlaceholderMap = generateGlobalFormatPlaceholderMap(gitSituation, gitVersionDetails, mavenSession);
         gitProjectProperties = generateGitProjectProperties(gitSituation, gitVersionDetails);
 
@@ -219,20 +215,20 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             return projectModel;
         }
 
-        File canonicalProjectPomFile = projectModel.getPomFile().getCanonicalFile();
-
-        if (!projectModules.contains(canonicalProjectPomFile)) {
-            if (logger.isTraceEnabled()) {
-                logger.trace("skip model - non project module - " + projectModel.getPomFile());
-            }
-            return projectModel;
-        }
-
         GAV projectGAV = GAV.of(projectModel);
         if (projectGAV.getVersion() == null) {
             logger.debug("skip model - can not determine project version - " + projectModel.getPomFile());
             return projectModel;
         }
+
+        if (!relatedProjects.contains(projectGAV)) {
+            if (logger.isTraceEnabled()) {
+                logger.trace("skip model - unrelated project - " + projectModel.getPomFile());
+            }
+            return projectModel;
+        }
+
+        File canonicalProjectPomFile = projectModel.getPomFile().getCanonicalFile();
 
         // return cached calculated project model if present
         Model cachedProjectModel = sessionModelCache.get(canonicalProjectPomFile);
@@ -264,11 +260,6 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         //   e.g. mvn versions:set -DnewVersion=1.0.0
         // That's why we need to add a build plugin that sets project pom file to git versioned pom file
         addBuildPlugin(projectModel);
-
-        // add potential project modules
-        for (File modulePomFile : getProjectModules(projectModel)) {
-            projectModules.add(modulePomFile.getCanonicalFile());
-        }
 
         logger.info("");
         return projectModel;
