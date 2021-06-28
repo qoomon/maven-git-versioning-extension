@@ -80,7 +80,7 @@ public final class GitUtil {
             String headBranch = GitUtil.branch(repository);
             List<String> headTags = GitUtil.tag_pointsAt(repository, HEAD);
             boolean isClean = GitUtil.status(repository).isClean();
-            return new GitSituation(repositoryBuilder.getGitDir(), headCommit, headCommitTimestamp, headBranch, headTags, isClean);
+            return new GitSituation(repositoryBuilder.getGitDir().getParentFile(), headCommit, headCommitTimestamp, headBranch, headTags, isClean);
         }
     }
 }
