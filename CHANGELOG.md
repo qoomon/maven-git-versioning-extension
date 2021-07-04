@@ -84,6 +84,7 @@
   * Remove property value pattern `<branch|tag|commit> <property> <valuePattern>`
   * Remove format placeholder `${property.name}`
   * Rename format placeholder `${property.value}` to just `${value}`
+  * Move temporary git versioned `pom.xml` from build directory next to original `pom.xml` (`.git-versioned-pom.xml`)
 
 
 ## 5.3.0
