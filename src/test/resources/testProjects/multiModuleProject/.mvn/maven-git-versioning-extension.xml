@@ -15,7 +15,7 @@
     </branch>
     <branch>
         <pattern><![CDATA[feature/(?<feature>.*)]]></pattern>
-        <versionFormat>${feature}-SNAPSHOT</versionFormat>
+        <versionFormat>${dirty}</versionFormat>
     </branch>
     <tag>
         <pattern>version/(.*)</pattern>

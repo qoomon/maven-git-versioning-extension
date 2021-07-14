@@ -4,10 +4,23 @@
 
 # Changelog
 
+## 6.5.0 (unreleased)
+* **Features**
+  * add git describe version placeholders
+    * new placeholders
+      * `${describe}`
+      * `${describe.tag}`
+        * `${describe.<TAG_PATTERN_GROUP_NAME or TAG_PATTERN_GROUP_INDEX>}` e.g. pattern `v(?<version>.*)` will create placeholder `${describe.version}`
+      * `${describe.distance}`
+
+* **BREAKING CHANGES**
+  * no longer provide project property `git.dirty` due to performance issues on larger projects,
+    version format placeholder `${dirty}` is still available
+
 ## 6.4.6
 * **Fixes**
   * Fix parent project version handling
-
+  
 ## 6.4.1
 * **Fixes**
   * Handle xsi:schemaLocation property in configuration file

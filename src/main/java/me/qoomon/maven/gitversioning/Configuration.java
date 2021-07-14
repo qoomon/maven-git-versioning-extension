@@ -18,6 +18,7 @@ public class Configuration {
     public Boolean preferTags;
 
     public Boolean updatePom;
+    public String describeTagPattern;
 
     @JacksonXmlElementWrapper(useWrapping = false)
     public List<VersionDescription> branch = new ArrayList<>();
@@ -33,6 +34,7 @@ public class Configuration {
         @JacksonXmlElementWrapper(useWrapping = false)
         public List<PropertyDescription> property = new ArrayList<>();
         public Boolean updatePom;
+        public String describeTagPattern;
     }
 
     public static class PropertyDescription {
