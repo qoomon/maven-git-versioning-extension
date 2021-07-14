@@ -19,7 +19,6 @@ import static java.util.Objects.requireNonNull;
 import static me.qoomon.gitversioning.commons.GitUtil.NO_COMMIT;
 import static org.eclipse.jgit.lib.Constants.HEAD;
 
-
 public class GitSituation {
 
     private final Repository repository;

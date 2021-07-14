@@ -1,6 +1,5 @@
 package me.qoomon.gitversioning.commons;
 
-
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
@@ -9,7 +8,7 @@ import static java.util.Objects.requireNonNull;
 public final class Lazy<T> implements Supplier<T> {
 
     private volatile Callable<T> initializer;
-    private volatile T value;
+    private T value;
 
     public Lazy(Callable<T> initializer) {
         this.initializer = requireNonNull(initializer);

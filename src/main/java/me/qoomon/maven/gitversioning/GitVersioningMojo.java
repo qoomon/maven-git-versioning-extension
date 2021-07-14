@@ -1,8 +1,6 @@
 package me.qoomon.maven.gitversioning;
 
-import org.apache.maven.model.Build;
 import org.apache.maven.model.Plugin;
-import org.apache.maven.model.PluginExecution;
 import org.apache.maven.model.building.ModelProcessor;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
