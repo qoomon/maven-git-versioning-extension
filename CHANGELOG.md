@@ -4,7 +4,7 @@
 
 # Changelog
 
-## 6.5.0 (unreleased)
+## 6.5.0
 * **Features**
   * add git describe version placeholders
     * new placeholders
