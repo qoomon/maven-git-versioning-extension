@@ -508,7 +508,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             {
                 String providedRef = getCommandOption(OPTION_NAME_GIT_REF);
                 if (providedRef != null) {
-                    if (providedRef.startsWith("refs/")) {
+                    if (!providedRef.startsWith("refs/")) {
                         throw new IllegalArgumentException("unexpected ref format" + providedRef + " -  needs to start with refs/");
                     }
 
