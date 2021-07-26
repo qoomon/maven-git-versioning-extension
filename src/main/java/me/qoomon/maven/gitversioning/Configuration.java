@@ -3,43 +3,74 @@ package me.qoomon.maven.gitversioning;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
+import com.google.common.collect.Lists;
+import me.qoomon.gitversioning.commons.GitRefType;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
+import static me.qoomon.gitversioning.commons.GitRefType.COMMIT;
+
+@JsonInclude(NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JacksonXmlRootElement(localName = "configuration")
 public class Configuration {
 
-    public Boolean disable;
+    private static final Pattern MATCH_ALL = Pattern.compile(".*");
 
-    public Boolean preferTags;
+    public Boolean disable = false;
 
+    public Pattern describeTagPattern = MATCH_ALL;
     public Boolean updatePom;
-    public String describeTagPattern;
 
-    @JacksonXmlElementWrapper(useWrapping = false)
-    public List<VersionDescription> branch = new ArrayList<>();
+    public PatchDescription rev;
 
-    @JacksonXmlElementWrapper(useWrapping = false)
-    public List<VersionDescription> tag = new ArrayList<>();
+    public RefPatchDescriptionList refs = new RefPatchDescriptionList();
 
-    public VersionDescription commit;
+    @JsonInclude(NON_NULL)
+    public static class PatchDescription {
 
-    public static class VersionDescription {
-        public String pattern;
-        public String versionFormat;
-        @JacksonXmlElementWrapper(useWrapping = false)
-        public List<PropertyDescription> property = new ArrayList<>();
+        public Pattern describeTagPattern;
         public Boolean updatePom;
-        public String describeTagPattern;
+
+        public String version;
+
+        @JsonInclude(NON_EMPTY)
+        @JacksonXmlElementWrapper(useWrapping = false)
+        public Map<String, String> properties = new HashMap<>();
     }
 
-    public static class PropertyDescription {
+    @JsonInclude(NON_NULL)
+    public static class RefPatchDescription extends PatchDescription {
 
-        public String name;
-        public String valueFormat;
+        @JacksonXmlProperty(isAttribute = true)
+        public GitRefType type = COMMIT;
+        public Pattern pattern;
+
+        public static RefPatchDescription of(PatchDescription description) {
+            RefPatchDescription refDescription = new RefPatchDescription();
+            refDescription.describeTagPattern = description.describeTagPattern;
+            refDescription.updatePom = description.updatePom;
+            refDescription.version = description.version;
+            refDescription.properties = new HashMap<>(description.properties);
+            return refDescription;
+        }
+    }
+
+    public static class RefPatchDescriptionList {
+        @JsonInclude(NON_EMPTY)
+        @JacksonXmlElementWrapper(useWrapping = false)
+        @JacksonXmlProperty(localName = "ref")
+        public List<RefPatchDescription> list = new ArrayList<>();
+
+        @JacksonXmlProperty(isAttribute = true)
+        public Boolean considerTagsOnlyIfHeadIsDetached = false;
     }
 }

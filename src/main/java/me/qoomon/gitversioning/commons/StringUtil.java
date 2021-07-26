@@ -38,14 +38,6 @@ public final class StringUtil {
     }
 
     /**
-     * @param text  to parse
-     * @param regex regular expression
-     * @return a map of group-index and group-name to matching value
-     */
-    public static Map<String, String> patternGroupValues(String text, String regex) {
-        return patternGroupValues(Pattern.compile(regex), text);
-    }
-    /**
      * @param pattern pattern
      * @param text  to parse
      * @return a map of group-index and group-name to matching value

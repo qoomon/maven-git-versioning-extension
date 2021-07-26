@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -89,11 +90,11 @@ class StringUtilTest {
     void valueGroupMap() {
 
         // Given
-        String givenRegex = "(one) (two) (three)";
+        Pattern givenRegex = Pattern.compile("(one) (two) (three)");
         String givenText = "one two three";
 
         // When
-        Map<String, String> valueMap = StringUtil.patternGroupValues(givenText, givenRegex);
+        Map<String, String> valueMap = StringUtil.patternGroupValues(givenRegex, givenText);
 
         // Then
         assertThat(valueMap).contains(entry("1", "one"), entry("2", "two"), entry("3", "three"));
@@ -103,11 +104,11 @@ class StringUtilTest {
     void valueGroupMap_nested() {
 
         // Given
-        String givenRegex = "(one) (two (three))";
+        Pattern givenRegex = Pattern.compile("(one) (two (three))");
         String givenText = "one two three";
 
         // When
-        Map<String, String> valueMap = StringUtil.patternGroupValues(givenText, givenRegex);
+        Map<String, String> valueMap = StringUtil.patternGroupValues(givenRegex, givenText);
 
         // Then
         assertThat(valueMap).contains(entry("1", "one"), entry("2", "two three"), entry("3", "three"));
@@ -117,11 +118,11 @@ class StringUtilTest {
     void valueGroupMap_namedGroup() {
 
         // Given
-        String givenRegex = "(?<first>one) (?<second>two) (?<third>three)";
+        Pattern givenRegex = Pattern.compile("(?<first>one) (?<second>two) (?<third>three)");
         String givenText = "one two three";
 
         // When
-        Map<String, String> valueMap = StringUtil.patternGroupValues(givenText, givenRegex);
+        Map<String, String> valueMap = StringUtil.patternGroupValues(givenRegex, givenText);
 
         // Then
         assertThat(valueMap).contains(entry("1", "one"), entry("2", "two"), entry("3", "three"));
@@ -132,11 +133,11 @@ class StringUtilTest {
     void valueGroupMap_namedGroupNested() {
 
         // Given
-        String givenRegex = "(?<first>one) (?<second>two (?<third>three))";
+        Pattern givenRegex = Pattern.compile("(?<first>one) (?<second>two (?<third>three))");
         String givenText = "one two three";
 
         // When
-        Map<String, String> valueMap = StringUtil.patternGroupValues(givenText, givenRegex);
+        Map<String, String> valueMap = StringUtil.patternGroupValues(givenRegex, givenText);
 
         // Then
         assertThat(valueMap).contains(entry("1", "one"), entry("2", "two three"), entry("3", "three"));

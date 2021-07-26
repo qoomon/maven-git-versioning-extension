@@ -4,6 +4,58 @@
 
 # Changelog
 
+## 7.0.0
+* **Features**
+  * Simplify xml configuration (also see BREAKING CHANGES), e.g.
+      ```xml
+      <configuration xmlns="https://github.com/qoomon/maven-git-versioning-extension"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="https://github.com/qoomon/maven-git-versioning-extension https://qoomon.github.io/maven-git-versioning-extension/configuration-7.0.0.xsd">
+    
+        <describeTagPattern><![CDATA[v(?<version>.*)]]></describeTagPattern>
+    
+        <rev>
+            <version>${describe.tag.version}-${describe.distance}-${commit.short}</version>
+        </rev>
+    
+        <refs>
+    
+            <ref type="tag">
+                <pattern><![CDATA[v(?<version>.*)]]></pattern>
+                <version>${ref.version}</version>
+            </ref>
+    
+            <ref type="branch">
+                <pattern>master</pattern>
+                <version>${project.version.release}-${branch}</version>
+            </ref>
+    
+            <ref type="branch">
+                <pattern>feature/(.+)</pattern>
+                <version>${ref}-SNAPSHOT</version>
+                <properties>
+                    <foo>new_new_new</foo>
+                </properties>
+            </ref>
+    
+        </refs>
+    
+      </configuration>
+      ```
+  * Allow arbitrary branch and tag config priority. Priority is defined by order, first matching config will be used.
+  * This release will consider tags by default, this behaviour can be disabled by `<refs considerTagsOnlyIfHeadIsDetached="true">`
+    
+* **BREAKING CHANGES**
+  * There is no default config anymore, if no ref config is matching current git situation, nor a rev config is defined an exception will be thrown.
+  * Placeholder Changes
+    * old -> new
+    * `${branch}` -> `${ref}`
+    * `${tag}` -> `${ref}`
+    * `${REF_PATTERN_GROUP}` -> `${ref.REF_PATTERN_GROUP}`
+    * `${describe.TAG_PATTERN_GROUP}` -> `${describe.tag.TAG_PATTERN_GROUP}`
+  * `preferTags` option was removed
+    * This release will consider tags by default, this behaviour can be disabled by `<refs considerTagsOnlyIfHeadIsDetached="true">` 
+
 ## 6.5.0
 * **Features**
   * add git describe version placeholders
