@@ -307,8 +307,13 @@ export VERSIONING_GIT_REF=$GITHUB_REF;
 ```
 
 #### GitLab CI Setup
-
-execute this snippet before running your `mvn` command
+Global Setuo
+```sell
+variables:
+  VERSIONING_GIT_TAG: ${CI_COMMIT_TAG}
+  VERSIONING_GIT_BRANCH: ${CI_COMMIT_BRANCH}
+```
+or execute this snippet before running your `mvn` command
 
 ```shell
 export VERSIONING_GIT_TAG=$CI_COMMIT_TAG;
