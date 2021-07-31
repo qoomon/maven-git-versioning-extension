@@ -290,7 +290,13 @@ fi
 ```
 
 #### GitLab CI Setup
-execute this snippet before running your `mvn` command
+Global Setup
+```shell
+variables:
+  VERSIONING_GIT_TAG: ${CI_COMMIT_TAG}
+  VERSIONING_GIT_BRANCH: ${CI_COMMIT_BRANCH}
+```
+or
 ```shell
 before_script:
   - export VERSIONING_GIT_TAG=$CI_COMMIT_TAG;
