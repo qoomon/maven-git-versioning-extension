@@ -240,7 +240,7 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
 
 - Provide **branch** or **tag** name
     - **Environment Variables**
-        - `export VERSIONING_GIT_REF=$PROVIDED_REF` e.g. `refs/tags/v1.0.0` or `refs/heads/main`
+        - `export VERSIONING_GIT_REF=$PROVIDED_REF` e.g. `refs/heads/main`, `refs/tags/v1.0.0` or `refs/pull/1000/head`
         - `export VERSIONING_GIT_BRANCH=$PROVIDED_BRANCH_NAME` e.g. `main` or `refs/heads/main`
         - `export VERSIONING_GIT_TAG=$PROVIDED_TAG_NAME` e.g. `v1.0.0` or `refs/tags/v1.0.0`
     - **Command Line Parameters**
@@ -298,39 +298,26 @@ environment variables with this information. You can provide those, by
 using [Parameters & Environment Variables](#parameters--environment-variables). Below you'll find some setup example for
 common CI/CD systems.
 
-#### GitHub Actions Setup
+#### Native Support 
+* GitHub Actions: if `$GITHUB_ACTIONS == true` `$GITHUB_REF` is considered
+* GitLab CI: if `GITLAB_CI == true` `$CI_COMMIT_BRANCH` and `$CI_COMMIT_TAG` are considered
+* Jenkins: if `JENKINS_HOME` is set `BRANCH_NAME` and `TAG_NAME` are considered
 
-execute this snippet before running your `mvn` command
+#### Manual Setup
+Set following environment variables before running your `mvn` command
 
+`$PROVIDED_REF` examples: `refs/heads/main`, `refs/tags/v1.0.0` or `refs/pull/1000/head`
 ```shell
-export VERSIONING_GIT_REF=$GITHUB_REF;
+export VERSIONING_GIT_REF=$PROVIDED_REF;
 ```
-
-#### GitLab CI Setup
-
-Global Setuo
-```sell
-variables:
-  VERSIONING_GIT_TAG: ${CI_COMMIT_TAG}
-  VERSIONING_GIT_BRANCH: ${CI_COMMIT_BRANCH}
-```
-orexecute this snippet before running your `mvn` command
+or
+`$PROVIDED_BRANCH` examples: `main`, `refs/heads/main` or `refs/pull/1000/head`
+`$PROVIDED_TAG` examples: `v1.0.0` or `refs/tags/v1.0.0`
 ```shell
-export VERSIONING_GIT_TAG=$CI_COMMIT_TAG;
-export VERSIONING_GIT_BRANCH=$CI_COMMIT_BRANCH;
+export VERSIONING_GIT_BRANCH=$PROVIDED_BRANCH;
+export VERSIONING_GIT_TAG=$PROVIDED_TAG;
 ```
 
-#### Jenkins Setup
-
-execute this snippet before running your `mvn` command
-
-```shell
-if [[ "$GIT_BRANCH" = origin/tags/* ]]; then
-    export VERSIONING_GIT_TAG=${GIT_BRANCH#origin/tags/};
-else 
-    export VERSIONING_GIT_BRANCH=${GIT_BRANCH#origin/};
-fi
-```
 
 ## Build
 

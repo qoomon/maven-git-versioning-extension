@@ -16,6 +16,7 @@ jobs:
         mvn ${MAVEN_CLI_OPTS} package -DskipTests
     - name: Test with Maven
       run: |
+        unset GITHUB_ACTIONS
         mvn ${MAVEN_CLI_OPTS} test
         mvn ${MAVEN_CLI_OPTS} install -DskipTests
         mvn ${MAVEN_CLI_OPTS} failsafe:integration-test failsafe:verify

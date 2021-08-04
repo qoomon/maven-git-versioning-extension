@@ -506,56 +506,114 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         final Repository repository = repositoryBuilder.build();
         return new GitSituation(repository) {
             {
-                String providedRef = getCommandOption(OPTION_NAME_GIT_REF);
-                if (providedRef != null) {
-                    if (!providedRef.startsWith("refs/")) {
-                        throw new IllegalArgumentException("unexpected ref format" + providedRef + " -  needs to start with refs/");
-                    }
+                String overrideBranch = getCommandOption(OPTION_NAME_GIT_BRANCH);
+                String overrideTag = getCommandOption(OPTION_NAME_GIT_TAG);
 
-                    if (providedRef.startsWith("refs/tags/")) {
-                        overrideTags(providedRef);
-                        overrideBranch(null);
-                    } else {
-                        overrideBranch(providedRef);
-                        overrideTags(null);
+                if (overrideBranch == null && overrideTag == null) {
+                    final String providedRef = getCommandOption(OPTION_NAME_GIT_REF);
+                    if (providedRef != null) {
+                        if (!providedRef.startsWith("refs/")) {
+                            throw new IllegalArgumentException("invalid provided ref " + providedRef + " -  needs to start with refs/");
+                        }
+
+                        if (providedRef.startsWith("refs/tags/")) {
+                            overrideTag = providedRef;
+                            overrideBranch = "";
+                        } else {
+                            overrideBranch = providedRef;
+                            overrideTag = "";
+                        }
                     }
                 }
 
-                final String providedTag = getCommandOption(OPTION_NAME_GIT_TAG);
-                if (providedTag != null) {
-                    overrideTags(providedTag);
-                    overrideBranch(null);
+                // GitHub Actions support
+                if (overrideBranch == null && overrideTag == null) {
+                    final String githubEnv = System.getenv("GITHUB_ACTIONS");
+                    if (githubEnv != null && githubEnv.equals("true")) {
+                        String githubRef = System.getenv("GITHUB_REF");
+                        logger.info("gather git situation from GitHub Actions environment variable: $GITHUB_REF");
+                        if (githubRef != null && githubRef.startsWith("refs/")) {
+                            if (githubRef.startsWith("refs/tags/")) {
+                                overrideTag = githubRef;
+                                overrideBranch = "";
+                            } else {
+                                overrideBranch = githubRef;
+                                overrideTag = "";
+                            }
+                        }
+                    }
                 }
 
-                final String providedBranch = getCommandOption(OPTION_NAME_GIT_BRANCH);
-                if (providedBranch != null) {
-                    overrideBranch(providedBranch);
-                    overrideTags(null);
+                // GitLab CI support
+                if (overrideBranch == null && overrideTag == null) {
+                    final String gitlabEnv = System.getenv("GITLAB_CI");
+                    if (gitlabEnv != null && gitlabEnv.equals("true")) {
+                        logger.info("gather git situation from GitLab CI environment variables: $CI_COMMIT_BRANCH and $CI_COMMIT_TAG");
+                        overrideBranch = System.getenv("$CI_COMMIT_BRANCH");
+                        overrideTag = System.getenv("$CI_COMMIT_TAG");
+                    }
+                }
+
+                // Jenkins support
+                if (overrideBranch == null && overrideTag == null) {
+                    final String jenkinsEnv = System.getenv("JENKINS_HOME");
+                    if (jenkinsEnv != null && !jenkinsEnv.trim().isEmpty()) {
+                        logger.info("gather git situation from jenkins environment variables: $BRANCH_NAME and $TAG_NAME");
+                        String branchName = System.getenv("BRANCH_NAME");
+                        String tagName = System.getenv("TAG_NAME");
+                        if (branchName != null && branchName.equals(tagName)) {
+                            overrideTag = tagName;
+                            overrideBranch = "";
+                        } else {
+                            overrideBranch = branchName;
+                            overrideTag = tagName;
+                        }
+                    }
+                }
+
+                if (overrideBranch != null) {
+                    overrideBranch(overrideBranch);
+                }
+
+                if (overrideTag != null) {
+                    overrideTags(overrideTag);
                 }
             }
 
             void overrideBranch(String branch) {
-                if (branch != null && branch.isEmpty()) {
+                if (branch != null && branch.trim().isEmpty()) {
                     branch = null;
                 }
-                logger.debug("override git branch with: " + branch);
+
                 if (branch != null) {
-                    branch = branch.replaceFirst("^refs/heads/", "");
-                    // GitHub Pull Requests
-                    branch = branch.replaceFirst("^refs/", "");
+                    if (branch.startsWith("refs/tags/")) {
+                        throw new IllegalArgumentException("invalid branch ref" + branch);
+                    }
+
+                    // two replacement steps to support default branches (heads)
+                    // and other refs e.g. GitHub pull requests refs/pull/1000/head
+                    branch = branch.replaceFirst("^refs/", "")
+                            .replaceFirst("^heads/", "");
                 }
 
+                logger.debug("override git branch with: " + branch);
                 setBranch(branch);
             }
 
             void overrideTags(String tag) {
-                if (tag != null && tag.isEmpty()) {
+                if (tag != null && tag.trim().isEmpty()) {
                     tag = null;
                 }
-                logger.debug("override git tags with: " + tag);
+
                 if (tag != null) {
+                    if (tag.startsWith("refs/") && !tag.startsWith("refs/tags/")) {
+                        throw new IllegalArgumentException("invalid tag ref" + tag);
+                    }
+
                     tag = tag.replaceFirst("^refs/tags/", "");
                 }
+
+                logger.debug("override git tags with: " + tag);
                 setTags(tag == null ? emptyList() : singletonList(tag));
             }
         };

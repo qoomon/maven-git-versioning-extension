@@ -5,6 +5,7 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import me.qoomon.gitversioning.commons.GitRefType;
 import me.qoomon.maven.gitversioning.Configuration.PatchDescription;
 import me.qoomon.maven.gitversioning.Configuration.RefPatchDescription;
+import org.apache.maven.it.VerificationException;
 import org.apache.maven.it.Verifier;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.DependencyManagement;
@@ -49,7 +50,8 @@ class GitVersioningExtensionIT {
         writeExtensionConfigFile(projectDir, new Configuration());
 
         // When
-        Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath());
+        Verifier verifier = getVerifier(projectDir);
+        verifier.displayStreamBuffers();
         verifier.executeGoal("verify");
 
         // Then
@@ -58,6 +60,10 @@ class GitVersioningExtensionIT {
         verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
         verifier.verifyTextInLog("[WARNING] skip - project is not part of a git repository");
         verifier.assertFileNotPresent(GIT_VERSIONING_POM_NAME);
+    }
+
+    private static Verifier getVerifier(Path projectDir) throws VerificationException {
+        return new Verifier(projectDir.toFile().getAbsolutePath(), true);
     }
 
     @Test
@@ -98,7 +104,7 @@ class GitVersioningExtensionIT {
             }});
 
             // When
-            Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath());
+            Verifier verifier = getVerifier(projectDir);
             verifier.executeGoal("verify");
 
             // Then
@@ -125,7 +131,7 @@ class GitVersioningExtensionIT {
             }});
 
             // When
-            Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath());
+            Verifier verifier = getVerifier(projectDir);
             verifier.executeGoal("verify");
 
             // Then
@@ -152,7 +158,7 @@ class GitVersioningExtensionIT {
             }});
 
             // When
-            Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath());
+            Verifier verifier = getVerifier(projectDir);
             verifier.executeGoal("verify");
 
             // Then
@@ -181,7 +187,7 @@ class GitVersioningExtensionIT {
             }});
 
             // When
-            Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath());
+            Verifier verifier = getVerifier(projectDir);
             verifier.executeGoal("verify");
 
             // Then
@@ -212,7 +218,7 @@ class GitVersioningExtensionIT {
             }});
 
             // When
-            Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath());
+            Verifier verifier = getVerifier(projectDir);
             verifier.executeGoal("verify");
 
             // Then
@@ -243,7 +249,7 @@ class GitVersioningExtensionIT {
             }});
 
             // When
-            Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath());
+            Verifier verifier = getVerifier(projectDir);
             verifier.executeGoal("verify");
 
             // Then
@@ -274,7 +280,7 @@ class GitVersioningExtensionIT {
             }});
 
             // When
-            Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath());
+            Verifier verifier = getVerifier(projectDir);
             verifier.executeGoal("verify");
 
             // Then
@@ -369,7 +375,7 @@ class GitVersioningExtensionIT {
             }});
 
             // When
-            Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath());
+            Verifier verifier = getVerifier(projectDir);
             verifier.executeGoal("verify");
 
             // Then
@@ -428,7 +434,7 @@ class GitVersioningExtensionIT {
             }});
 
             // When
-            Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath());
+            Verifier verifier = getVerifier(projectDir);
             verifier.executeGoal("verify");
 
             // Then
@@ -472,7 +478,7 @@ class GitVersioningExtensionIT {
             }});
 
             // When
-            Verifier verifier = new Verifier(logicProjectDir.toFile().getAbsolutePath());
+            Verifier verifier = getVerifier(logicProjectDir);
             verifier.executeGoal("verify");
 
             // Then
@@ -528,7 +534,7 @@ class GitVersioningExtensionIT {
             }});
 
             // When
-            Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath());
+            Verifier verifier = getVerifier(projectDir);
             verifier.executeGoal("verify");
 
             // Then
@@ -582,7 +588,7 @@ class GitVersioningExtensionIT {
             }});
 
             // When
-            Verifier verifier = new Verifier(logicProjectDir.toFile().getAbsolutePath());
+            Verifier verifier = getVerifier(logicProjectDir);
             verifier.executeGoal("verify");
 
             // Then
@@ -640,7 +646,7 @@ class GitVersioningExtensionIT {
             }});
 
             // When
-            Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath());
+            Verifier verifier = getVerifier(projectDir);
             verifier.executeGoal("verify");
 
             // Then
