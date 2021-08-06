@@ -248,6 +248,3 @@
         </profile>
     </profiles>
 </project>
-
-<!--Deploy to OSS Nexus-->
-<!--GPG_TTY=$(tty) mvn clean deploy -P release -Dgpg.keyname=???-->

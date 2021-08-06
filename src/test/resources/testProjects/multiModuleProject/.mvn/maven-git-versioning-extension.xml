@@ -4,10 +4,6 @@
 
     <describeTagPattern><![CDATA[v(?<version>.*)]]></describeTagPattern>
 
-    <rev>
-        <version>${describe.tag.version}-${describe.distance}-${commit.short}</version>
-    </rev>
-
     <refs>
 
         <ref type="tag">
@@ -31,6 +27,7 @@
                 <foo>new_new_new</foo>
             </properties>
         </ref>
+
     </refs>
 
 </configuration>

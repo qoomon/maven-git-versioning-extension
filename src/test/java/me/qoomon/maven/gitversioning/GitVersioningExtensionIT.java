@@ -182,6 +182,7 @@ class GitVersioningExtensionIT {
             writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
             writeExtensionsFile(projectDir);
             writeExtensionConfigFile(projectDir, new Configuration() {{
+                refs.considerTagsOnBranches = true;
                 refs.list.add(createTagVersionDescription());
                 refs.list.add(createBranchVersionDescription());
             }});
@@ -274,7 +275,6 @@ class GitVersioningExtensionIT {
             writeExtensionsFile(projectDir);
 
             writeExtensionConfigFile(projectDir, new Configuration() {{
-                refs.considerTagsOnlyIfHeadIsDetached = true;
                 refs.list.add(createTagVersionDescription());
                 refs.list.add(createBranchVersionDescription());
             }});

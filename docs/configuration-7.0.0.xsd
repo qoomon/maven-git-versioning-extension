@@ -21,7 +21,7 @@
                             <xs:element name="ref" type="RefPatchDescription" minOccurs="0" maxOccurs="unbounded"/>
                         </xs:sequence>
 
-                        <xs:attribute name="considerTagsOnlyIfHeadIsDetached" type="xs:boolean"/>
+                        <xs:attribute name="considerTagsOnBranches" type="xs:boolean"/>
                     </xs:complexType>
                 </xs:element>
             </xs:all>
