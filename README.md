@@ -92,30 +92,30 @@ You can configure the version and properties adjustments for specific branches a
 - `<refs considerTagsOnBranches="BOOLEAN">` List of ref configurations, ordered by priority. First matching
   configuration will be used.
     - `considerTagsOnBranches` By default, tags pointing at current commit will be ignored if HEAD is attached to a branch. 
-        - If this option is `true` tags will always be taken into account.
-        - ⚠️ This feature can lead to performance issue on projects with a lot of tags.
-          <br><br>
+     - If this option is `true` tags will always be taken into account.
+     - ⚠️ This feature can lead to performance issue on projects with a lot of tags.
+       <br><br>
 
     - `<ref type="TYPE">` specific ref patch definition.
-        - *required* `type` Ref type indicates which kind of ref will be matched against `pattern`, can be `branch` or `tag`
-        - `<pattern>` An arbitrary regex to match ref names
-            - has to be a **full match pattern** e.g. `main` or `feature/.+`
-              <br><br>
+     - *required* `type` Ref type indicates which kind of ref will be matched against `pattern`, can be `branch` or `tag`
+     - `<pattern>` An arbitrary regex to match ref names
+      - has to be a **full match pattern** e.g. `main` or `feature/.+`
+        <br><br>
 
-        - `<describeTagPattern>` An arbitrary regex to match tag names for git describe command
-            - has to be a **full match pattern** e.g. `v.+`)
-            - will override global `<describeTagPattern>` value
-              <br><br>
+     - `<describeTagPattern>` An arbitrary regex to match tag names for git describe command
+      - has to be a **full match pattern** e.g. `v.+`)
+      - will override global `<describeTagPattern>` value
+        <br><br>
 
-        - `<version>` The new version format, see [Format Placeholders](#format-placeholders)
-        - `<properties>`
-            - `<name>value</name>` A property definition to update the value of a property.
-                - `<name>` The property name
-                - `value` The new value format of the property, see [Format Placeholders](#format-placeholders)
-                  <br><br>
+     - `<version>` The new version format, see [Format Placeholders](#format-placeholders)
+     - `<properties>`
+      - `<name>value</name>` A property definition to update the value of a property.
+       - `<name>` The property name
+       - `value` The new value format of the property, see [Format Placeholders](#format-placeholders)
+         <br><br>
 
-        - `<updatePom>` Enable(`true`) or disable(`false`) version and properties update in original pom file
-            - will override global `<updatePom>` value
+     - `<updatePom>` Enable(`true`) or disable(`false`) version and properties update in original pom file
+      - will override global `<updatePom>` value
 
 - `<rev>` Rev configuration will be used if no ref configuration is matching current git situation.
     - same as `<ref>` configuration, except `type` attribute and `<pattern>` element.
@@ -230,27 +230,27 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
 
 - Disable Extension
     - **Environment Variables**
-        - `export VERSIONING_DISABLE=true`
+     - `export VERSIONING_DISABLE=true`
     - **Command Line Parameters**
-        - `mvn … -Dversioning.disable`
+     - `mvn … -Dversioning.disable`
 
 - Provide **branch** or **tag** name
     - **Environment Variables**
-        - `export VERSIONING_GIT_REF=$PROVIDED_REF` e.g. `refs/heads/main`, `refs/tags/v1.0.0` or `refs/pull/1000/head`
-        - `export VERSIONING_GIT_BRANCH=$PROVIDED_BRANCH_NAME` e.g. `main` or `refs/heads/main`
-        - `export VERSIONING_GIT_TAG=$PROVIDED_TAG_NAME` e.g. `v1.0.0` or `refs/tags/v1.0.0`
+     - `export VERSIONING_GIT_REF=$PROVIDED_REF` e.g. `refs/heads/main`, `refs/tags/v1.0.0` or `refs/pull/1000/head`
+     - `export VERSIONING_GIT_BRANCH=$PROVIDED_BRANCH_NAME` e.g. `main` or `refs/heads/main`
+     - `export VERSIONING_GIT_TAG=$PROVIDED_TAG_NAME` e.g. `v1.0.0` or `refs/tags/v1.0.0`
     - **Command Line Parameters**
-        - `mvn … -Dgit.ref=$PROVIDED_REF`
-        - `mvn … -Dgit.branch=$PROVIDED_BRANCH_NAME`
-        - `mvn … -Dgit.tag=$PROVIDED_TAG_NAME`
+     - `mvn … -Dgit.ref=$PROVIDED_REF`
+     - `mvn … -Dgit.branch=$PROVIDED_BRANCH_NAME`
+     - `mvn … -Dgit.tag=$PROVIDED_TAG_NAME`
 
   ℹ Especially useful for **CI builds** see [Miscellaneous Hints](#miscellaneous-hints)
 
 - Update `pom.xml`
     - **Environment Variables**
-        - `export VERSIONING_UPDATE_POM=true`
+     - `export VERSIONING_UPDATE_POM=true`
     - **Command Line Parameters**
-        - `mvn … -Dversioning.updatePom`
+     - `mvn … -Dversioning.updatePom`
 
 ## Provided Project Properties
 
