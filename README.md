@@ -153,7 +153,7 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
 - `Ref Pattern Groups`
     - Content of regex groups in `<ref><pattern>` can be addressed like this:
     - `${ref.GROUP_NAME}` `${ref.GROUP_NAME.slug}`
-      `${ref.GROUP_INDEX}` `${ref.GROUP_INDEX.slug}`
+    - `${ref.GROUP_INDEX}` `${ref.GROUP_INDEX.slug}`
     - Named Group Example
         ```xml
         <ref type="branch">
@@ -202,19 +202,19 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
     - The distance count to last matching tag
 - `${describe.tag}`
     - The matching tag of `git describe`
-    - Describe Tag Pattern Groups
-        - Content of regex groups in `<describeTagPattern>` can be addressed like this:
-        - `${describe.tag.GROUP_NAME}` `${describe.tag.GROUP_NAME.slug}`
-          `${describe.tag.GROUP_INDEX}` `${describe.tag.GROUP_INDEX.slug}`
-        - Named Group Example
-            ```xml
-            <ref type="branch">
-                <pattern>main</pattern>
-                <describeTagPattern><![CDATA[v(?<version>.*)]]></describeTagPattern>
-                <version>${describe.tag.version}-SNAPSHOT</version>
-            </ref>
-            ```
-            <br> 
+ - Describe Tag Pattern Groups
+     - Content of regex groups in `<describeTagPattern>` can be addressed like this:
+     - `${describe.tag.GROUP_NAME}` `${describe.tag.GROUP_NAME.slug}`
+     - `${describe.tag.GROUP_INDEX}` `${describe.tag.GROUP_INDEX.slug}`
+     - Named Group Example
+         ```xml
+         <ref type="branch">
+             <pattern>main</pattern>
+             <describeTagPattern><![CDATA[v(?<version>.*)]]></describeTagPattern>
+             <version>${describe.tag.version}-SNAPSHOT</version>
+         </ref>
+         ```
+         <br> 
 
 - `${dirty}`
     - If repository has untracked files or uncommitted changes this placeholder will resolve to `-DIRTY`, otherwise it will resolve to an empty string.
