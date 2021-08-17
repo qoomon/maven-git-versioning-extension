@@ -13,6 +13,7 @@ import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.util.Arrays;
 
 /**
  * Created by qoomon on 18/11/2016.
@@ -65,7 +66,11 @@ final class MavenUtil {
     }
 
     public static void writeXml(final File file, final Document gitVersionedPom) throws IOException {
-        Files.write(file.toPath(), gitVersionedPom.toXML().getBytes());
+        byte[] newBytes = gitVersionedPom.toXML().getBytes();
+        if (file.exists() && Arrays.equals(newBytes, Files.readAllBytes(file.toPath()))) {
+            return;
+        }
+        Files.write(file.toPath(), newBytes);
     }
 
     public static Document readXml(File file) throws IOException {
