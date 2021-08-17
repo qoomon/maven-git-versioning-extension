@@ -300,6 +300,7 @@ export VERSIONING_GIT_TAG=$PROVIDED_TAG;
 ```
 
 `$PROVIDED_BRANCH` value examples: `main`, `refs/heads/main` or `refs/pull/1000/head`
+
 `$PROVIDED_TAG` value examples: `v1.0.0` or `refs/tags/v1.0.0`
 
 ---
