@@ -25,7 +25,7 @@ public class GitSituation {
     private final File rootDirectory;
 
     private final ObjectId head;
-    private final String hash;
+    private final String rev;
     private final Supplier<ZonedDateTime> timestamp = Lazy.by(this::timestamp);
     private Supplier<String> branch = Lazy.by(this::branch);
 
@@ -41,7 +41,7 @@ public class GitSituation {
         this.repository = repository;
         this.rootDirectory = repository.getWorkTree();
         this.head = repository.resolve(HEAD);
-        this.hash = head != null ? head.getName() : NO_COMMIT;
+        this.rev = head != null ? head.getName() : NO_COMMIT;
     }
 
 
@@ -49,8 +49,8 @@ public class GitSituation {
         return rootDirectory;
     }
 
-    public String getHash() {
-        return hash;
+    public String getRev() {
+        return rev;
     }
 
     public ZonedDateTime getTimestamp() {

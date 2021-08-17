@@ -1,18 +1,38 @@
-<configuration>
-    <branch>
-        <pattern>master</pattern>
-        <versionFormat>${version.release}</versionFormat>
-        <property>
-            <name>foo</name>
-            <valueFormat>new_new_new</valueFormat>
-        </property>
-    </branch>
-    <branch>
-        <pattern>feature/(.*)</pattern>
-        <versionFormat>${1}-SNAPSHOT</versionFormat>
-    </branch>
-    <tag>
-        <pattern>v([0-9].*)</pattern>
-        <versionFormat>${1}</versionFormat>
-    </tag>
+<configuration xmlns="https://github.com/qoomon/maven-git-versioning-extension"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="https://github.com/qoomon/maven-git-versioning-extension https://qoomon.github.io/maven-git-versioning-extension/configuration-7.0.0.xsd">
+
+    <describeTagPattern><![CDATA[v(?<version>.*)]]></describeTagPattern>
+
+    <rev>
+        <version>foo</version>
+        <updatePom>true</updatePom>
+    </rev>
+
+    <refs>
+
+        <ref type="tag">
+            <pattern><![CDATA[v(?<version>.*)]]></pattern>
+            <version>${ref.version}</version>
+            <updatePom>true</updatePom>
+        </ref>
+
+        <ref type="branch">
+            <pattern>master</pattern>
+            <version>${project.version.release}-${branch}</version>
+            <properties>
+                <foo>new_new_new</foo>
+            </properties>
+        </ref>
+
+        <ref type="branch">
+            <pattern>feature/(.+)</pattern>
+            <version>${ref}-SNAPSHOT</version>
+            <properties>
+                <foo>new_new_new</foo>
+            </properties>
+        </ref>
+
+    </refs>
+
 </configuration>

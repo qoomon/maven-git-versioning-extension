@@ -6,19 +6,18 @@
 [![Build Workflow](https://github.com/qoomon/maven-git-versioning-extension/workflows/Build/badge.svg)](https://github.com/qoomon/maven-git-versioning-extension/actions?query=workflow%3ABuild)
 [![LGTM Grade](https://img.shields.io/lgtm/grade/java/github/qoomon/maven-git-versioning-extension)](https://lgtm.com/projects/g/qoomon/maven-git-versioning-extension)
 
-
 **ℹ Also available as [Gradle Plugin](https://github.com/qoomon/gradle-git-versioning-plugin)**
 
+This extension can virtually set project version and properties, based on current **Git status**
 
-This extension can virtually set project version and properties, based on current **Git status**.
+ℹ **No POM files will be modified, version and properties are modified in memory only**
 
-ℹ **No POM files will be modified, version and properties are modified in memory only.**
-* Get rid of...
+* Get rid of…
     * editing `pom.xml`
-    * managing project versions with within files and Git tags.
-    * Git merge conflicts.
-* Highly customizable configuration, see example below.
-![Example](docs/MavenGitVersioningExtension.png)
+    * managing project versions within files and Git tags
+    * git merge conflicts
+* Highly customizable configuration, see example below
+  ![Example](docs/MavenGitVersioningExtension.png)
 
 ## Usage
 
@@ -29,127 +28,148 @@ This extension can virtually set project version and properties, based on curren
 create or update `${rootProjectDir}/.mvn/extensions.xml` file
 
 ```xml
-<extensions xmlns="http://maven.apache.org/EXTENSIONS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/EXTENSIONS/1.0.0 https://maven.apache.org/xsd/core-extensions-1.0.0.xsd">
+
+<extensions xmlns="https://maven.apache.org/EXTENSIONS/1.0.0" xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="https://maven.apache.org/EXTENSIONS/1.0.0 https://maven.apache.org/xsd/core-extensions-1.0.0.xsd">
 
     <extension>
         <groupId>me.qoomon</groupId>
         <artifactId>maven-git-versioning-extension</artifactId>
-        <version>6.4.3</version>
+        <version>7.0.0</version>
     </extension>
 
 </extensions>
 ```
 
-ℹ Consider [CI/CD](#cicd-setup) section when running this extension in a CI/CD environment 
-
 ## Configure Extension
 
-You can configure the final version format for specific branches and tags separately.
+ℹ Consider [CI/CD](#cicd-setup) section when running this extension in a CI/CD environment
 
 Create `${rootProjectDir}/.mvn/maven-git-versioning-extension.xml`.
+
+You can configure the version and properties adjustments for specific branches and tags.
 
 **Example:** `maven-git-versioning-extension.xml`
 
 ```xml
-<configuration xmlns="https://github.com/qoomon/maven-git-versioning-extension" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-               xsi:schemaLocation="https://github.com/qoomon/maven-git-versioning-extension https://qoomon.github.io/maven-git-versioning-extension/configuration-6.4.0.xsd">
-    <branch>
-        <pattern>main</pattern>
-        <versionFormat>${version}</versionFormat>
-    </branch>
-    <branch>
-         <pattern>feature/(.+)</pattern>
-         <versionFormat>${1}-SNAPSHOT</versionFormat>
-     </branch>
-    <tag>
-        <pattern>v([0-9].*)</pattern>
-        <versionFormat>${1}</versionFormat>
-    </tag>
+
+<configuration xmlns="https://github.com/qoomon/maven-git-versioning-extension"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="https://github.com/qoomon/maven-git-versioning-extension https://qoomon.github.io/maven-git-versioning-extension/configuration-7.0.0.xsd">
+
+    <refs>
+        <ref type="branch">
+            <pattern>.+</pattern>
+            <version>${ref}-SNAPSHOT</version>
+            <properties>
+                <foo>${ref}</foo>
+            </properties>
+        </ref>
+
+        <ref type="tag">
+            <pattern><![CDATA[v(?<version>.*)]]></pattern>
+            <version>${ref.version}</version>
+        </ref>
+    </refs>
+
+    <!-- optional fallback configuration in case of no matching ref configuration-->
+    <rev>
+        <version>${commit}</version>
+    </rev>
+
 </configuration>
 ```
 
-- *optional* `<disable>` global disable(`true`)/enable(`false`) extension.
-    - Can be overridden by command option, see (Parameters & Environment Variables)[#parameters-&-environment-variables].
+### Configuration Elements
 
-- *optional* `<updatePom>` global enable(`true`)/disable(`false`) version and properties update in original pom file.
-    - Can be overridden by command option, see (Parameters & Environment Variables)[#parameters-&-environment-variables].
+- `<disable>` global disable(`true`)/enable(`false`) extension, default is `false`.
+    - Can be overridden by command option, see (Parameters & Environment Variables)[#parameters-&-environment-variables]
 
-- *optional* `<preferTags>` global enable(`true`)/disable(`false`) prefer tag rules over branch rules if both match.
+- `<describeTagPattern>` An arbitrary regex to match tag names for git describe command (has to be a **full match
+  pattern** e.g. `v.+`), default is `.*`
+- `<updatePom>` Enable(`true`)/disable(`false`) version and properties update in original pom file, default is `false`
+    - Can be overridden by command option, see (Parameters & Environment Variables)[#parameters-&-environment-variables]
+      .
 
-- `<branch>` specific version format definition.
-    - `<pattern>` An arbitrary regex to match branch names (has to be a **full match pattern** e.g. `feature/.+` )
-    - `<versionFormat>` An arbitrary string, see [Version Format & Placeholders](#version-format--placeholders)
-    - `<property>` A property definition to update the value of a property
-        - `<name>` The property name
-        - `<valueFormat>` The new value format of the property, see [Version Format & Placeholders](#version-format--placeholders)
-    - *optional* `<updatePom>` Enable(`true`) or disable(`false`) version and properties update in original pom fill (will override global `<updatePom>` value)
-    - ⚠ **considered if...**
-        * HEAD attached to a branch `git checkout <BRANCH>`<br>
-        * Or branch name is provided by environment variable or command line parameter
+- `<refs considerTagsOnBranches="BOOLEAN">` List of ref configurations, ordered by priority. First matching
+  configuration will be used.
+    - `considerTagsOnBranches` By default, tags pointing at current commit will be ignored if HEAD is attached to a
+      branch. If this option is `true` tags will always be taken into account.
+        - ⚠️ If enabled this behaviour can lead to performance issue on projects with a lot of tags.
+          <br><br>
 
-- `<tag>` specific version format definition.
-    - `<pattern>` An arbitrary regex to match tag names (has to be a **full match pattern** e.g. `v[0-9].*` )
-    - `<versionFormat>` An arbitrary string, see [Version Format & Placeholders](#version-format--placeholders)
-    - `<property>` A property definition to update the value of a property
-        - `<name>` The property name
-        - `<valueFormat>` The new value format of the property, see [Version Format & Placeholders](#version-format--placeholders)
-    - *optional* `<updatePom>` Enable(`true`) or disable(`false`) version update in original pom fill (will override global `<updatePom>` value)
-    - ⚠ **considered if...**
-        * HEAD is detached `git checkout <TAG>`<br>
-        * Or tag name is provided by environment variable or command line parameter
-  
-- `<commit>` specific version format definition.
-    - `<versionFormat>` An arbitrary string, see [Version Format & Placeholders](#version-format--placeholders)
-    - `<property>` A property definition to update the value of a property
-        - `<name>` The property name
-        - `<valueFormat>` The new value format of the property, see [Version Format & Placeholders](#version-format--placeholders)
-    - ⚠ **considered if...**
-        * HEAD is detached `git checkout <COMMIT>` and no matching version tag is pointing to HEAD<br>
+    - `<ref type="TYPE">` specific ref patch definition.
+        - *required* `type` Ref type indicates which kind of ref will be matched against `pattern`, can be `branch`
+          or `tag`
+        - `<pattern>` An arbitrary regex to match ref names
+            - has to be a **full match pattern** e.g. `main` or `feature/.+`
+              <br><br>
 
-#### Format Placeholders
+        - `<describeTagPattern>` An arbitrary regex to match tag names for git describe command
+            - has to be a **full match pattern** e.g. `v.+`)
+            - will override global `<describeTagPattern>` value
+        - `<updatePom>` Enable(`true`) or disable(`false`) version and properties update in original pom file
+            - will override global `<updatePom>` value
+              <br><br>
 
-ℹ whole `versionFormat` will be slugified automatically, that means all `/` characters replaced by `-`
+        - `<version>` The new version format, see [Format Placeholders](#format-placeholders)
+        - `<properties>`
+            - `<name>value</name>` A property definition to update the value of a property.
+                - `<name>` The property name
+                - `value` The new value format of the property, see [Format Placeholders](#format-placeholders)
+
+- `<rev>` Rev configuration will be used if no ref configuration is matching current git situation.
+    - same as `<ref>` configuration, except `type` attribute and `<pattern>` element.
+
+### Format Placeholders
+
+ℹ `….slug` placeholders means all `/` characters will be replaced by `-`.
+
+ℹ Final `version` will be slugified automatically, so no need to use `${….slug}` placeholders in `<version>` format.
 
 ℹ define placeholder default value (placeholder is not defined) like this `${name:-DEFAULT_VALUE}`<br>
-  e.g `${env.BUILD_NUMBER:-0}` or `${env.BUILD_NUMBER:-local}` 
+e.g `${env.BUILD_NUMBER:-0}` or `${env.BUILD_NUMBER:-local}`
 
 ℹ define placeholder overwrite value (placeholder is defined) like this `${name:+OVERWRITE_VALUE}`<br>
-  e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
+e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
 
+###### Placeholders
+
+- `${env.VARIABLE}`
+    - Value of environment variable `VARIABLE`
+- `${property.name}`
+    - Value of commandline property `-Dname=value`
+      <br><br>
 
 - `${version}`
-    - `version` set in `pom.xml`
+    - `<version>` set in `pom.xml`
     - e.g. '1.0.0-SNAPSHOT'
 - `${version.release}`
     - like `${version}` without `-SNAPSHOT` postfix
     - e.g. '1.0.0'
-    
-- `${ref}`
-    - current ref name (branch name, tag name or commit hash)
-- `${ref.slug}`
-    - like `${ref}` with all `/` replaced by `-`
+      <br><br>
 
-- `${branch}` (only available within branch configuration)
-    - The branch name of `HEAD`
-    - e.g. 'master', 'feature/next-big-thing', ...
-- `${branch.slug}`
-    - like `${branch}` with all `/` replaced by `-`    
- 
-- `${tag}` (only available within tag configuration)
-    - The tag name that points at `HEAD`, if multiple tags point at `HEAD` latest version is selected
-    - e.g. 'version/1.0.1', 'v1.2.3', ...
-- `${tag.slug}`
-    - like `${tag}` with all `/` replaced by `-`    
-    
+- `${ref}` `${ref.slug}`
+    - HEAD ref name (branch or tag name or commit hash)
+- `Ref Pattern Groups`
+    - Content of regex groups in `<ref><pattern>` can be addressed like this:
+    - `${ref.GROUP_NAME}` `${ref.GROUP_NAME.slug}`
+      `${ref.GROUP_INDEX}` `${ref.GROUP_INDEX.slug}`
+    - Named Group Example
+        ```xml
+        <ref type="branch">
+            <pattern><![CDATA[feature/(?<feature>.+)]]></pattern>
+            <version>${ref.feature}-SNAPSHOT</version>
+        </ref>
+        ```
+        <br>
+
 - `${commit}`
     - The `HEAD` commit hash
     - e.g. '0fc20459a8eceb2c4abb9bf0af45a6e8af17b94b'
-
 - `${commit.short}`
     - The short `HEAD` commit hash (7 characters)
     - e.g. '0fc2045'
-
 - `${commit.timestamp}`
     - The `HEAD` commit timestamp (epoch seconds)
     - e.g. '1560694278'
@@ -174,152 +194,154 @@ Create `${rootProjectDir}/.mvn/maven-git-versioning-extension.xml`.
 - `${commit.timestamp.datetime}`
     - The `HEAD` commit timestamp formatted as `yyyyMMdd.HHmmss`
     - e.g. '20190616.161442'
-
-- `Pattern Groups`
-    - Contents of group in the regex pattern can be addressed `${GROUP_NAME}` or `${GROUP_INDEX}`
-    - `${GROUP_NAME.slug}` or `${GROUP_INDEX.slug}`
-        - like `${GROUP_NAME}` or `${GROUP_INDEX}` with all `/` replaced by `-`  
-    - Examples
-        - Named Group
-            ```xml
-            <branch>
-                <pattern><![CDATA[feature/(?<feature>.+)]]></pattern>
-                <versionFormat>${feature}-SNAPSHOT</versionFormat>
-            </branch>
-            ```
-        - Group Index
-            ```xml
-            <tag>
-                <pattern>v([0-9].*)</pattern>
-                <versionFormat>${1}</versionFormat>
-            </tag>
-            ```
+      <br><br>
 
 - `${describe}`
-    - will resolve to `git describe` output
-    - ⚠️ may lead to performance issue on very large projects
-- `${describe.tag}`
-  - the matching tag of `git describe`
+    - Will resolve to `git describe` output
+    - ⚠️ Can lead to performance issue on projects with a lot of tags
 - `${describe.distance}`
-    - the distance count to last matching tag
-    
+    - The distance count to last matching tag
+- `${describe.tag}`
+    - The matching tag of `git describe`
+    - Describe Tag Pattern Groups
+        - Content of regex groups in `<describeTagPattern>` can be addressed like this:
+        - `${describe.tag.GROUP_NAME}` `${describe.tag.GROUP_NAME.slug}`
+          `${describe.tag.GROUP_INDEX}` `${describe.tag.GROUP_INDEX.slug}`
+        - Named Group Example
+            ```xml
+            <ref type="branch">
+                <pattern>main</pattern>
+                <describeTagPattern><![CDATA[v(?<version>.*)]]></describeTagPattern>
+                <version>${describe.tag.version}-SNAPSHOT</version>
+            </ref>
+            ```
+            <br> 
+
 - `${dirty}`
-    - if repository has untracked files or uncommitted changes this placeholder will resolve to `-DIRTY`, otherwise it will resolve to an empty string.
-    - ⚠️ may lead to performance issue on very large projects
+    - If repository has untracked files or uncommitted changes this placeholder will resolve to `-DIRTY`, otherwise it
+      will resolve to an empty string.
+    - ⚠️ Can lead to performance issue on very large projects
 - `${dirty.snapshot}`
-    - like `${dirty}`, but will resolve to `-SNAPSHOT`
+    - Like `${dirty}`, but will resolve to `-SNAPSHOT`
+      <br><br>
 
 - `${value}` - Only available within property format
-    - value of matching property
+    - Original value of matching property
 
-- `${env.VARIABLE}`
-    - value of environment variable `VARIABLE`
-      
 ### Parameters & Environment Variables
 
 - Disable Extension
     - **Environment Variables**
         - `export VERSIONING_DISABLE=true`
     - **Command Line Parameters**
-        - `mvn ... -Dversioning.disable=true`
-            
+        - `mvn … -Dversioning.disable`
+
 - Provide **branch** or **tag** name
     - **Environment Variables**
-        - `export VERSIONING_GIT_BRANCH=$PROVIDED_BRANCH_NAME`
-        - `export VERSIONING_GIT_TAG=$PROVIDED_TAG_NAME`
+        - `export VERSIONING_GIT_REF=$PROVIDED_REF` e.g. `refs/heads/main`, `refs/tags/v1.0.0` or `refs/pull/1000/head`
+        - `export VERSIONING_GIT_BRANCH=$PROVIDED_BRANCH_NAME` e.g. `main` or `refs/heads/main`
+        - `export VERSIONING_GIT_TAG=$PROVIDED_TAG_NAME` e.g. `v1.0.0` or `refs/tags/v1.0.0`
     - **Command Line Parameters**
-        - `mvn ... -Dgit.branch=$PROVIDED_BRANCH_NAME`
-        - `mvn ... -Dgit.tag=$PROVIDED_TAG_NAME`
-        
+        - `mvn … -Dgit.ref=$PROVIDED_REF`
+        - `mvn … -Dgit.branch=$PROVIDED_BRANCH_NAME`
+        - `mvn … -Dgit.tag=$PROVIDED_TAG_NAME`
+
   ℹ Especially useful for **CI builds** see [Miscellaneous Hints](#miscellaneous-hints)
 
 - Update `pom.xml`
     - **Environment Variables**
         - `export VERSIONING_UPDATE_POM=true`
     - **Command Line Parameters**
-        - `mvn ... -Dversioning.updatePom=true`
-
-- **Prefer Tags** for Versioning instead of Branches
-    - **Environment Variables**
-        - `export VERSIONING_PREFER_TAGS=true`
-    - **Command Line Parameters**
-        - `mvn ... -Dversioning.preferTags=true`
+        - `mvn … -Dversioning.updatePom`
 
 ## Provided Project Properties
 
 - `git.commit` e.g. '0fc20459a8eceb2c4abb9bf0af45a6e8af17b94b'
-- `git.ref` value of branch or tag name or commit hash
-    - `git.ref.slug` like `git.ref` with all `/` replaced by `-`
-- `git.branch` e.g. 'feature/next-big-thing', only set for branch versioning
-    - `git.branch.slug` like `git.branch` with all `/` replaced by `-`
-- `git.tag` e.g. 'v1.2.3', only set for tag versioning
-    - `git.tag.slug` like `git.tag` with all `/` replaced by `-`
+- `git.commit.short` e.g. '0fc2045'
 - `git.commit.timestamp` e.g. '1560694278'
 - `git.commit.timestamp.datetime` e.g. '2019-11-16T14:37:10Z'
 
-# Miscellaneous Hints
+- `git.ref` `git.ref.slug` HEAD ref name (branch or tag name or commit hash)
 
-### Enable Debug/Trace Logging for extension
-`mvn ... -Dorg.slf4j.simpleLogger.log.me.qoomon.maven.gitversioning=debug`
+---
+
+## IDE Setup
+
+### IntelliJ
+
+For a flawless experience you need to disable this extension during project import. Disable it by
+adding `-Dversioning.disable=true` to Maven Importer VM options (Preferences > Build, Execution, Deployment > Build
+Tools > Maven > Importing > VM options for importer).
+
+## CI/CD Setup
+
+Most CI/CD systems do checkouts in a detached HEAD state so no branch information is available, however they provide
+environment variables with this information. You can provide those, by
+using [Parameters & Environment Variables](#parameters--environment-variables). Below you'll find some setup example for
+common CI/CD systems.
+
+### Native Support
+
+* GitHub Actions: if `$GITHUB_ACTIONS == true`, `GITHUB_REF` is considered
+* GitLab CI: if `$GITLAB_CI == true`, `CI_COMMIT_BRANCH` and `CI_COMMIT_TAG` are considered
+* Circle CI: if `$CIRCLECI == true`, `CIRCLE_BRANCH` and `CIRCLE_TAG` are considered
+* Jenkins: if `JENKINS_HOME` is set, `BRANCH_NAME` and `TAG_NAME` are considered
+
+### Manual Setup
+
+Set following environment variables before running your `mvn` command
+
+```shell
+export VERSIONING_GIT_REF=$PROVIDED_REF;
+```
+
+`$PROVIDED_REF` value examples: `refs/heads/main`, `refs/tags/v1.0.0` or `refs/pull/1000/head`
+
+or
+
+```shell
+export VERSIONING_GIT_BRANCH=$PROVIDED_BRANCH;
+export VERSIONING_GIT_TAG=$PROVIDED_TAG;
+```
+
+`$PROVIDED_BRANCH` value examples: `main`, `refs/heads/main` or `refs/pull/1000/head`
+`$PROVIDED_TAG` value examples: `v1.0.0` or `refs/tags/v1.0.0`
+
+---
+
+## Miscellaneous Hints
 
 ### Commandline To Print Project Version
+
 `mvn help:evaluate -Dexpression=project.version -q -DforceStdout`
 
-### Reproducible builds ###
-The reproducible builds feature (https://maven.apache.org/guides/mini/guide-reproducible-builds.html) newly introduced in maven can be easily supported with this extension by using the latest commit timestamp as build timestamps.
+### Reproducible builds
+
+The [maven reproducible builds feature](https://maven.apache.org/guides/mini/guide-reproducible-builds.html) can be
+easily supported with this extension, by using the commit timestamp as build timestamps.
+
 ```xml
-<project.build.outputTimestamp>${git.commit.timestamp.datetime}</project.build.outputTimestamp>
-```
-### IntelliJ Setup
-For a flawless experience you need to disable this extension during project import.
-Disable it by adding `-Dversioning.disable=true` to Maven Importer VM options (Preferences > Build, Execution, Deployment > Build Tools > Maven > Importing > VM options for importer).
 
-### CI/CD Setup
-Most CI/CD systems do checkouts in a detached HEAD state so no branch information is available, however they provide environment variables with this information. You can provide those, by using [Parameters & Environment Variables](#parameters--environment-variables). Below you'll find some setup example for common CI/CD systems.
-
-#### GitHub Actions Setup
-execute this snippet before running your `mvn` command
-```shell
-if  [[ "$GITHUB_REF" = refs/tags/* ]]; then
-    export VERSIONING_GIT_TAG=${GITHUB_REF#refs/tags/};
-elif [[ "$GITHUB_REF" = refs/heads/* ]]; then
-    export VERSIONING_GIT_BRANCH=${GITHUB_REF#refs/heads/};
-elif [[ "$GITHUB_REF" = refs/pull/*/merge ]]; then
-    export VERSIONING_GIT_BRANCH=${GITHUB_REF#refs/pull/};
-fi
+<properties>
+    <project.build.outputTimestamp>${git.commit.timestamp.datetime}</project.build.outputTimestamp>
+</properties>
 ```
 
-#### GitLab CI Setup
-Global Setup
-```shell
-variables:
-  VERSIONING_GIT_TAG: ${CI_COMMIT_TAG}
-  VERSIONING_GIT_BRANCH: ${CI_COMMIT_BRANCH}
-```
-or
-```shell
-before_script:
-  - export VERSIONING_GIT_TAG=$CI_COMMIT_TAG;
-    export VERSIONING_GIT_BRANCH=$CI_COMMIT_BRANCH;
-```
+---
 
-#### Jenkins Setup
-execute this snippet before running your `mvn` command
-```shell
-if [[ "$GIT_BRANCH" = origin/tags/* ]]; then
-    export VERSIONING_GIT_TAG=${GIT_BRANCH#origin/tags/};
-else 
-    export VERSIONING_GIT_BRANCH=${GIT_BRANCH#origin/};
-fi
-```
+## Build & Release
 
-## Build
 ```shell
-  - mvn install
-  # run integration tests after install, 
+  mvn verify
+  # Publishes this plugin to local Maven
+  mvn install
+  # Run integration tests after install, 
   # integration tests will run with LATEST version of extension installed
-  - mvn failsafe:integration-test
+  mvn failsafe:integration-test
+  # Publishes this plugin to OSS Nexus.
+  GPG_TTY=$(tty) mvn clean deploy -P release -Dgpg.keyname=???
 ```
 
-#### Debug
+##### Debug
+
 `mvn help:evaluate -Dexpression=project.version -Dorg.slf4j.simpleLogger.log.me.qoomon.maven.gitversioning=debug`

@@ -66,7 +66,7 @@ public final class GitUtil {
     public static GitDescription describe(Repository repository, ObjectId revObjectId, Pattern tagPattern,
                                           Map<ObjectId, List<Ref>> reverseTagRefMap) throws IOException {
 
-        if(revObjectId == null) {
+        if (revObjectId == null) {
             return new GitDescription(NO_COMMIT, "root", 0);
         }
 
@@ -99,7 +99,7 @@ public final class GitUtil {
         }
     }
 
-    public static boolean isShallowRepository(Repository repository){
+    public static boolean isShallowRepository(Repository repository) {
         return new File(repository.getDirectory(), "shallow").isFile();
     }
 
