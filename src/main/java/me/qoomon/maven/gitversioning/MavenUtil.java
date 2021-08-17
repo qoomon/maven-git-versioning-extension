@@ -15,6 +15,8 @@ import java.io.*;
 import java.nio.file.Files;
 import java.util.Arrays;
 
+import static java.nio.file.Files.readAllBytes;
+
 /**
  * Created by qoomon on 18/11/2016.
  */
@@ -66,15 +68,19 @@ final class MavenUtil {
     }
 
     public static void writeXml(final File file, final Document gitVersionedPom) throws IOException {
-        byte[] newBytes = gitVersionedPom.toXML().getBytes();
-        if (file.exists() && Arrays.equals(newBytes, Files.readAllBytes(file.toPath()))) {
-            return;
+        byte[] gitVersionedPomBytes = gitVersionedPom.toXML().getBytes();
+        if (file.exists()) {
+            byte[] existingPomBytes = readAllBytes(file.toPath());
+            if (Arrays.equals(gitVersionedPomBytes, existingPomBytes)) {
+                // do not write if there is no change
+                return;
+            }
         }
-        Files.write(file.toPath(), newBytes);
+        Files.write(file.toPath(), gitVersionedPomBytes);
     }
 
     public static Document readXml(File file) throws IOException {
-        String pomXml = new String(Files.readAllBytes(file.toPath()));
+        String pomXml = new String(readAllBytes(file.toPath()));
         XMLParser parser = new XMLParser();
         return parser.parse(new XMLStringSource(pomXml));
     }

@@ -43,7 +43,8 @@
     ```
 * New option to consider tag configs on branches (attached HEAD), enabled by `<refs considerTagsOnBranches="true">`
     * If enabled, first matching branch or tag config will be used for versioning
-
+* prevent unnecessary updates of `pom.xml` to prevent unwanted rebuilds (#129 kudos to @ls-urs-keller)
+ 
 ##### BREAKING CHANGES
 * There is no default config anymore, if no `<ref>` configuration is matching current git situation and no `<rev>` configuration has been
   defined a warning message will be logged and extension will be skipped.

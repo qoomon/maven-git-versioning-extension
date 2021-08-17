@@ -4,6 +4,11 @@
 
     <describeTagPattern><![CDATA[v(?<version>.*)]]></describeTagPattern>
 
+    <rev>
+        <version>foo</version>
+        <updatePom>true</updatePom>
+    </rev>
+
     <refs>
 
         <ref type="tag">

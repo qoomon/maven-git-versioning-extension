@@ -13,8 +13,6 @@
                 <xs:element name="describeTagPattern" type="xs:string" minOccurs="0"/>
                 <xs:element name="updatePom" type="xs:boolean" minOccurs="0"/>
 
-                <xs:element name="rev" type="PatchDescription" minOccurs="0"/>
-
                 <xs:element name="refs" minOccurs="0">
                     <xs:complexType>
                         <xs:sequence>
@@ -24,6 +22,8 @@
                         <xs:attribute name="considerTagsOnBranches" type="xs:boolean"/>
                     </xs:complexType>
                 </xs:element>
+
+                <xs:element name="rev" type="PatchDescription" minOccurs="0"/>
             </xs:all>
         </xs:complexType>
     </xs:element>
@@ -33,7 +33,7 @@
             <xs:element name="describeTagPattern" type="xs:string" minOccurs="0"/>
             <xs:element name="updatePom" type="xs:boolean" minOccurs="0"/>
 
-            <xs:element name="version" type="xs:string"/>
+            <xs:element name="version" type="xs:string" minOccurs="0"/>
             <xs:element name="properties" minOccurs="0">
                 <xs:complexType>
                     <xs:sequence>
@@ -45,22 +45,29 @@
     </xs:complexType>
 
     <xs:complexType name="RefPatchDescription">
-        <xs:complexContent>
-            <xs:extension base="PatchDescription">
-                <xs:all>
-                    <xs:element name="pattern" type="xs:string" minOccurs="0"/>
-                </xs:all>
+        <xs:all>
+            <xs:element name="pattern" type="xs:string" minOccurs="0"/>
+            <xs:element name="describeTagPattern" type="xs:string" minOccurs="0"/>
+            <xs:element name="updatePom" type="xs:boolean" minOccurs="0"/>
 
-                <xs:attribute name="type" use="required">
-                    <xs:simpleType>
-                        <xs:restriction base="xs:string">
-                            <xs:enumeration value="tag"/>
-                            <xs:enumeration value="branch"/>
-                        </xs:restriction>
-                    </xs:simpleType>
-                </xs:attribute>
-            </xs:extension>
-        </xs:complexContent>
+            <xs:element name="version" type="xs:string" minOccurs="0"/>
+            <xs:element name="properties" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="skip"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:all>
+
+        <xs:attribute name="type" use="required">
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:enumeration value="tag"/>
+                    <xs:enumeration value="branch"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
     </xs:complexType>
 
 </xs:schema>
