@@ -35,7 +35,7 @@ create or update `${rootProjectDir}/.mvn/extensions.xml` file
     <extension>
         <groupId>me.qoomon</groupId>
         <artifactId>maven-git-versioning-extension</artifactId>
-        <version>7.0.0</version>
+        <version>7.1.0</version>
     </extension>
 
 </extensions>
@@ -134,23 +134,16 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
 
 ###### Placeholders
 
-- `${env.VARIABLE}`
-    - Value of environment variable `VARIABLE`
-- `${property.name}`
-    - Value of commandline property `-Dname=value`
+- `${env.VARIABLE}` Value of environment variable `VARIABLE`
+- `${property.name}` Value of commandline property `-Dname=value`
       <br><br>
 
-- `${version}`
-    - `<version>` set in `pom.xml`
-    - e.g. '1.0.0-SNAPSHOT'
-- `${version.release}`
-    - like `${version}` without `-SNAPSHOT` postfix
-    - e.g. '1.0.0'
+- `${version}` `<version>` set in `pom.xml` e.g. '1.0.0-SNAPSHOT'
+- `${version.release}` like `${version}` without `-SNAPSHOT` postfix e.g. '1.0.0'
       <br><br>
 
-- `${ref}` `${ref.slug}`
-    - HEAD ref name (branch or tag name or commit hash)
-- `Ref Pattern Groups`
+- `${ref}` `${ref.slug}` ref name (branch or tag name or commit hash)
+- Ref Pattern Groups
     - Content of regex groups in `<ref><pattern>` can be addressed like this:
     - `${ref.GROUP_NAME}` `${ref.GROUP_NAME.slug}`
     - `${ref.GROUP_INDEX}` `${ref.GROUP_INDEX.slug}`
@@ -163,68 +156,44 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
         ```
         <br>
 
-- `${commit}`
-    - The `HEAD` commit hash
-    - e.g. '0fc20459a8eceb2c4abb9bf0af45a6e8af17b94b'
-- `${commit.short}`
-    - The short `HEAD` commit hash (7 characters)
-    - e.g. '0fc2045'
-- `${commit.timestamp}`
-    - The `HEAD` commit timestamp (epoch seconds)
-    - e.g. '1560694278'
-- `${commit.timestamp.year}`
-    - The `HEAD` commit year
-    - e.g. '2021'
-- `${commit.timestamp.month}`
-    - The `HEAD` commit month of year
-    - e.g. '01'
-- `${commit.timestamp.day}`
-    - The `HEAD` commit day of month
-    - e.g. '01'
-- `${commit.timestamp.hour}`
-    - The `HEAD` commit hour of day (24h)
-    - e.g. '01'
-- `${commit.timestamp.minute}`
-    - The `HEAD` commit minute of hour
-    - e.g. '01'
-- `${commit.timestamp.second}`
-    - The `HEAD` commit second of minute
-    - e.g. '01'
-- `${commit.timestamp.datetime}`
-    - The `HEAD` commit timestamp formatted as `yyyyMMdd.HHmmss`
-    - e.g. '20190616.161442'
+- `${commit}` commit hash '0fc20459a8eceb2c4abb9bf0af45a6e8af17b94b'
+- `${commit.short}` commit hash (7 characters) e.g. '0fc2045'
+- `${commit.timestamp}` commit timestamp (epoch seconds) e.g. '1560694278'
+- `${commit.timestamp.year}` commit year e.g. '2021'
+- `${commit.timestamp.year.2digit}` 2-digit commit year.g. '21'
+- `${commit.timestamp.month}` commit month of year e.g. '12'
+- `${commit.timestamp.day}` commit day of month e.g. '23'
+- `${commit.timestamp.hour}` commit hour of day (24h)e.g. '13'
+- `${commit.timestamp.minute}` commit minute of hour e.g. '59'
+- `${commit.timestamp.second}` commit second of minute e.g. '30'
+- `${commit.timestamp.datetime}` commit timestamp formatted as `yyyyMMdd.HHmmss`e.g. '20190616.161442'
       <br><br>
 
-- `${describe}`
-    - Will resolve to `git describe` output
-    - ⚠️ Can lead to performance issue on projects with a lot of tags
-- `${describe.distance}`
-    - The distance count to last matching tag
-- `${describe.tag}`
-    - The matching tag of `git describe`
- - Describe Tag Pattern Groups
-     - Content of regex groups in `<describeTagPattern>` can be addressed like this:
-     - `${describe.tag.GROUP_NAME}` `${describe.tag.GROUP_NAME.slug}`
-     - `${describe.tag.GROUP_INDEX}` `${describe.tag.GROUP_INDEX.slug}`
-     - Named Group Example
-         ```xml
-         <ref type="branch">
-             <pattern>main</pattern>
-             <describeTagPattern><![CDATA[v(?<version>.*)]]></describeTagPattern>
-             <version>${describe.tag.version}-SNAPSHOT</version>
-         </ref>
-         ```
-         <br> 
+- `${describe}` Will resolve to `git describe` output
+    - ⚠️ `${describe....}` placeholders can lead to performance issue on projects with a lot of tags
+- `${describe.distance}` The distance count to last matching tag
+- `${describe.tag}` The matching tag of `git describe`
+- Describe Tag Pattern Groups
+    - Content of regex groups in `<describeTagPattern>` can be addressed like this:
+    - `${describe.tag.GROUP_NAME}` `${describe.tag.GROUP_NAME.slug}`
+    - `${describe.tag.GROUP_INDEX}` `${describe.tag.GROUP_INDEX.slug}`
+    - Named Group Example
+        ```xml
+        <ref type="branch">
+            <pattern>main</pattern>
+            <describeTagPattern><![CDATA[v(?<version>.*)]]></describeTagPattern>
+            <version>${describe.tag.version}-SNAPSHOT</version>
+        </ref>
+        ```
+        <br> 
 
-- `${dirty}`
-    - If repository has untracked files or uncommitted changes this placeholder will resolve to `-DIRTY`, otherwise it will resolve to an empty string.
+- `${dirty}` If repository has untracked files or uncommitted changes this placeholder will resolve to `-DIRTY`, otherwise it will resolve to an empty string.
     - ⚠️ Can lead to performance issue on very large projects
-- `${dirty.snapshot}`
-    - Like `${dirty}`, but will resolve to `-SNAPSHOT`
+- `${dirty.snapshot}` Like `${dirty}`, but will resolve to `-SNAPSHOT`
       <br><br>
 
-- `${value}` - Only available within property format
-    - Original value of matching property
+- `${value}` Original value of matching property (Only available within property format)
+
 
 ### Parameters & Environment Variables
 

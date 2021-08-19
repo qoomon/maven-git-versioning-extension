@@ -4,6 +4,12 @@
 
 # Changelog
 
+## 7.1.0
+
+##### Features
+* New Placeholder `${commit.timestamp.year.2digit}`
+
+
 ## 7.0.0
 
 ##### Features
