@@ -14,7 +14,7 @@
 
         <ref type="branch">
             <pattern>master</pattern>
-            <version>${project.version.release}-${branch}</version>
+            <version>${version.release}-${ref}</version>
             <properties>
                 <foo>new_new_new</foo>
             </properties>

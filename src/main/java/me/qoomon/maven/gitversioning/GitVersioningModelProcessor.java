@@ -532,10 +532,8 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
                         if (providedRef.startsWith("refs/tags/")) {
                             overrideTag = providedRef;
-                            overrideBranch = "";
                         } else {
                             overrideBranch = providedRef;
-                            overrideTag = "";
                         }
                     }
                 }
@@ -550,10 +548,8 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                         if (githubRef != null && githubRef.startsWith("refs/")) {
                             if (githubRef.startsWith("refs/tags/")) {
                                 overrideTag = githubRef;
-                                overrideBranch = "";
                             } else {
                                 overrideBranch = githubRef;
-                                overrideTag = "";
                             }
                         }
                     }
@@ -598,7 +594,6 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                         logger.debug("  TAG_NAME: " + tagName);
                         if (branchName != null && branchName.equals(tagName)) {
                             overrideTag = tagName;
-                            overrideBranch = "";
                         } else {
                             overrideBranch = branchName;
                             overrideTag = tagName;
@@ -606,11 +601,8 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                     }
                 }
 
-                if (overrideBranch != null) {
+                if (overrideBranch != null || overrideTag != null) {
                     overrideBranch(overrideBranch);
-                }
-
-                if (overrideTag != null) {
                     overrideTags(overrideTag);
                 }
             }

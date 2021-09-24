@@ -4,6 +4,12 @@
 
 # Changelog
 
+## 7.1.1
+
+##### Fixes
+* if a tag is provided (and no branch) the extension behaves like in detached head state
+* if a branch is provided (and no tag) the extension behaves like in attached head state with no tags pointing to head
+
 ## 7.1.0
 
 ##### Features
