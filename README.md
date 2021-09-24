@@ -83,11 +83,11 @@ You can configure the version and properties adjustments for specific branches a
 ### Configuration Elements
 
 - `<disable>` global disable(`true`)/enable(`false`) extension, default is `false`.
-    - Can be overridden by command option, see (Parameters & Environment Variables)[#parameters-&-environment-variables]
+    - Can be overridden by command option, see [Parameters & Environment Variables](#parameters--environment-variables).
 
 - `<describeTagPattern>` An arbitrary regex to match tag names for git describe command (has to be a **full match pattern** e.g. `v.+`), default is `.*`
 - `<updatePom>` Enable(`true`)/disable(`false`) version and properties update in original pom file, default is `false`
-    - Can be overridden by command option, see (Parameters & Environment Variables)[#parameters-&-environment-variables]
+    - Can be overridden by command option, see [Parameters & Environment Variables](#parameters--environment-variables).
 
 - `<refs considerTagsOnBranches="BOOLEAN">` List of ref configurations, ordered by priority. First matching
   configuration will be used.
