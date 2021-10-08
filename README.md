@@ -2,9 +2,10 @@
 
 [![Maven Central](https://img.shields.io/maven-central/v/me.qoomon/maven-git-versioning-extension.svg)](https://search.maven.org/artifact/me.qoomon/maven-git-versioning-extension)
 [![Changelog](https://badgen.net/badge/changelog/%E2%98%85/blue)](CHANGELOG.md)
-
 [![Build Workflow](https://github.com/qoomon/maven-git-versioning-extension/workflows/Build/badge.svg)](https://github.com/qoomon/maven-git-versioning-extension/actions?query=workflow%3ABuild)
 [![LGTM Grade](https://img.shields.io/lgtm/grade/java/github/qoomon/maven-git-versioning-extension)](https://lgtm.com/projects/g/qoomon/maven-git-versioning-extension)
+
+![Example](docs/MavenGitVersioningExtension.png)
 
 **ℹ Also available as [Gradle Plugin](https://github.com/qoomon/gradle-git-versioning-plugin)**
 
@@ -16,8 +17,6 @@ This extension can virtually set project version and properties, based on curren
     * editing `pom.xml`
     * managing project versions within files and Git tags
     * git merge conflicts
-* Highly customizable configuration, see example below
-  ![Example](docs/MavenGitVersioningExtension.png)
 
 ## Usage
 
