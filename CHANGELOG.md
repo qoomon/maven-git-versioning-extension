@@ -4,6 +4,11 @@
 
 # Changelog
 
+## 7.1.2
+
+##### Fixes
+* proper handle of concurrent module builds
+
 ## 7.1.1
 
 ##### Fixes

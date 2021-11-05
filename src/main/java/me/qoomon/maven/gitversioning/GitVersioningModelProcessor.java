@@ -99,20 +99,20 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
     @Override
     public Model read(File input, Map<String, ?> options) throws IOException {
-        final Model projectModel = super.read(input, options);
-        return processModel(projectModel, options);
+        // clone model before return to prevent concurrency issues
+        return processModel(super.read(input, options), options).clone();
     }
 
     @Override
     public Model read(Reader input, Map<String, ?> options) throws IOException {
-        final Model projectModel = super.read(input, options);
-        return processModel(projectModel, options);
+        // clone model before return to prevent concurrency issues
+        return processModel(super.read(input, options), options).clone();
     }
 
     @Override
     public Model read(InputStream input, Map<String, ?> options) throws IOException {
-        final Model projectModel = super.read(input, options);
-        return processModel(projectModel, options);
+        // clone model before return to prevent concurrency issues
+        return processModel(super.read(input, options), options).clone();
     }
 
 
