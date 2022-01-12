@@ -37,6 +37,7 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 import static com.fasterxml.jackson.databind.MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS;
+import static com.fasterxml.jackson.databind.MapperFeature.USE_ANNOTATIONS;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.Math.*;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
@@ -77,6 +78,8 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     private SessionScope sessionScope;
 
     private boolean initialized = false;
+
+    private Configuration config;
 
     // --- following fields will be initialized by init() method -------------------------------------------------------
     private MavenSession mavenSession; // can't be injected, cause it's not available before model read
@@ -137,7 +140,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
         final File configFile = new File(mvnDirectory, projectArtifactId() + ".xml");
         logger.debug("read config from " + configFile);
-        Configuration config = readConfig(configFile);
+        config = readConfig(configFile);
 
         // check if extension is disabled by command option
         final String commandOptionDisable = getCommandOption(OPTION_NAME_DISABLE);
@@ -246,7 +249,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             return projectModel;
         }
 
-        if (!relatedProjects.contains(projectGAV)) {
+        if (!isRelatedProject(projectGAV)) {
             if (logger.isTraceEnabled()) {
                 logger.trace("skip model - unrelated project - " + projectModel.getPomFile());
             }
@@ -337,7 +340,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         Parent parent = projectModel.getParent();
         if (parent != null) {
             GAV parentGAV = GAV.of(parent);
-            if (relatedProjects.contains(parentGAV)) {
+            if (isRelatedProject(parentGAV)) {
                 String gitVersion = getGitVersion(versionFormat, parentGAV);
                 logger.debug("set parent version to " + gitVersion + " (" + parentGAV + ")");
                 parent.setVersion(gitVersion);
@@ -438,13 +441,13 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
     private List<Plugin> filterRelatedPlugins(List<Plugin> plugins) {
         return plugins.stream()
-                .filter(it -> relatedProjects.contains(GAV.of(it)))
+                .filter(it -> isRelatedProject(GAV.of(it)))
                 .collect(toList());
     }
 
     private List<ReportPlugin> filterRelatedReportPlugins(List<ReportPlugin> plugins) {
         return plugins.stream()
-                .filter(it -> relatedProjects.contains(GAV.of(it)))
+                .filter(it -> isRelatedProject(GAV.of(it)))
                 .collect(toList());
     }
 
@@ -483,7 +486,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
     public List<Dependency> filterRelatedDependencies(List<Dependency> dependencies) {
         return dependencies.stream()
-                .filter(it -> relatedProjects.contains(GAV.of(it)))
+                .filter(it -> isRelatedProject(GAV.of(it)))
                 .collect(toList());
     }
 
@@ -867,6 +870,9 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     private Set<GAV> determineRelatedProjects(Model projectModel) throws IOException {
         final HashSet<GAV> relatedProjects = new HashSet<>();
         determineRelatedProjects(projectModel, relatedProjects);
+        config.relatedProjects.stream()
+                .map(it -> new GAV(it.groupId, it.artifactId, "*"))
+                .forEach(relatedProjects::add);
         return relatedProjects;
     }
 
@@ -904,6 +910,15 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             determineRelatedProjects(moduleProjectModel, relatedProjects);
         }
     }
+
+    private boolean isRelatedProject(GAV project) {
+
+        boolean isRelated = relatedProjects.contains(project)
+                || relatedProjects.contains(new GAV(project.getGroupId(), project.getArtifactId(), "*"));
+        System.err.println("===== "+ project+" isRelated: " + isRelated);
+        return isRelated;
+    }
+
 
     /**
      * checks if <code>pomFile</code> is part of current maven and git context

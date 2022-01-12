@@ -4,10 +4,15 @@
 
 # Changelog
 
+## 7.2.0
+
+##### Features
+* Add `<relatedProjects>` config option
+
 ## 7.1.3
 
 ##### Fixes
-*  fix `rootDirectory` determination for sub working trees
+* fix `rootDirectory` determination for sub working trees
 
 ## 7.1.2
 

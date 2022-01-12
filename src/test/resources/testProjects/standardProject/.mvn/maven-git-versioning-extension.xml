@@ -35,4 +35,11 @@
 
     </refs>
 
+    <relatedProjects>
+        <project>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+        </project>
+    </relatedProjects>
+
 </configuration>

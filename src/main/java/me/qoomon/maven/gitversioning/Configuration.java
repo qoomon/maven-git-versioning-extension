@@ -1,7 +1,9 @@
 package me.qoomon.maven.gitversioning;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
@@ -33,6 +35,11 @@ public class Configuration {
     public RefPatchDescriptionList refs = new RefPatchDescriptionList();
 
     public PatchDescription rev;
+
+    @JsonInclude(NON_EMPTY)
+    @JacksonXmlElementWrapper
+    @JsonProperty(required = true)
+    public List<RelatedProject> relatedProjects = new ArrayList<>();
 
     @JsonInclude(NON_NULL)
     public static class PatchDescription {
@@ -77,5 +84,18 @@ public class Configuration {
         @JacksonXmlElementWrapper(useWrapping = false)
         @JacksonXmlProperty(localName = "ref")
         public List<RefPatchDescription> list = new ArrayList<>();
+    }
+
+    public static class RelatedProject {
+        public String groupId;
+        public String artifactId;
+
+        @JsonCreator
+        public RelatedProject(
+                @JsonProperty(required = true,  value="groupId") String groupId,
+                @JsonProperty(required = true, value="artifactId") String artifactId) {
+            this.groupId = groupId;
+            this.artifactId = artifactId;
+        }
     }
 }

@@ -24,6 +24,14 @@
                 </xs:element>
 
                 <xs:element name="rev" type="PatchDescription" minOccurs="0"/>
+
+                <xs:element name="relatedProjects" minOccurs="0">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="project" type="RelatedProject" minOccurs="0" maxOccurs="unbounded"/>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
             </xs:all>
         </xs:complexType>
     </xs:element>
@@ -68,6 +76,13 @@
                 </xs:restriction>
             </xs:simpleType>
         </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="RelatedProject">
+        <xs:all>
+            <xs:element name="groupId" type="xs:string"/>
+            <xs:element name="artifactId" type="xs:string"/>
+        </xs:all>
     </xs:complexType>
 
 </xs:schema>

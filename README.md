@@ -118,6 +118,16 @@ You can configure the version and properties adjustments for specific branches a
 - `<rev>` Rev configuration will be used if no ref configuration is matching current git situation.
     - same as `<ref>` configuration, except `type` attribute and `<pattern>` element.
 
+- `<relatedProjects>` Add external projects as related project to update their versions as well.
+   ```xml
+   <relatedProjects>
+       <project>
+           <groupId>me.qoomon</groupId>
+           <artifactId>base</artifactId>
+       </project>
+   </relatedProjects>
+   ```
+
 ### Format Placeholders
 
 ℹ `….slug` placeholders means all `/` characters will be replaced by `-`.
