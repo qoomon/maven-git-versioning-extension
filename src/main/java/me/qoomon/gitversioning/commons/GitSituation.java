@@ -39,7 +39,7 @@ public class GitSituation {
 
     public GitSituation(Repository repository) throws IOException {
         this.repository = repository;
-        this.rootDirectory = repository.getWorkTree();
+        this.rootDirectory =  repository.getDirectory().getParentFile();
         this.head = repository.resolve(HEAD);
         this.rev = head != null ? head.getName() : NO_COMMIT;
     }
