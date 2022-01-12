@@ -293,6 +293,11 @@ The [maven reproducible builds feature](https://maven.apache.org/guides/mini/gui
 ## Build & Release
 
 ```shell
+gpg --import private.key
+gpg --list-keys
+```
+
+```shell
   mvn verify
   # Publishes this plugin to local Maven
   mvn install
