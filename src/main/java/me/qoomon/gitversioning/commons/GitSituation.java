@@ -1,11 +1,13 @@
 package me.qoomon.gitversioning.commons;
 
+import org.eclipse.jgit.errors.NoWorkTreeException;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
@@ -39,11 +41,30 @@ public class GitSituation {
 
     public GitSituation(Repository repository) throws IOException {
         this.repository = repository;
-        this.rootDirectory =  repository.getDirectory().getParentFile();
+        this.rootDirectory = getWorkTree(repository);
         this.head = repository.resolve(HEAD);
         this.rev = head != null ? head.getName() : NO_COMMIT;
     }
 
+    /**
+     * fixed version repository.getWorkTree()
+     * handle worktrees as well
+     *
+     * @param repository
+     * @return .git directory
+     */
+    private File getWorkTree(Repository repository) throws IOException {
+        try {
+            return repository.getWorkTree();
+        } catch (NoWorkTreeException e) {
+            File gitDirFile = new File(repository.getDirectory(), "gitdir");
+            if (gitDirFile.exists()) {
+                String gitDirPath = Files.readString(gitDirFile.toPath());
+                return new File(gitDirPath).getParentFile();
+            }
+            throw e;
+        }
+    }
 
     public File getRootDirectory() {
         return rootDirectory;
