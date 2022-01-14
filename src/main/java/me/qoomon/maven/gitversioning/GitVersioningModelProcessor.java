@@ -912,11 +912,8 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     }
 
     private boolean isRelatedProject(GAV project) {
-
-        boolean isRelated = relatedProjects.contains(project)
+        return relatedProjects.contains(project)
                 || relatedProjects.contains(new GAV(project.getGroupId(), project.getArtifactId(), "*"));
-        System.err.println("===== "+ project+" isRelated: " + isRelated);
-        return isRelated;
     }
 
 
