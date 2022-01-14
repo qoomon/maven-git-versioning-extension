@@ -193,7 +193,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         logger.info("matching ref: " + gitVersionDetails.getRefType().name() + " - " + gitVersionDetails.getRefName());
         final RefPatchDescription patchDescription = gitVersionDetails.getPatchDescription();
         logger.info("ref configuration: " + gitVersionDetails.getRefType().name() + " - pattern: " + patchDescription.pattern);
-        if (patchDescription.describeTagPattern != null) {
+        if (patchDescription.describeTagPattern != null && !patchDescription.describeTagPattern.pattern().equals(".*")) {
             logger.info("  describeTagPattern: " + patchDescription.describeTagPattern);
             gitSituation.setDescribeTagPattern(patchDescription.describeTagPattern);
         }
