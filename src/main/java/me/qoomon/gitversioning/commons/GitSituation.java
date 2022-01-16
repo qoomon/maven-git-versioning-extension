@@ -59,7 +59,7 @@ public class GitSituation {
         } catch (NoWorkTreeException e) {
             File gitDirFile = new File(repository.getDirectory(), "gitdir");
             if (gitDirFile.exists()) {
-                String gitDirPath = Files.readString(gitDirFile.toPath());
+                String gitDirPath = Files.readAllLines(gitDirFile.toPath()).get(0);
                 return new File(gitDirPath).getParentFile();
             }
             throw e;
