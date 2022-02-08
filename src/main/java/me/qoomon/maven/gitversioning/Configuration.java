@@ -41,6 +41,11 @@ public class Configuration {
     @JsonProperty(required = true)
     public List<RelatedProject> relatedProjects = new ArrayList<>();
 
+    @JsonInclude(NON_EMPTY)
+    @JacksonXmlElementWrapper
+    @JsonProperty(required = true)
+    public List<RelatedProject> disabledProjects = new ArrayList<>();
+
     @JsonInclude(NON_NULL)
     public static class PatchDescription {
 

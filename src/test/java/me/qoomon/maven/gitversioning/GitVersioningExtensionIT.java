@@ -14,6 +14,7 @@ import org.apache.maven.model.Parent;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -661,6 +662,148 @@ class GitVersioningExtensionIT {
                     softly.assertThat(dependency.getVersion()).isEqualTo(expectedVersion);
                 });
             }));
+        }
+    }
+
+    @Test
+    void dependencyUpdates_multiModuleProject_disabledDependentProject() throws Exception {
+        try (Git git = Git.init().setInitialBranch("test").setDirectory(projectDir.toFile()).call()) {
+            // Given
+            git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+
+            pomModel.setPackaging("pom");
+            pomModel.addModule("api");
+            pomModel.addModule("logic");
+
+            writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
+            writeExtensionsFile(projectDir);
+
+            writeExtensionConfigFile(projectDir, new Configuration() {{
+                refs.list.add(createBranchVersionDescription());
+                disabledProjects.add(new RelatedProject(pomModel.getGroupId(), "logic"));
+            }});
+
+            Path apiProjectDir = Files.createDirectories(projectDir.resolve("api"));
+            Model apiPomModel = writeModel(apiProjectDir.resolve("pom.xml").toFile(), new Model() {{
+                setModelVersion(pomModel.getModelVersion());
+                setParent(new Parent() {{
+                    setGroupId(pomModel.getGroupId());
+                    setArtifactId(pomModel.getArtifactId());
+                    setVersion(pomModel.getVersion());
+                }});
+                setArtifactId("api");
+                setVersion(pomModel.getVersion());
+            }});
+
+            Path logicProjectDir = Files.createDirectories(projectDir.resolve("logic"));
+            Model logicPomModel = writeModel(logicProjectDir.resolve("pom.xml").toFile(), new Model() {{
+                setModelVersion(pomModel.getModelVersion());
+                setParent(new Parent() {{
+                    setGroupId(pomModel.getGroupId());
+                    setArtifactId(pomModel.getArtifactId());
+                    setVersion(pomModel.getVersion());
+                }});
+                setArtifactId("logic");
+                setVersion(pomModel.getVersion());
+                addDependency(new Dependency() {{
+                    setGroupId(pomModel.getGroupId());
+                    setArtifactId("api");
+                    setVersion(pomModel.getVersion());
+                }});
+            }});
+
+            // When
+            Verifier verifier = getVerifier(projectDir);
+            verifier.executeGoal("verify");
+
+            // Then
+            verifier.verifyErrorFreeLog();
+            String expectedLogicVersion = pomModel.getVersion();
+            String expectedApiVersion = "test-gitVersioning";
+            verifier.verifyTextInLog("Building " + logicPomModel.getArtifactId() + " " + expectedLogicVersion);
+            verifier.verifyTextInLog("Building " + apiPomModel.getArtifactId() + " " + expectedApiVersion);
+
+            Model gitVersionedLogicPomModel = readModel(logicProjectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
+            assertThat(gitVersionedLogicPomModel.getVersion()).isEqualTo(expectedLogicVersion);
+            assertThat(gitVersionedLogicPomModel).satisfies(it -> assertSoftly(softly -> {
+                softly.assertThat(it.getDependencies().get(0)).satisfies(dependency -> {
+                    softly.assertThat(dependency.getArtifactId()).isEqualTo(apiPomModel.getArtifactId());
+                    softly.assertThat(dependency.getVersion()).isEqualTo(expectedApiVersion);
+                });
+            }));
+            Model gitVersionedApiPomModel = readModel(apiProjectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
+            assertThat(gitVersionedApiPomModel.getVersion()).isEqualTo(expectedApiVersion);
+        }
+    }
+
+    @Test
+    void dependencyUpdates_multiModuleProject_disabledProjectDependee() throws Exception {
+        try (Git git = Git.init().setInitialBranch("test").setDirectory(projectDir.toFile()).call()) {
+            // Given
+            git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+
+            pomModel.setPackaging("pom");
+            pomModel.addModule("api");
+            pomModel.addModule("logic");
+
+            writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
+            writeExtensionsFile(projectDir);
+
+            writeExtensionConfigFile(projectDir, new Configuration() {{
+                refs.list.add(createBranchVersionDescription());
+                disabledProjects.add(new RelatedProject(pomModel.getGroupId(), "api"));
+            }});
+
+            Path apiProjectDir = Files.createDirectories(projectDir.resolve("api"));
+            Model apiPomModel = writeModel(apiProjectDir.resolve("pom.xml").toFile(), new Model() {{
+                setModelVersion(pomModel.getModelVersion());
+                setParent(new Parent() {{
+                    setGroupId(pomModel.getGroupId());
+                    setArtifactId(pomModel.getArtifactId());
+                    setVersion(pomModel.getVersion());
+                }});
+                setArtifactId("api");
+                setVersion(pomModel.getVersion());
+            }});
+
+            Path logicProjectDir = Files.createDirectories(projectDir.resolve("logic"));
+            Model logicPomModel = writeModel(logicProjectDir.resolve("pom.xml").toFile(), new Model() {{
+                setModelVersion(pomModel.getModelVersion());
+                setParent(new Parent() {{
+                    setGroupId(pomModel.getGroupId());
+                    setArtifactId(pomModel.getArtifactId());
+                    setVersion(pomModel.getVersion());
+                }});
+                setArtifactId("logic");
+                setVersion(pomModel.getVersion());
+                addDependency(new Dependency() {{
+                    setGroupId(pomModel.getGroupId());
+                    setArtifactId("api");
+                    setVersion(pomModel.getVersion());
+                }});
+            }});
+
+            // When
+            Verifier verifier = getVerifier(projectDir);
+            verifier.executeGoal("verify");
+
+            // Then
+            verifier.verifyErrorFreeLog();
+            String expectedLogicVersion = "test-gitVersioning";
+            String expectedApiVersion = pomModel.getVersion();
+            verifier.verifyTextInLog("Building " + logicPomModel.getArtifactId() + " " + expectedLogicVersion);
+            verifier.verifyTextInLog("Building " + apiPomModel.getArtifactId() + " " + expectedApiVersion);
+
+            Model gitVersionedLogicPomModel = readModel(logicProjectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
+            assertThat(gitVersionedLogicPomModel.getVersion()).isEqualTo(expectedLogicVersion);
+            assertThat(gitVersionedLogicPomModel).satisfies(it -> assertSoftly(softly -> {
+                softly.assertThat(it.getDependencies().get(0)).satisfies(dependency -> {
+                    softly.assertThat(dependency.getArtifactId()).isEqualTo(apiPomModel.getArtifactId());
+                    softly.assertThat(dependency.getVersion()).isEqualTo(expectedApiVersion);
+                });
+            }));
+            Model gitVersionedApiPomModel = readModel(apiProjectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
+            assertThat(gitVersionedApiPomModel.getVersion()).isEqualTo(expectedApiVersion);
         }
     }
 

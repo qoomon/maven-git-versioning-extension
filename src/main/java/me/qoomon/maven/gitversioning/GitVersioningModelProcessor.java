@@ -93,6 +93,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     private Map<String, Supplier<String>> globalFormatPlaceholderMap;
     private Map<String, String> gitProjectProperties;
     private Set<GAV> relatedProjects;
+    private Set<GAV> disabledProjects;
 
 
     // ---- other fields -----------------------------------------------------------------------------------------------
@@ -219,6 +220,13 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             relatedProjects.forEach(gav -> logger.debug("  " + gav));
         }
 
+        // determine disabled projects
+        disabledProjects = determineDisabledProjects(projectModel);
+        if (logger.isDebugEnabled()) {
+            logger.debug(buffer().strong("disabled projects:").toString());
+            disabledProjects.forEach(gav -> logger.debug("  " + gav));
+        }
+
         logger.info("");
     }
 
@@ -340,7 +348,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         Parent parent = projectModel.getParent();
         if (parent != null) {
             GAV parentGAV = GAV.of(parent);
-            if (isRelatedProject(parentGAV)) {
+            if (isActiveProject(parentGAV)) {
                 String gitVersion = getGitVersion(versionFormat, parentGAV);
                 logger.debug("set parent version to " + gitVersion + " (" + parentGAV + ")");
                 parent.setVersion(gitVersion);
@@ -351,9 +359,11 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     private void updateVersion(Model projectModel, String versionFormat) {
         if (projectModel.getVersion() != null) {
             GAV projectGAV = GAV.of(projectModel);
-            String gitVersion = getGitVersion(versionFormat, projectGAV);
-            logger.debug("set version to " + gitVersion);
-            projectModel.setVersion(gitVersion);
+            if (isActiveProject(projectGAV)) {
+                String gitVersion = getGitVersion(versionFormat, projectGAV);
+                logger.debug("set version to " + gitVersion);
+                projectModel.setVersion(gitVersion);
+            }
         }
     }
 
@@ -441,13 +451,13 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
     private List<Plugin> filterRelatedPlugins(List<Plugin> plugins) {
         return plugins.stream()
-                .filter(it -> isRelatedProject(GAV.of(it)))
+                .filter(it -> isActiveProject(GAV.of(it)))
                 .collect(toList());
     }
 
     private List<ReportPlugin> filterRelatedReportPlugins(List<ReportPlugin> plugins) {
         return plugins.stream()
-                .filter(it -> isRelatedProject(GAV.of(it)))
+                .filter(it -> isActiveProject(GAV.of(it)))
                 .collect(toList());
     }
 
@@ -486,7 +496,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
     public List<Dependency> filterRelatedDependencies(List<Dependency> dependencies) {
         return dependencies.stream()
-                .filter(it -> isRelatedProject(GAV.of(it)))
+                .filter(it -> isActiveProject(GAV.of(it)))
                 .collect(toList());
     }
 
@@ -876,6 +886,14 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         return relatedProjects;
     }
 
+    private Set<GAV> determineDisabledProjects(Model projectModel) throws IOException {
+        final HashSet<GAV> disabledProjects = new HashSet<>();
+        config.disabledProjects.stream()
+            .map(it -> new GAV(it.groupId, it.artifactId, "*"))
+            .forEach(disabledProjects::add);
+        return disabledProjects;
+    }
+
     private void determineRelatedProjects(Model projectModel, Set<GAV> relatedProjects) throws IOException {
         final GAV projectGAV = GAV.of(projectModel);
         if (relatedProjects.contains(projectGAV)) {
@@ -916,6 +934,14 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                 || relatedProjects.contains(new GAV(project.getGroupId(), project.getArtifactId(), "*"));
     }
 
+    private boolean isDisabledProject(GAV project) {
+        return disabledProjects.contains(project)
+            || disabledProjects.contains(new GAV(project.getGroupId(), project.getArtifactId(), "*"));
+    }
+
+    private boolean isActiveProject(GAV project) {
+        return isRelatedProject(project) && !isDisabledProject(project);
+    }
 
     /**
      * checks if <code>pomFile</code> is part of current maven and git context
