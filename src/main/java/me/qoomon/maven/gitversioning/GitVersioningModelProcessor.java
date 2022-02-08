@@ -8,6 +8,7 @@ import de.pdark.decentxml.Element;
 import me.qoomon.gitversioning.commons.GitDescription;
 import me.qoomon.gitversioning.commons.GitSituation;
 import me.qoomon.gitversioning.commons.Lazy;
+import me.qoomon.gitversioning.commons.RandomNumberSupplier;
 import me.qoomon.maven.gitversioning.Configuration.PatchDescription;
 import me.qoomon.maven.gitversioning.Configuration.RefPatchDescription;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
@@ -37,7 +38,6 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 import static com.fasterxml.jackson.databind.MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS;
-import static com.fasterxml.jackson.databind.MapperFeature.USE_ANNOTATIONS;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.Math.*;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
@@ -94,11 +94,11 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     private Map<String, String> gitProjectProperties;
     private Set<GAV> relatedProjects;
 
+    private final RandomNumberSupplier randomSupplier = new RandomNumberSupplier();
 
     // ---- other fields -----------------------------------------------------------------------------------------------
 
     private final Map<File, Model> sessionModelCache = new HashMap<>();
-
 
     @Override
     public Model read(File input, Map<String, ?> options) throws IOException {
@@ -117,7 +117,6 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         // clone model before return to prevent concurrency issues
         return processModel(super.read(input, options), options).clone();
     }
-
 
     private void init(Model projectModel) throws IOException {
         logger.info("");
@@ -774,6 +773,11 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
         // environment variables e.g. BUILD_NUMBER=123 will be available as ${env.BUILD_NUMBER}
         System.getenv().forEach((key, value) -> placeholderMap.put("env." + key, () -> value));
+
+        // Add a four-digit numbers
+        placeholderMap.put("random.fourDigits", randomSupplier.randomFourDigits());
+        placeholderMap.put("random.fiveDigits", randomSupplier.randomFiveDigits());
+        placeholderMap.put("random.sixDigits", randomSupplier.randomSixDigits());
 
         return placeholderMap;
     }
