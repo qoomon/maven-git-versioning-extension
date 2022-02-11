@@ -755,6 +755,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         final Lazy<String> descriptionTag = Lazy.by(() -> description.get().getTag());
         placeholderMap.put("describe.tag", descriptionTag);
         placeholderMap.put("describe.distance", Lazy.by(() -> String.valueOf(description.get().getDistance())));
+        placeholderMap.put("describe.distance.snapshot", Lazy.by(() -> description.get().getDistance() != 0 ? "-SNAPSHOT" : ""));
 
         // describe tag pattern groups
         final Lazy<Map<String, String>> describeTagPatternValues = Lazy.by(

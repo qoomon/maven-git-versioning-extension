@@ -179,6 +179,7 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
 
 - `${describe}` Will resolve to `git describe` output
 - `${describe.distance}` The distance count to last matching tag
+- `${describe.distance.snapshot}` Will resolve to `-SNAPSHOT` if the distance count to last matching tag is nonzero
 - `${describe.tag}` The matching tag of `git describe`
 - Describe Tag Pattern Groups
     - Content of regex groups in `<describeTagPattern>` can be addressed like this:
