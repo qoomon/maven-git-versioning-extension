@@ -150,6 +150,7 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
 - `${version.release}` like `${version}` without `-SNAPSHOT` postfix e.g. '1.0.0'
 - `${version.major}` like `${version}` but only the major version component e.g. '1'
 - `${version.minor}` like `${version}` but only the minor version component e.g. '0'
+- `${version.patch}` like `${version}` but only the patch version component e.g. '0'
       <br><br>
 
 - `${ref}` `${ref.slug}` ref name (branch or tag name or commit hash)
