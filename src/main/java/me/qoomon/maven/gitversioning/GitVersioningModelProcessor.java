@@ -706,9 +706,9 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         placeholderMap.put("version.release", Lazy.by(() -> originalProjectVersion.get().replaceFirst("-SNAPSHOT$", "")));
 
         String[] versionComponents = originalProjectVersion.get().replaceFirst("-.*$","").split("\\.");
-        placeholderMap.put("version.major", Lazy.by(() -> versionComponents.length >= 1 ? versionComponents[0] : ""));
-        placeholderMap.put("version.minor", Lazy.by(() -> versionComponents.length >= 2 ? versionComponents[1] : ""));
-        placeholderMap.put("version.patch", Lazy.by(() -> versionComponents.length >= 3 ? versionComponents[2] : ""));
+        placeholderMap.put("version.major", Lazy.by(() -> versionComponents.length > 0 ? versionComponents[0] : ""));
+        placeholderMap.put("version.minor", Lazy.by(() -> versionComponents.length > 1 ? versionComponents[1] : ""));
+        placeholderMap.put("version.patch", Lazy.by(() -> versionComponents.length > 1 ? versionComponents[2] : ""));
 
         return placeholderMap;
     }
