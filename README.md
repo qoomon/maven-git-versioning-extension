@@ -146,8 +146,11 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
 - `${property.name}` Value of commandline property `-Dname=value`
       <br><br>
 
-- `${version}` `<version>` set in `pom.xml` e.g. '1.0.0-SNAPSHOT'
-- `${version.release}` like `${version}` without `-SNAPSHOT` postfix e.g. '1.0.0'
+- `${version}` `<version>` set in `pom.xml` e.g. '1.2.3-SNAPSHOT'
+- `${version.major}` the major version component of `${version}` e.g. '1'
+- `${version.minor}` the minor version component of `${version}` e.g. '2'
+- `${version.patch}` the patch version component of `${version}` e.g. '3'
+- `${version.release}` like `${version}` without `-SNAPSHOT` postfix e.g. '1.2.3'
       <br><br>
 
 - `${ref}` `${ref.slug}` ref name (branch or tag name or commit hash)

@@ -6,6 +6,11 @@
 
 ## 7.2.3
 
+##### Features
+* add additional version component placeholders (#165 @pdkyas)
+
+## 7.2.3
+
 ##### Fixes
 * fix worktree handling
 
