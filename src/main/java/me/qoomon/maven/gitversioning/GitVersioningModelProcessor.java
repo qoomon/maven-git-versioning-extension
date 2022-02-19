@@ -21,7 +21,6 @@ import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.slf4j.Logger;
 
-import javax.enterprise.inject.Typed;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -37,7 +36,6 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 import static com.fasterxml.jackson.databind.MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS;
-import static com.fasterxml.jackson.databind.MapperFeature.USE_ANNOTATIONS;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.Math.*;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
@@ -60,7 +58,6 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 @Named("core-default")
 @Singleton
-@Typed(ModelProcessor.class)
 @SuppressWarnings("CdiInjectionPointsInspection")
 public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
