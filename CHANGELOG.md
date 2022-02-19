@@ -4,7 +4,7 @@
 
 # Changelog
 
-## 7.2.3
+## 7.3.0
 
 ##### Features
 * add additional version component placeholders (#165 @pdkyas)
