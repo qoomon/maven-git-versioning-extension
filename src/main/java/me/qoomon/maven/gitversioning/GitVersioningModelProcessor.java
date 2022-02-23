@@ -46,7 +46,6 @@ import static java.util.stream.Collectors.*;
 import static me.qoomon.gitversioning.commons.GitRefType.*;
 import static me.qoomon.gitversioning.commons.StringUtil.*;
 import static me.qoomon.maven.gitversioning.BuildProperties.projectArtifactId;
-import static me.qoomon.maven.gitversioning.GitVersioningMojo.GOAL;
 import static me.qoomon.maven.gitversioning.GitVersioningMojo.asPlugin;
 import static me.qoomon.maven.gitversioning.MavenUtil.*;
 import static org.apache.maven.shared.utils.StringUtils.*;
@@ -278,8 +277,8 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                     StandardCopyOption.REPLACE_EXISTING);
         }
 
-        // git versioned pom can't be set as model pom right away, file
-        // cause it will break plugins, that trying to update original pom file
+        // git versioned pom can't be set as model pom right away,
+        // because it will break plugins, that trying to update original pom file
         //   e.g. mvn versions:set -DnewVersion=1.0.0
         // That's why we need to add a build plugin that sets project pom file to git versioned pom file
         addBuildPlugin(projectModel);
@@ -497,8 +496,8 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         Plugin plugin = asPlugin();
 
         PluginExecution execution = new PluginExecution();
-        execution.setId(GOAL);
-        execution.getGoals().add(GOAL);
+        execution.setId(GitVersioningMojo.GOAL);
+        execution.getGoals().add(GitVersioningMojo.GOAL);
 
         plugin.getExecutions().add(execution);
 
