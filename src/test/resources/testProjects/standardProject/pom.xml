@@ -9,8 +9,19 @@
     <version>0.0.0-SNAPSHOT</version>
 
     <properties>
-        <foo>${basedir}/src/main/fuxx</foo>
-        <nickname>qoomon</nickname>
+        <dep.dependency-management-plugin>0.4</dep.dependency-management-plugin>
+        <dep.enforce-managed-deps-rule>1.3</dep.enforce-managed-deps-rule>
+        <dep.extra-enforcer-rules>1.5.1</dep.extra-enforcer-rules>
+        <dep.linkage-checker-enforcer-rules>1.5.12</dep.linkage-checker-enforcer-rules>
+        <dep.maven-clean-plugin>3.1.0</dep.maven-clean-plugin>
+        <dep.maven-compiler-plugin>3.10.0</dep.maven-compiler-plugin>
+        <dep.maven-deploy-plugin>3.0.0-M2</dep.maven-deploy-plugin>
+        <dep.maven-enforcer-plugin>3.0.0</dep.maven-enforcer-plugin>
+        <dep.maven-install-plugin>3.0.0-M1</dep.maven-install-plugin>
+        <dep.maven-jar-plugin>3.2.2</dep.maven-jar-plugin>
+        <dep.maven-resources-plugin>3.2.0</dep.maven-resources-plugin>
+        <dep.maven-site-plugin>3.10.0</dep.maven-site-plugin>
+        <dep.surefire-plugin>3.0.0-M5</dep.surefire-plugin>
     </properties>
 
     <dependencies>
@@ -20,6 +31,68 @@
             <version>28.2-jre</version>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>fail</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requirePluginVersions/>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <artifactId>maven-clean-plugin</artifactId>
+                    <version>${dep.maven-clean-plugin}</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${dep.maven-compiler-plugin}</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-deploy-plugin</artifactId>
+                    <version>${dep.maven-deploy-plugin}</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-enforcer-plugin</artifactId>
+                    <version>${dep.maven-enforcer-plugin}</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-install-plugin</artifactId>
+                    <version>${dep.maven-install-plugin}</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>${dep.maven-jar-plugin}</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <version>${dep.maven-resources-plugin}</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-site-plugin</artifactId>
+                    <version>${dep.maven-site-plugin}</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${dep.surefire-plugin}</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
 
 </project>
 

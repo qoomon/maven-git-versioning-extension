@@ -504,7 +504,9 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         if (projectModel.getBuild() == null) {
             projectModel.setBuild(new Build());
         }
-        projectModel.getBuild().getPlugins().add(plugin);
+        // add at index 0 to be executed before any other project plugin,
+        // to prevent malfunctions with other plugins
+        projectModel.getBuild().getPlugins().add(0, plugin);
     }
 
 

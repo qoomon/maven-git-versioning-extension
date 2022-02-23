@@ -22,6 +22,8 @@ This extension can virtually set project version and properties, based on curren
 
 ⚠️ minimal required maven version is `3.6.3`
 
+⚠️ If you're using **IntelliJ** have a look at [IntelliJ Setup Instructions](#intellij---multi-modules-projects)
+
 ### Add Extension to Maven Project
 
 create or update `${rootProjectDir}/.mvn/extensions.xml` file
@@ -244,10 +246,14 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
 
 ## IDE Setup
 
-### IntelliJ
+### IntelliJ - Multi Modules Projects
 
-For a flawless experience you need to disable this extension during project import. 
-Disable it by adding `-Dversioning.disable=true` to Maven Importer VM options (Preferences > Build, Execution, Deployment > Build Tools > Maven > Importing > VM options for importer).
+For a flawless experience you need to disable this extension during project import, otherwise you'll get errors for modules depending on another module.  
+To disable this extension during import add following Maven Importer VM options (`Preferences > Build, Execution, Deployment > Build Tools > Maven > Importing > VM options for importer`) `-Dversioning.disable=true`
+
+*Related Issues*
+* https://youtrack.jetbrains.com/issue/IDEA-200272
+* https://youtrack.jetbrains.com/issue/IDEA-288322
 
 ## CI/CD Setup
 
