@@ -784,6 +784,8 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     private static Map<String, String> generateGitProjectProperties(GitSituation gitSituation, GitVersionDetails gitVersionDetails) {
         final Map<String, String> properties = new HashMap<>();
 
+        properties.put("git.worktree", gitSituation.getRootDirectory().getAbsolutePath());
+
         properties.put("git.commit", gitVersionDetails.getCommit());
         properties.put("git.commit.short", gitVersionDetails.getCommit().substring(0, 7));
 
