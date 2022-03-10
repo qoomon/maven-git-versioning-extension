@@ -24,7 +24,7 @@ import java.nio.file.Path;
 import java.util.regex.Pattern;
 
 import static me.qoomon.gitversioning.commons.GitRefType.*;
-import static me.qoomon.maven.gitversioning.GitVersioningModelProcessor.GIT_VERSIONING_POM_NAME;
+import static me.qoomon.maven.gitversioning.GitVersioningPomMojo.GIT_VERSIONING_POM_NAME;
 import static me.qoomon.maven.gitversioning.MavenUtil.readModel;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;

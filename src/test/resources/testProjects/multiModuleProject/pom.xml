@@ -6,7 +6,7 @@
 
     <groupId>multi-module-project</groupId>
     <artifactId>main</artifactId>
-    <version>0.0.0</version>
+    <version>7.0.0</version>
     <packaging>pom</packaging>
 
     <properties>
@@ -40,12 +40,12 @@
             <dependency>
                 <groupId>multi-module-project</groupId>
                 <artifactId>api</artifactId>
-                <version>0.0.0</version>
+                <version>7.0.0</version>
             </dependency>
             <dependency>
                 <groupId>multi-module-project</groupId>
                 <artifactId>logic</artifactId>
-                <version>0.0.0</version>
+                <version>7.0.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

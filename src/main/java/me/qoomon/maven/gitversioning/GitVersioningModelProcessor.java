@@ -3,8 +3,7 @@ package me.qoomon.maven.gitversioning;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.google.inject.Key;
 import com.google.inject.OutOfScopeException;
-import de.pdark.decentxml.Document;
-import de.pdark.decentxml.Element;
+import com.sun.org.apache.xpath.internal.operations.Mod;
 import me.qoomon.gitversioning.commons.GitDescription;
 import me.qoomon.gitversioning.commons.GitSituation;
 import me.qoomon.gitversioning.commons.Lazy;
@@ -16,6 +15,7 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.*;
 import org.apache.maven.model.building.DefaultModelProcessor;
 import org.apache.maven.model.building.ModelProcessor;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.session.scope.internal.SessionScope;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
@@ -25,13 +25,10 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
@@ -46,8 +43,10 @@ import static java.util.stream.Collectors.*;
 import static me.qoomon.gitversioning.commons.GitRefType.*;
 import static me.qoomon.gitversioning.commons.StringUtil.*;
 import static me.qoomon.maven.gitversioning.BuildProperties.projectArtifactId;
-import static me.qoomon.maven.gitversioning.GitVersioningMojo.asPlugin;
+import static me.qoomon.maven.gitversioning.GitVersioningPomMojo.GIT_VERSIONING_POM_NAME;
+import static me.qoomon.maven.gitversioning.GitVersioningPomMojo.asPlugin;
 import static me.qoomon.maven.gitversioning.MavenUtil.*;
+import static org.apache.maven.plugins.annotations.LifecyclePhase.VALIDATE;
 import static org.apache.maven.shared.utils.StringUtils.*;
 import static org.apache.maven.shared.utils.logging.MessageUtils.buffer;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -57,7 +56,6 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 @Named("core-default")
 @Singleton
-@SuppressWarnings("CdiInjectionPointsInspection")
 public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
     private static final String OPTION_NAME_GIT_REF = "git.ref";
@@ -65,8 +63,6 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     private static final String OPTION_NAME_GIT_BRANCH = "git.branch";
     private static final String OPTION_NAME_DISABLE = "versioning.disable";
     private static final String OPTION_UPDATE_POM = "versioning.updatePom";
-
-    static final String GIT_VERSIONING_POM_NAME = ".git-versioned-pom.xml";
 
     final private Logger logger = getLogger(GitVersioningModelProcessor.class);
 
@@ -83,8 +79,8 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     private GitSituation gitSituation;
 
     private boolean disabled = false;
-    private GitVersionDetails gitVersionDetails;
-    boolean updatePom = false;
+    public static GitVersionDetails gitVersionDetails;
+    public static boolean updatePom = false;
 
     private Map<String, Supplier<String>> globalFormatPlaceholderMap;
     private Map<String, String> gitProjectProperties;
@@ -268,22 +264,15 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
         updateModel(projectModel, gitVersionDetails.getPatchDescription());
 
-        File gitVersionedPomFile = writePomFile(projectModel);
-        if (updatePom) {
-            logger.debug("updating original POM file");
-            Files.copy(
-                    gitVersionedPomFile.toPath(),
-                    projectModel.getPomFile().toPath(),
-                    StandardCopyOption.REPLACE_EXISTING);
-        }
-
         // git versioned pom can't be set as model pom right away,
         // because it will break plugins, that trying to update original pom file
         //   e.g. mvn versions:set -DnewVersion=1.0.0
         // That's why we need to add a build plugin that sets project pom file to git versioned pom file
         addBuildPlugin(projectModel);
 
+        projectModel.setPomFile(new File(projectModel.getPomFile().getParent(), "XXXXXXX.pom"));
         logger.info("");
+
         return projectModel;
     }
 
@@ -493,13 +482,21 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     private void addBuildPlugin(Model projectModel) {
         logger.debug("add version build plugin");
 
+        String pomExecutionPhaseId = VALIDATE.id(); // TODO get pomExecutionPhaseId from config
+
         Plugin plugin = asPlugin();
 
-        PluginExecution execution = new PluginExecution();
-        execution.setId(GitVersioningMojo.GOAL);
-        execution.getGoals().add(GitVersioningMojo.GOAL);
+        if (pomExecutionPhaseId.equalsIgnoreCase(VALIDATE.id())) {
+            PluginExecution ejectExecution = new PluginExecution();
+            ejectExecution.setPhase(VALIDATE.id());
+            ejectExecution.getGoals().add(GitVersioningEjectMojo.GOAL);
+            plugin.getExecutions().add(ejectExecution);
+        }
 
-        plugin.getExecutions().add(execution);
+        PluginExecution pomExecution = new PluginExecution();
+        pomExecution.setPhase(pomExecutionPhaseId);
+        pomExecution.getGoals().add(GitVersioningPomMojo.GOAL);
+        plugin.getExecutions().add(pomExecution);
 
         if (projectModel.getBuild() == null) {
             projectModel.setBuild(new Build());
@@ -703,7 +700,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         placeholderMap.put("version", originalProjectVersion);
         placeholderMap.put("version.release", Lazy.by(() -> originalProjectVersion.get().replaceFirst("-SNAPSHOT$", "")));
 
-        String[] versionComponents = originalProjectVersion.get().replaceFirst("-.*$","").split("\\.");
+        String[] versionComponents = originalProjectVersion.get().replaceFirst("-.*$", "").split("\\.");
         placeholderMap.put("version.major", Lazy.by(() -> versionComponents.length > 0 ? versionComponents[0] : ""));
         placeholderMap.put("version.minor", Lazy.by(() -> versionComponents.length > 1 ? versionComponents[1] : ""));
         placeholderMap.put("version.patch", Lazy.by(() -> versionComponents.length > 1 ? versionComponents[2] : ""));
@@ -988,189 +985,6 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     }
 
 
-    // ---- generate git versioned pom file ----------------------------------------------------------------------------
-
-    private File writePomFile(Model projectModel) throws IOException {
-        File gitVersionedPomFile = new File(projectModel.getProjectDirectory(), GIT_VERSIONING_POM_NAME);
-        logger.debug("generate " + gitVersionedPomFile);
-
-        // read original pom file
-        Document gitVersionedPomDocument = readXml(projectModel.getPomFile());
-        Element projectElement = gitVersionedPomDocument.getChild("project");
-
-        // update project
-        updateParentVersion(projectElement, projectModel.getParent());
-        updateVersion(projectElement, projectModel);
-        updatePropertyValues(projectElement, projectModel);
-        updateDependencyVersions(projectElement, projectModel);
-        updatePluginVersions(projectElement, projectModel.getBuild(), projectModel.getReporting());
-
-        updateProfiles(projectElement, projectModel.getProfiles());
-
-        writeXml(gitVersionedPomFile, gitVersionedPomDocument);
-
-        return gitVersionedPomFile;
-    }
-
-    private static void updateParentVersion(Element projectElement, Parent parent) {
-        Element parentElement = projectElement.getChild("parent");
-        if (parentElement != null) {
-            Element parentVersionElement = parentElement.getChild("version");
-            parentVersionElement.setText(parent.getVersion());
-        }
-    }
-
-    private static void updateVersion(Element projectElement, Model projectModel) {
-        Element versionElement = projectElement.getChild("version");
-        if (versionElement != null) {
-            versionElement.setText(projectModel.getVersion());
-        }
-    }
-
-    private void updatePropertyValues(Element element, ModelBase model) {
-        // properties section
-        Element propertiesElement = element.getChild("properties");
-        if (propertiesElement != null) {
-            Properties modelProperties = model.getProperties();
-            gitVersionDetails.getPatchDescription().properties.keySet().forEach(propertyName -> {
-                Element propertyElement = propertiesElement.getChild(propertyName);
-                if (propertyElement != null) {
-                    String pomPropertyValue = propertyElement.getText();
-                    String modelPropertyValue = (String) modelProperties.get(propertyName);
-                    if (!Objects.equals(modelPropertyValue, pomPropertyValue)) {
-                        propertyElement.setText(modelPropertyValue);
-                    }
-                }
-            });
-        }
-    }
-
-    private static void updateDependencyVersions(Element element, ModelBase model) {
-        // dependencies section
-        {
-            Element dependenciesElement = element.getChild("dependencies");
-            if (dependenciesElement != null) {
-                updateDependencyVersions(dependenciesElement, model.getDependencies());
-            }
-        }
-        // dependencyManagement section
-        Element dependencyManagementElement = element.getChild("dependencyManagement");
-        if (dependencyManagementElement != null) {
-            Element dependenciesElement = dependencyManagementElement.getChild("dependencies");
-            if (dependenciesElement != null) {
-                updateDependencyVersions(dependenciesElement, model.getDependencyManagement().getDependencies());
-            }
-        }
-    }
-
-    private static void updateDependencyVersions(Element dependenciesElement, List<Dependency> dependencies) {
-        forEachPair(dependenciesElement.getChildren(), dependencies, (dependencyElement, dependency) -> {
-            // sanity check
-            if (!Objects.equals(dependency.getManagementKey(), getDependencyManagementKey(dependencyElement))) {
-                throw new IllegalArgumentException("Unexpected difference of xml and model dependencies order");
-            }
-
-            Element dependencyVersionElement = dependencyElement.getChild("version");
-            if (dependencyVersionElement != null) {
-                dependencyVersionElement.setText(dependency.getVersion());
-            }
-        });
-    }
-
-    private static String getDependencyManagementKey(Element element) {
-        Element groupId = element.getChild("groupId");
-        Element artifactId = element.getChild("artifactId");
-        Element type = element.getChild("type");
-        Element classifier = element.getChild("classifier");
-        return (groupId != null ? groupId.getText().trim() : "")
-                + ":" + (artifactId != null ? artifactId.getText().trim() : "")
-                + ":" + (type != null ? type.getText().trim() : "jar")
-                + (classifier != null ? ":" + classifier.getText().trim() : "");
-    }
-
-    private static void updatePluginVersions(Element projectElement, BuildBase build, Reporting reporting) {
-        // build section
-        Element buildElement = projectElement.getChild("build");
-        if (buildElement != null) {
-            // plugins section
-            {
-                Element pluginsElement = buildElement.getChild("plugins");
-                if (pluginsElement != null) {
-                    updatePluginVersions(pluginsElement, build.getPlugins());
-                }
-            }
-            // pluginManagement section
-            Element pluginsManagementElement = buildElement.getChild("pluginsManagement");
-            if (pluginsManagementElement != null) {
-                Element pluginsElement = pluginsManagementElement.getChild("plugins");
-                if (pluginsElement != null) {
-                    updatePluginVersions(pluginsElement, build.getPluginManagement().getPlugins());
-                }
-            }
-        }
-
-        Element reportingElement = projectElement.getChild("reporting");
-        if (reportingElement != null) {
-            // plugins section
-            {
-                Element pluginsElement = reportingElement.getChild("plugins");
-                if (pluginsElement != null) {
-                    updateReportPluginVersions(pluginsElement, reporting.getPlugins());
-                }
-            }
-        }
-    }
-
-    private static void updatePluginVersions(Element pluginsElement, List<Plugin> plugins) {
-        forEachPair(pluginsElement.getChildren(), plugins, (pluginElement, plugin) -> {
-            // sanity check
-            if (!Objects.equals(plugin.getKey(), getPluginKey(pluginElement))) {
-                throw new IllegalArgumentException("Unexpected difference of xml and model plugin order");
-            }
-
-            Element pluginVersionElement = pluginElement.getChild("version");
-            if (pluginVersionElement != null) {
-                pluginVersionElement.setText(plugin.getVersion());
-            }
-        });
-    }
-
-    private static void updateReportPluginVersions(Element pluginsElement, List<ReportPlugin> plugins) {
-        forEachPair(pluginsElement.getChildren(), plugins, (pluginElement, plugin) -> {
-            // sanity check
-            if (!Objects.equals(plugin.getKey(), getPluginKey(pluginElement))) {
-                throw new IllegalArgumentException("Unexpected difference of xml and model plugin order");
-            }
-
-            Element pluginVersionElement = pluginElement.getChild("version");
-            if (pluginVersionElement != null) {
-                pluginVersionElement.setText(plugin.getVersion());
-            }
-        });
-    }
-
-    private static String getPluginKey(Element element) {
-        Element groupId = element.getChild("groupId");
-        Element artifactId = element.getChild("artifactId");
-        return (groupId != null ? groupId.getText().trim() : "org.apache.maven.plugins")
-                + ":" + (artifactId != null ? artifactId.getText().trim() : "");
-    }
-
-    private void updateProfiles(Element projectElement, List<Profile> profiles) {
-        Element profilesElement = projectElement.getChild("profiles");
-        if (profilesElement != null) {
-            Map<String, Profile> profileMap = profiles.stream()
-                    .collect(toMap(Profile::getId, it -> it));
-            for (Element profileElement : profilesElement.getChildren("profile")) {
-                Profile profile = profileMap.get(profileElement.getChild("id").getText());
-                updatePropertyValues(profileElement, profile);
-                updateDependencyVersions(profileElement, profile);
-                updatePluginVersions(profileElement, profile.getBuild(), profile.getReporting());
-            }
-        }
-    }
-
-
     // ---- misc -------------------------------------------------------------------------------------------------------
 
     private static String extensionLogHeader(GAV extensionGAV) {
@@ -1217,18 +1031,4 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         return value.replace("/", "-");
     }
 
-
-    // ---- utils ------------------------------------------------------------------------------------------------------
-
-    public static <T1, T2> void forEachPair(Collection<T1> collection1, Collection<T2> collection2, BiConsumer<T1, T2> consumer) {
-        if (collection1.size() != collection2.size()) {
-            throw new IllegalArgumentException("Collections sizes are not equals");
-        }
-
-        Iterator<T1> iter1 = collection1.iterator();
-        Iterator<T2> iter2 = collection2.iterator();
-        while (iter1.hasNext() && iter2.hasNext()) {
-            consumer.accept(iter1.next(), iter2.next());
-        }
-    }
 }
