@@ -14,6 +14,7 @@ This extension can virtually set project version and properties, based on curren
 ℹ **No POM files will be modified, version and properties are modified in memory only**
 
 * Get rid of…
+    * Maven Release Plugin, see [Maven Release Plugin: The Final Nail in the Coffin](https://axelfontaine.com/blog/final-nail.html)
     * editing `pom.xml`
     * managing project versions within files and Git tags
     * git merge conflicts
