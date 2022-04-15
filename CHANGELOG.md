@@ -4,6 +4,12 @@
 
 # Changelog
 
+## 8.0.0
+- migrate to java 11
+
+##### BREAKING CHANGES
+- drop support for java 8
+
 ## 7.4.0
 
 ##### Features
