@@ -152,8 +152,12 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
 - `${version}` `<version>` set in `pom.xml` e.g. '1.2.3-SNAPSHOT'
 - `${version.major}` the major version component of `${version}` e.g. '1'
 - `${version.minor}` the minor version component of `${version}` e.g. '2'
+  - `${version.minor.prefixed}` like `${version.minor}` with version component separator e.g. '.2'
 - `${version.patch}` the patch version component of `${version}` e.g. '3'
-- `${version.release}` like `${version}` without `-SNAPSHOT` postfix e.g. '1.2.3'
+  - `${version.patch.prefixed}` like `${version.patch}`  with version component separator e.g. '.3'
+- `${version.label}` the version label of `${version}` e.g. 'SNAPSHOT'
+  - `${version.label.prefixed}` like `${version.label}` with label separator e.g. '-SNAPSHOT'
+- `${version.release}` like `${version}` without version labels like `-SNAPSHOT` e.g. '1.2.3'
       <br><br>
 
 - `${ref}` `${ref.slug}` ref name (branch or tag name or commit hash)

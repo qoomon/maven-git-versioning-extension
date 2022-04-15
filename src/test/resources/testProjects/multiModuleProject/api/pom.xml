@@ -7,7 +7,7 @@
     <parent>
         <groupId>multi-module-project</groupId>
         <artifactId>main</artifactId>
-        <version>0.0.0</version>
+        <version>0.0.0-LOCAL</version>
         <relativePath>..</relativePath>
     </parent>
 

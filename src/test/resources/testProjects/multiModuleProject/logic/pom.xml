@@ -7,12 +7,12 @@
     <parent>
         <groupId>multi-module-project</groupId>
         <artifactId>main</artifactId>
-        <version>0.0.0</version>
+        <version>0.0.0-LOCAL</version>
     </parent>
 
     <groupId>multi-module-project</groupId>
     <artifactId>logic</artifactId>
-    <version>0.0.0</version>
+    <version>0.0.0-LOCAL</version>
 
     <properties>
         <foo>xxxxx</foo>
@@ -23,7 +23,7 @@
         <dependency>
             <groupId>multi-module-project</groupId>
             <artifactId>api</artifactId>
-            <version>0.0.0</version>
+            <version>0.0.0-LOCAL</version>
         </dependency>
     </dependencies>
 

@@ -7,12 +7,12 @@
     <parent>
         <groupId>multi-module-project</groupId>
         <artifactId>nested-main</artifactId>
-        <version>0.0.0</version>
+        <version>0.0.0-LOCAL</version>
     </parent>
 
     <groupId>multi-module-project</groupId>
     <artifactId>nested-logic</artifactId>
-    <version>0.0.0</version>
+    <version>0.0.0-LOCAL</version>
 
     <properties>
         <foo>xxxxx</foo>

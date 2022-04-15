@@ -57,7 +57,6 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 @Named("core-default")
 @Singleton
-@SuppressWarnings("CdiInjectionPointsInspection")
 public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
     private static final String OPTION_NAME_GIT_REF = "git.ref";
@@ -699,14 +698,23 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
     private Map<String, Supplier<String>> generateFormatPlaceholderMap(GAV originalProjectGAV) {
         final Map<String, Supplier<String>> placeholderMap = new HashMap<>(globalFormatPlaceholderMap);
-        final Supplier<String> originalProjectVersion = originalProjectGAV::getVersion;
-        placeholderMap.put("version", originalProjectVersion);
-        placeholderMap.put("version.release", Lazy.by(() -> originalProjectVersion.get().replaceFirst("-SNAPSHOT$", "")));
+        final String version = originalProjectGAV.getVersion();
+        final Lazy<String[]> versionComponents = Lazy.by(() -> version.replaceFirst("-.*$", "").split("\\."));
+        final Lazy<String> versionMajor = Lazy.by(() -> versionComponents.get().length > 0 ? versionComponents.get()[0] : "");
+        final Lazy<String> versionMinor = Lazy.by(() -> versionComponents.get().length > 1 ? versionComponents.get()[1] : "");
+        final Lazy<String> versionPatch = Lazy.by(() -> versionComponents.get().length > 1 ? versionComponents.get()[2] : "");
+        final Lazy<String> versionLabel = Lazy.by(() ->  version.replaceFirst("^[^-]*-?", ""));
+        placeholderMap.put("version", Lazy.of(version));
+        placeholderMap.put("version.major", versionMajor);
+        placeholderMap.put("version.minor", versionMinor);
+        placeholderMap.put("version.minor.prefixed", Lazy.by(() -> "." + versionMinor.get()));
+        placeholderMap.put("version.patch", versionPatch);
+        placeholderMap.put("version.patch.prefixed", Lazy.by(() -> "." + versionPatch.get()));
+        placeholderMap.put("version.label", versionLabel);
+        placeholderMap.put("version.label.prefixed", Lazy.by(() -> "-" + versionLabel.get()));
 
-        String[] versionComponents = originalProjectVersion.get().replaceFirst("-.*$","").split("\\.");
-        placeholderMap.put("version.major", Lazy.by(() -> versionComponents.length > 0 ? versionComponents[0] : ""));
-        placeholderMap.put("version.minor", Lazy.by(() -> versionComponents.length > 1 ? versionComponents[1] : ""));
-        placeholderMap.put("version.patch", Lazy.by(() -> versionComponents.length > 1 ? versionComponents[2] : ""));
+        final Lazy<String> versionRelease = Lazy.by(() -> version.replaceFirst("-.*$", ""));
+        placeholderMap.put("version.release", versionRelease);
 
         return placeholderMap;
     }
