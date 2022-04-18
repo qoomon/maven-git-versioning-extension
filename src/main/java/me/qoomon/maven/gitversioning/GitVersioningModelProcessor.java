@@ -336,7 +336,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         if (parent != null) {
             GAV parentGAV = GAV.of(parent);
             if (isRelatedProject(parentGAV)) {
-                String gitVersion = getGitVersion(versionFormat, parentGAV);
+                String gitVersion = getGitVersion(versionFormat, parentGAV.getVersion());
                 logger.debug("set parent version to " + gitVersion + " (" + parentGAV + ")");
                 parent.setVersion(gitVersion);
             }
@@ -346,7 +346,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     private void updateVersion(Model projectModel, String versionFormat) {
         if (projectModel.getVersion() != null) {
             GAV projectGAV = GAV.of(projectModel);
-            String gitVersion = getGitVersion(versionFormat, projectGAV);
+            String gitVersion = getGitVersion(versionFormat, projectGAV.getVersion());
             logger.debug("set version to " + gitVersion);
             projectModel.setVersion(gitVersion);
         }
@@ -362,7 +362,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
             String propertyFormat = propertyFormats.get(modelPropertyName);
             if (propertyFormat != null) {
-                String gitPropertyValue = getGitPropertyValue(propertyFormat, modelPropertyValue, originalProjectGAV);
+                String gitPropertyValue = getGitPropertyValue(propertyFormat, modelPropertyValue, originalProjectGAV.getVersion());
                 if (!gitPropertyValue.equals(modelPropertyValue)) {
                     if (logHeader) {
                         logger.info(sectionLogHeader("properties", model));
@@ -419,7 +419,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     private void updateVersion(Plugin plugin, String versionFormat) {
         if (plugin.getVersion() != null) {
             GAV pluginGAV = GAV.of(plugin);
-            String gitVersion = getGitVersion(versionFormat, pluginGAV);
+            String gitVersion = getGitVersion(versionFormat, pluginGAV.getVersion());
             logger.debug(pluginGAV.getProjectId() + ": set version to " + gitVersion);
             plugin.setVersion(gitVersion);
         }
@@ -428,7 +428,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     private void updateVersion(ReportPlugin plugin, String versionFormat) {
         if (plugin.getVersion() != null) {
             GAV pluginGAV = GAV.of(plugin);
-            String gitVersion = getGitVersion(versionFormat, pluginGAV);
+            String gitVersion = getGitVersion(versionFormat, pluginGAV.getVersion());
             logger.debug(pluginGAV.getProjectId() + ": set version to " + gitVersion);
             plugin.setVersion(gitVersion);
         }
@@ -473,7 +473,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     private void updateVersion(Dependency dependency, String versionFormat) {
         if (dependency.getVersion() != null) {
             GAV dependencyGAV = GAV.of(dependency);
-            String gitVersion = getGitVersion(versionFormat, dependencyGAV);
+            String gitVersion = getGitVersion(versionFormat, dependencyGAV.getVersion());
             logger.debug(dependencyGAV.getProjectId() + ": set version to " + gitVersion);
             dependency.setVersion(gitVersion);
         }
@@ -684,27 +684,26 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         return null;
     }
 
-    private String getGitVersion(String versionFormat, GAV originalProjectGAV) {
-        final Map<String, Supplier<String>> placeholderMap = generateFormatPlaceholderMap(originalProjectGAV);
+    private String getGitVersion(String versionFormat, String projectVersion) {
+        final Map<String, Supplier<String>> placeholderMap = generateFormatPlaceholderMap(projectVersion);
 
         return slugify(substituteText(versionFormat, placeholderMap));
     }
 
-    private String getGitPropertyValue(String propertyFormat, String originalValue, GAV originalProjectGAV) {
-        final Map<String, Supplier<String>> placeholderMap = generateFormatPlaceholderMap(originalProjectGAV);
+    private String getGitPropertyValue(String propertyFormat, String originalValue, String projectVersion) {
+        final Map<String, Supplier<String>> placeholderMap = generateFormatPlaceholderMap(projectVersion);
         placeholderMap.put("value", () -> originalValue);
         return substituteText(propertyFormat, placeholderMap);
     }
 
-    private Map<String, Supplier<String>> generateFormatPlaceholderMap(GAV originalProjectGAV) {
+    private Map<String, Supplier<String>> generateFormatPlaceholderMap(String projectVersion) {
         final Map<String, Supplier<String>> placeholderMap = new HashMap<>(globalFormatPlaceholderMap);
-        final String version = originalProjectGAV.getVersion();
-        final Lazy<String[]> versionComponents = Lazy.by(() -> version.replaceFirst("-.*$", "").split("\\."));
+        final Lazy<String[]> versionComponents = Lazy.by(() -> projectVersion.replaceFirst("-.*$", "").split("\\."));
         final Lazy<String> versionMajor = Lazy.by(() -> versionComponents.get().length > 0 ? versionComponents.get()[0] : "");
         final Lazy<String> versionMinor = Lazy.by(() -> versionComponents.get().length > 1 ? versionComponents.get()[1] : "");
         final Lazy<String> versionPatch = Lazy.by(() -> versionComponents.get().length > 1 ? versionComponents.get()[2] : "");
-        final Lazy<String> versionLabel = Lazy.by(() ->  version.replaceFirst("^[^-]*-?", ""));
-        placeholderMap.put("version", Lazy.of(version));
+        final Lazy<String> versionLabel = Lazy.by(() ->  projectVersion.replaceFirst("^[^-]*-?", ""));
+        placeholderMap.put("version", Lazy.of(projectVersion));
         placeholderMap.put("version.major", versionMajor);
         placeholderMap.put("version.minor", versionMinor);
         placeholderMap.put("version.minor.prefixed", Lazy.by(() -> "." + versionMinor.get()));
@@ -713,7 +712,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         placeholderMap.put("version.label", versionLabel);
         placeholderMap.put("version.label.prefixed", Lazy.by(() -> "-" + versionLabel.get()));
 
-        final Lazy<String> versionRelease = Lazy.by(() -> version.replaceFirst("-.*$", ""));
+        final Lazy<String> versionRelease = Lazy.by(() -> projectVersion.replaceFirst("-.*$", ""));
         placeholderMap.put("version.release", versionRelease);
 
         return placeholderMap;
