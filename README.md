@@ -241,7 +241,7 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
 ## Provided Project Properties
 
 - `git.worktree` absolute path of git worktree directory
-- 
+
 - `git.commit` e.g. '0fc20459a8eceb2c4abb9bf0af45a6e8af17b94b'
 - `git.commit.short` e.g. '0fc2045'
 - `git.commit.timestamp` e.g. '1560694278'
