@@ -150,15 +150,16 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
       <br><br>
 
 - `${version}` `<version>` set in `pom.xml` e.g. '1.2.3-SNAPSHOT'
-- `${version.major}` the major version component of `${version}` e.g. '1'
-- `${version.minor}` the minor version component of `${version}` e.g. '2'
-  - `${version.minor.prefixed}` like `${version.minor}` with version component separator e.g. '.2'
-- `${version.patch}` the patch version component of `${version}` e.g. '3'
-  - `${version.patch.prefixed}` like `${version.patch}`  with version component separator e.g. '.3'
-- `${version.label}` the version label of `${version}` e.g. 'SNAPSHOT'
-  - `${version.label.prefixed}` like `${version.label}` with label separator e.g. '-SNAPSHOT'
-- `${version.release}` like `${version}` without version labels like `-SNAPSHOT` e.g. '1.2.3'
-      <br><br>
+  - `${version.major}` the major version component of `${version}` e.g. '1'
+    - `${version.major.next}` the `${version.major}` increased by 1 e.g. '2'
+  - `${version.minor}` the minor version component of `${version}` e.g. '2'
+    - `${version.minor.next}` the `${version.minor}` increased by 1 e.g. '3'
+  - `${version.patch}` the patch version component of `${version}` e.g. '3'
+    - `${version.patch.next}` the `${version.patch}` increased by 1 e.g. '4'
+  - `${version.label}` the version label of `${version}` e.g. 'SNAPSHOT'
+    - `${version.label.prefixed}` like `${version.label}` with label separator e.g. '-SNAPSHOT'
+  - `${version.release}` like `${version}` without version labels like `-SNAPSHOT` e.g. '1.2.3'
+        <br><br>
 
 - `${ref}` `${ref.slug}` ref name (branch or tag name or commit hash)
 - Ref Pattern Groups
@@ -190,6 +191,13 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
 - `${describe}` Will resolve to `git describe` output
 - `${describe.distance}` The distance count to last matching tag
 - `${describe.tag}` The matching tag of `git describe`
+  - `${describe.tag.version}` the tag version determined by regex `\d+\.\d+\.\d+`
+    - `${describe.tag.version.major}` the major version component of `${describe.tag.version}` e.g. '1'
+      - `${describe.tag.version.major.next}` the `${describe.tag.version.major}` increased by 1 e.g. '2'
+    - `${describe.tag.version.minor}` the major version component of `${describe.tag.version}` e.g. '2'
+      - `${describe.tag.version.minor.next}` the `${describe.tag.version.minor}` increased by 1 e.g. '3'
+    - `${describe.tag.version.path}` the major version component of `${describe.tag.version}` e.g. '3'
+      - `${describe.tag.version.patch.next}` the `${describe.tag.version.patch}` increased by 1 e.g. '4'
 - Describe Tag Pattern Groups
     - Content of regex groups in `<describeTagPattern>` can be addressed like this:
     - `${describe.tag.GROUP_NAME}` `${describe.tag.GROUP_NAME.slug}`

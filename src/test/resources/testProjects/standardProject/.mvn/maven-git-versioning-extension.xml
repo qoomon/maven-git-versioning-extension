@@ -19,7 +19,7 @@
 
         <ref type="branch">
             <pattern>master</pattern>
-            <version>${describe.tag.version}-SNAPSHOT</version>
+            <version>${describe.tag.version.major.next}-SNAPSHOT</version>
             <properties>
                 <foo>new_new_new</foo>
             </properties>
