@@ -52,13 +52,17 @@ class GitVersioningExtensionIT {
         // When
         Verifier verifier = getVerifier(projectDir);
         verifier.displayStreamBuffers();
-        verifier.executeGoal("verify");
+
+        VerificationException exception = null;
+        try {
+            verifier.executeGoal("verify");
+        } catch (VerificationException ex) {
+            exception = ex;
+        }
 
         // Then
-        verifier.verifyErrorFreeLog();
-        String expectedVersion = "0.0.0";
-        verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
-        verifier.verifyTextInLog("[WARNING] skip - project is not part of a git repository");
+        assertThat(exception).isNotNull();
+        verifier.verifyTextInLog("fatal: not a git repository");
         verifier.assertFileNotPresent(GIT_VERSIONING_POM_NAME);
     }
 

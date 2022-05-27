@@ -27,7 +27,7 @@
 
         <ref type="branch">
             <pattern>feature/(.+)</pattern>
-            <version>${ref}-SNAPSHOT</version>
+            <version>${ref}-${timestamp}-SNAPSHOT</version>
             <properties>
                 <foo>new_new_new</foo>
             </properties>

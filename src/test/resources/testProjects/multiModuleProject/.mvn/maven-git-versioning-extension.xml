@@ -14,7 +14,7 @@
 
         <ref type="branch">
             <pattern>master</pattern>
-            <version>${version.release}-${ref}-${version.label}</version>
+            <version>${version.release}-${ref}-${commit.timestamp.datetime}-${version.label}</version>
             <properties>
                 <foo>new_new_new</foo>
             </properties>
