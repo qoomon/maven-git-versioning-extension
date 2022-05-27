@@ -6,6 +6,24 @@
 
 ## 8.0.0
 ##### Features
+* replace jgit with local git calls
+* remove project properties
+  * `git.commit` 
+  * `git.commit.short` 
+  * `git.commit.timestamp`    
+  * `git.commit.timestamp.datetime`    
+  * `git.commit.timestamp.datetime`
+  * `git.commit.timestamp.datetime` 
+  * `git.ref` 
+  * `git.ref.slug`
+
+##### BREAKING CHANGES
+- git needs to be available int PATH
+- removed project properties see above
+
+
+## 8.0.0
+##### Features
 - migrate to java 11
 - placeholder
   - new

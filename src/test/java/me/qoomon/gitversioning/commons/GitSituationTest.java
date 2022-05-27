@@ -25,7 +25,7 @@ class GitSituationTest {
         // given
         Git git = Git.init().setInitialBranch("master").setDirectory(tempDir.toFile()).call();
 
-        GitSituation situation = new GitSituation(git.getRepository());
+        GitSituation situation = new GitSituation(git.getRepository().getWorkTree());
 
         // then
         assertThat(situation).satisfies(it -> assertSoftly(softly -> {
@@ -44,7 +44,7 @@ class GitSituationTest {
 
         RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
 
-        GitSituation situation = new GitSituation(git.getRepository());
+        GitSituation situation = new GitSituation(git.getRepository().getWorkTree());
 
         // then
         assertThat(situation).satisfies(it -> assertSoftly(softly -> {
@@ -64,7 +64,7 @@ class GitSituationTest {
         String givenTag = "v1";
         git.tag().setName(givenTag).setObjectId(givenCommit).call();
 
-        GitSituation situation = new GitSituation(git.getRepository());
+        GitSituation situation = new GitSituation(git.getRepository().getWorkTree());
 
         // Then
         assertThat(situation).satisfies(it -> assertSoftly(softly -> {
@@ -83,7 +83,7 @@ class GitSituationTest {
         RevCommit givenCommit = git.commit().setMessage("init").setAllowEmpty(true).call();
         git.checkout().setName(givenCommit.getName()).call();
 
-        GitSituation situation = new GitSituation(git.getRepository());
+        GitSituation situation = new GitSituation(git.getRepository().getWorkTree());
 
         // Then
         assertThat(situation).satisfies(it -> assertSoftly(softly -> {
@@ -104,7 +104,7 @@ class GitSituationTest {
         git.tag().setName(givenTag).setObjectId(givenCommit).call();
         git.checkout().setName(givenTag).call();
 
-        GitSituation situation = new GitSituation(git.getRepository());
+        GitSituation situation = new GitSituation(git.getRepository().getWorkTree());
 
         // Then
         assertThat(situation).satisfies(it -> assertSoftly(softly -> {
@@ -125,7 +125,7 @@ class GitSituationTest {
         String givenTag = "v1";
         git.tag().setAnnotated(true).setName(givenTag).call();
 
-        GitSituation situation = new GitSituation(git.getRepository());
+        GitSituation situation = new GitSituation(git.getRepository().getWorkTree());
 
         // Then
         assertThat(situation).satisfies(it -> assertSoftly(softly -> {
@@ -147,7 +147,7 @@ class GitSituationTest {
         git.tag().setAnnotated(true).setName(givenTag).setObjectId(givenCommit).call();
         git.checkout().setName(givenTag).call();
 
-        GitSituation situation = new GitSituation(git.getRepository());
+        GitSituation situation = new GitSituation(git.getRepository().getWorkTree());
 
         // Then
         assertThat(situation).satisfies(it -> assertSoftly(softly -> {
@@ -168,7 +168,7 @@ class GitSituationTest {
         String givenTag = "v1";
         git.tag().setAnnotated(false).setName(givenTag).call();
 
-        GitSituation situation = new GitSituation(git.getRepository());
+        GitSituation situation = new GitSituation(git.getRepository().getWorkTree());
 
         // Then
         assertThat(situation).satisfies(it -> assertSoftly(softly -> {
@@ -190,7 +190,7 @@ class GitSituationTest {
         git.tag().setAnnotated(false).setName(givenTag).call();
         git.checkout().setName(givenTag).call();
 
-        GitSituation situation = new GitSituation(git.getRepository());
+        GitSituation situation = new GitSituation(git.getRepository().getWorkTree());
 
         // Then
         assertThat(situation).satisfies(it -> assertSoftly(softly -> {

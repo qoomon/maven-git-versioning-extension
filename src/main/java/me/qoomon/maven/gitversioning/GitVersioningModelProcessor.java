@@ -7,6 +7,7 @@ import de.pdark.decentxml.Document;
 import de.pdark.decentxml.Element;
 import me.qoomon.gitversioning.commons.GitDescription;
 import me.qoomon.gitversioning.commons.GitSituation;
+import me.qoomon.gitversioning.commons.GitUtil;
 import me.qoomon.gitversioning.commons.Lazy;
 import me.qoomon.maven.gitversioning.Configuration.PatchDescription;
 import me.qoomon.maven.gitversioning.Configuration.RefPatchDescription;
@@ -17,8 +18,6 @@ import org.apache.maven.model.*;
 import org.apache.maven.model.building.DefaultModelProcessor;
 import org.apache.maven.model.building.ModelProcessor;
 import org.apache.maven.session.scope.internal.SessionScope;
-import org.eclipse.jgit.lib.Repository;
-import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.slf4j.Logger;
 
 import javax.inject.Inject;
@@ -517,13 +516,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     // ---- versioning -------------------------------------------------------------------------------------------------
 
     private GitSituation getGitSituation(File executionRootDirectory) throws IOException {
-        final FileRepositoryBuilder repositoryBuilder = new FileRepositoryBuilder().findGitDir(executionRootDirectory);
-        if (repositoryBuilder.getGitDir() == null) {
-            return null;
-        }
-
-        final Repository repository = repositoryBuilder.build();
-        return new GitSituation(repository) {
+        return new GitSituation(executionRootDirectory) {
             {
                 String overrideBranch = getCommandOption(OPTION_NAME_GIT_BRANCH);
                 String overrideTag = getCommandOption(OPTION_NAME_GIT_TAG);
@@ -827,19 +820,6 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         final Map<String, String> properties = new HashMap<>();
 
         properties.put("git.worktree", gitSituation.getRootDirectory().getAbsolutePath());
-
-        properties.put("git.commit", gitVersionDetails.getCommit());
-        properties.put("git.commit.short", gitVersionDetails.getCommit().substring(0, 7));
-
-        final ZonedDateTime headCommitDateTime = gitSituation.getTimestamp();
-        properties.put("git.commit.timestamp", String.valueOf(headCommitDateTime.toEpochSecond()));
-        properties.put("git.commit.timestamp.datetime", headCommitDateTime.toEpochSecond() > 0
-                ? headCommitDateTime.format(ISO_INSTANT) : "0000-00-00T00:00:00Z");
-
-        final String refName = gitVersionDetails.getRefName();
-        final String refNameSlug = slugify(refName);
-        properties.put("git.ref", refName);
-        properties.put("git.ref" + ".slug", refNameSlug);
 
         return properties;
     }

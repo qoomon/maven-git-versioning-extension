@@ -1,130 +1,217 @@
 package me.qoomon.gitversioning.commons;
 
-import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.Status;
-import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.lib.ObjectId;
-import org.eclipse.jgit.lib.Ref;
-import org.eclipse.jgit.lib.RefDatabase;
-import org.eclipse.jgit.lib.Repository;
-import org.eclipse.jgit.revwalk.RevCommit;
-import org.eclipse.jgit.revwalk.RevWalk;
-
 import java.io.File;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.ZonedDateTime;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static java.time.Instant.EPOCH;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
-import static org.eclipse.jgit.lib.Constants.R_TAGS;
-import static org.eclipse.jgit.lib.Repository.shortenRefName;
 
 public final class GitUtil {
 
+    private static final boolean IS_WINDOWS = System.getProperty("os.name").toLowerCase().startsWith("windows");
+    private static final Pattern GIT_DESCRIBE_PATTER = Pattern.compile("^(?<tag>.*)-(?<distance>\\d*)-g(?<commit>[^-]*?)$");
+    private static final Pattern GIT_LOG_TAG_DECORATION_PATTER = Pattern.compile("tag: (?<tag>[^,]*)");
+
     public static String NO_COMMIT = "0000000000000000000000000000000000000000";
 
-    public static Status status(Repository repository) {
-        try {
-            return Git.wrap(repository).status().call();
-        } catch (GitAPIException e) {
-            throw new RuntimeException(e);
+
+    public static boolean isClean(File directory) throws IOException {
+        ProcessResult processResult = ProcessResult.of(new ProcessBuilder()
+                .directory(directory)
+                .command("git", "status", "--porcelain")
+                .start());
+
+        if (processResult.exitCode != 0) {
+            throw new RuntimeException(processResult.stderr);
         }
+
+        return processResult.stdout.isBlank();
     }
 
-    public static String branch(Repository repository) throws IOException {
-        String branch = repository.getBranch();
-        if (ObjectId.isId(branch)) {
-            return null;
+    public static String branch(File directory) throws IOException {
+        ProcessResult processResult = ProcessResult.of(new ProcessBuilder()
+                .directory(directory)
+                .command("git", "branch", "--show-current")
+                .start());
+
+        if (processResult.exitCode != 0) {
+            throw new RuntimeException(processResult.stderr);
         }
-        return branch;
+
+        return processResult.stdout.isBlank()
+                ? null
+                : processResult.stdout.stripTrailing();
     }
 
-    public static List<String> tagsPointAt(Repository repository, ObjectId revObjectId) throws IOException {
-        return tagsPointAt(repository, revObjectId, reverseTagRefMap(repository));
+    public static List<String> tagsPointAt(File directory, String rev) throws IOException {
+        if (isEmpty(directory)) {
+            return emptyList();
+        }
+
+        ProcessResult processResult = ProcessResult.of(new ProcessBuilder()
+                .directory(directory)
+                .command("git", "tag", "--points-at", rev)
+                .start());
+
+        if (processResult.exitCode != 0) {
+            throw new RuntimeException(processResult.stderr);
+        }
+        return processResult.stdout.isBlank()
+                ? emptyList()
+                : Arrays.asList(processResult.stdout.stripTrailing().split("\\n"));
+
     }
 
-    public static List<String> tagsPointAt(Repository repository, ObjectId revObjectId,
-                                           Map<ObjectId, List<Ref>> reverseTagRefMap) {
-        return reverseTagRefMap.getOrDefault(revObjectId, emptyList()).stream()
-                .sorted(new RefNameComparator(repository))
-                .map(ref -> shortenRefName(ref.getName()))
-                .collect(toList());
-    }
-
-    public static GitDescription describe(Repository repository, ObjectId revObjectId, Pattern tagPattern) throws IOException {
-        return describe(repository, revObjectId, tagPattern, reverseTagRefMap(repository));
-    }
-
-    public static GitDescription describe(Repository repository, ObjectId revObjectId, Pattern tagPattern,
-                                          Map<ObjectId, List<Ref>> reverseTagRefMap) throws IOException {
-
-        if (revObjectId == null) {
+    public static GitDescription describe(File directory, String rev, Pattern tagPattern) throws IOException {
+        if (isEmpty(directory)) {
             return new GitDescription(NO_COMMIT, "root", 0);
         }
 
-        // Walk back commit ancestors looking for tagged one
-        try (RevWalk walk = new RevWalk(repository)) {
-            walk.setRetainBody(false);
-            walk.setFirstParent(true);
-            walk.markStart(walk.parseCommit(revObjectId));
-            Iterator<RevCommit> walkIterator = walk.iterator();
-            int depth = -1;
-            while (walkIterator.hasNext()) {
-                RevCommit rev = walkIterator.next();
-                depth++;
-
-                Optional<Ref> matchingTag = reverseTagRefMap.getOrDefault(rev, emptyList()).stream()
-                        .sorted(new RefNameComparator(repository))
-                        .filter(tag -> tagPattern.matcher(shortenRefName(tag.getName())).matches())
-                        .findFirst();
-
-                if (matchingTag.isPresent()) {
-                    return new GitDescription(revObjectId.getName(), shortenRefName(matchingTag.get().getName()), depth);
-                }
-            }
-
-            if (isShallowRepository(repository)) {
-                throw new IllegalStateException("couldn't find matching tag in shallow git repository");
-            }
-
-            return new GitDescription(revObjectId.getName(), "root", depth);
+        List<String> tags = tags(directory, rev);
+        Optional<String> tag = tags.stream().filter(it -> tagPattern.matcher(it).matches()).findFirst();
+        if (tag.isEmpty()) {
+            throw new RuntimeException("No matching tag found for tag pattern" + tagPattern);
         }
+
+        ProcessResult processResult = ProcessResult.of(new ProcessBuilder()
+                .directory(directory)
+                .command("git", "describe", "--first-parent", "--tags", "--long", "--match", tag.get())
+                .start());
+
+        if (processResult.exitCode != 0) {
+            throw new RuntimeException(processResult.stderr);
+        }
+
+        Matcher gitDescribeMatcher = GIT_DESCRIBE_PATTER.matcher(processResult.stdout);
+        if (!gitDescribeMatcher.matches()) {
+            throw new RuntimeException("Unexpected git describe result " + processResult.stdout);
+        }
+        String describeCommit = gitDescribeMatcher.group("commit");
+        String describeTag = gitDescribeMatcher.group("tag");
+        int describeDistance = Integer.parseInt(gitDescribeMatcher.group("distance"));
+        return new GitDescription(describeCommit, describeTag, describeDistance);
+
     }
 
-    public static boolean isShallowRepository(Repository repository) {
-        return new File(repository.getDirectory(), "shallow").isFile();
+    public static boolean isEmpty(File directory) throws IOException {
+        ProcessResult processResult = ProcessResult.of(new ProcessBuilder()
+                .directory(directory)
+                .command("git", "reflog", "-n0")
+                .start());
+
+        if (processResult.exitCode != 0) {
+            if (processResult.stderr.stripTrailing().endsWith(" does not have any commits yet")) {
+                return true;
+            }
+            throw new RuntimeException(processResult.stderr);
+        }
+
+        return false;
     }
 
-    public static List<Ref> tags(Repository repository) throws IOException {
-        return tags(repository.getRefDatabase());
+    public static List<String> tags(File directory, String rev) throws IOException {
+        if (isEmpty(directory)) {
+            return emptyList();
+        }
+
+        ProcessResult processResult = ProcessResult.of(new ProcessBuilder()
+                .directory(directory)
+                .command("git", "log", "--first-parent", "--simplify-by-decoration", "--pretty='format:%D'", rev)
+                .start());
+
+        if (processResult.exitCode != 0) {
+            throw new RuntimeException(processResult.stderr);
+        }
+        // tag: build-1.7.20-dev-1349, tag: build-1.7.20-dev-1349, origin/rr/skuzmich/dont-generate-wat-in-box-tests-by-default
+
+        return processResult.stdout.isBlank()
+                ? emptyList()
+                : Arrays.stream(processResult.stdout.stripTrailing().split("\\n"))
+                .map(it -> {
+                    LinkedList<String> tags = new LinkedList<>();
+                    Matcher matcher = GIT_LOG_TAG_DECORATION_PATTER.matcher(it);
+                    while (matcher.find()) {
+                        tags.add(matcher.group("tag"));
+                    }
+                    return tags;
+                }).flatMap(List::stream)
+                .collect(toList());
     }
 
-    public static List<Ref> tags(RefDatabase refDatabase) throws IOException {
-        return refDatabase.getRefsByPrefix(R_TAGS);
+    public static ZonedDateTime revTimestamp(File directory, String rev) throws IOException {
+        if (isEmpty(directory)) {
+            return ZonedDateTime.ofInstant(EPOCH, UTC);
+        }
+
+        ProcessResult processResult = ProcessResult.of(new ProcessBuilder()
+                .directory(directory)
+                .command("git", "show", "--format=%ct", "-s", rev)
+                .start());
+
+        if (processResult.exitCode != 0) {
+            throw new RuntimeException(processResult.stderr);
+        }
+
+        int commitEpochSeconds = Integer.parseInt(processResult.stdout.trim());
+        Instant commitTime = Instant.ofEpochSecond(commitEpochSeconds);
+        return ZonedDateTime.ofInstant(commitTime, UTC);
     }
 
-    public static Map<ObjectId, List<Ref>> reverseTagRefMap(Repository repository) throws IOException {
-        RefDatabase refDatabase = repository.getRefDatabase();
-        return tags(refDatabase).stream().collect(groupingBy(ref -> {
+    public static String getHash(File directory, String rev) throws IOException {
+        if (isEmpty(directory)) {
+            return NO_COMMIT;
+        }
+
+        ProcessResult processResult = ProcessResult.of(new ProcessBuilder()
+                .directory(directory)
+                .command("git", "rev-parse", rev)
+                .start());
+
+        if (processResult.exitCode != 0) {
+            throw new RuntimeException(processResult.stderr);
+        }
+
+        return processResult.stdout.trim();
+    }
+
+    public static File getRootDirectory(File directory) throws IOException {
+        ProcessResult processResult = ProcessResult.of(new ProcessBuilder()
+                .directory(directory)
+                .command("git", "rev-parse", "--show-toplevel")
+                .start());
+
+        if (processResult.exitCode != 0) {
+            throw new RuntimeException(processResult.stderr);
+        }
+
+        return new File(processResult.stdout.trim());
+    }
+
+
+    private static class ProcessResult {
+        final String stdout;
+        final String stderr;
+        final int exitCode;
+
+        private ProcessResult(Process process) throws IOException {
+            stdout = new String(process.getInputStream().readAllBytes());
+            stderr = new String(process.getErrorStream().readAllBytes());
             try {
-                ObjectId peeledObjectId = refDatabase.peel(ref).getPeeledObjectId();
-                return peeledObjectId != null ? peeledObjectId : ref.getObjectId();
-            } catch (IOException e) {
+                exitCode = process.waitFor();
+            } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-        }));
-    }
+        }
 
-    public static ZonedDateTime revTimestamp(Repository repository, ObjectId rev) throws IOException {
-        Instant commitTime = Instant.ofEpochSecond(repository.parseCommit(rev).getCommitTime());
-        return ZonedDateTime.ofInstant(commitTime, UTC);
+        public static ProcessResult of(Process process) throws IOException {
+            return new ProcessResult(process);
+        }
     }
 }
