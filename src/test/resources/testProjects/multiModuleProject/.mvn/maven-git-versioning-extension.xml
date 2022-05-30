@@ -13,8 +13,12 @@
         </ref>
 
         <ref type="branch">
-            <pattern>master</pattern>
-            <version>${version.release}-${ref}-${version.label}</version>
+            <pattern>
+                master
+            </pattern>
+            <version>
+                ${version.release}-${ref}-${version.label}
+            </version>
             <properties>
                 <foo>new_new_new</foo>
             </properties>

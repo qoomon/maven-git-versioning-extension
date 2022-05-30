@@ -698,7 +698,7 @@ class GitVersioningExtensionIT {
     private RefPatchDescription createVersionDescription(GitRefType type, String format) {
         RefPatchDescription refVersionDescription = new RefPatchDescription();
         refVersionDescription.type = type;
-        refVersionDescription.pattern = Pattern.compile(".*");
+        refVersionDescription.pattern = ".*";
         refVersionDescription.version = format;
         return refVersionDescription;
     }

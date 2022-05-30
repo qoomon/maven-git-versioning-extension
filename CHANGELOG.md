@@ -4,6 +4,11 @@
 
 # Changelog
 
+## 8.0.1
+##### Fixes
+* handle multiline config elements in `maven-git-versioning-extension.xml`
+
+
 ## 8.0.0
 ##### Features
 - migrate to java 11

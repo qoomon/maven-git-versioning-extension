@@ -4,11 +4,16 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 import me.qoomon.gitversioning.commons.GitRefType;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,11 +29,19 @@ import static me.qoomon.gitversioning.commons.GitRefType.COMMIT;
 @JacksonXmlRootElement(localName = "configuration")
 public class Configuration {
 
-    private static final Pattern MATCH_ALL = Pattern.compile(".*");
+    private static final String MATCH_ALL = ".*";
 
     public Boolean disable = false;
 
-    public Pattern describeTagPattern = MATCH_ALL;
+    @JsonDeserialize(using = IgnoreWhitespaceDeserializer.class)
+    public String describeTagPattern = MATCH_ALL;
+
+    public Pattern describeTagPattern() {
+        if(describeTagPattern == null) {
+            return null;
+        }
+        return Pattern.compile(describeTagPattern);
+    }
 
     public Boolean updatePom = false;
 
@@ -44,12 +57,22 @@ public class Configuration {
     @JsonInclude(NON_NULL)
     public static class PatchDescription {
 
-        public Pattern describeTagPattern;
+        @JsonDeserialize(using = IgnoreWhitespaceDeserializer.class)
+        public String describeTagPattern;
 
+        public Pattern describeTagPattern() {
+            if(describeTagPattern == null) {
+                return null;
+            }
+            return Pattern.compile(describeTagPattern);
+        }
+
+        @JsonDeserialize(using = IgnoreWhitespaceDeserializer.class)
         public String version;
 
         @JsonInclude(NON_EMPTY)
         @JacksonXmlElementWrapper(useWrapping = false)
+        // TODO  @JsonDeserialize(using = IgnoreWhitespaceDeserializer.class)
         public Map<String, String> properties = new HashMap<>();
 
         public Boolean updatePom;
@@ -61,13 +84,22 @@ public class Configuration {
         @JacksonXmlProperty(isAttribute = true)
         public GitRefType type = COMMIT;
 
-        public Pattern pattern;
+        @JsonDeserialize(using = IgnoreWhitespaceDeserializer.class)
+        public String pattern;
 
-        public RefPatchDescription(){}
+        public Pattern pattern() {
+            if(pattern == null) {
+                return null;
+            }
+            return Pattern.compile(pattern);
+        }
+
+        public RefPatchDescription() {
+        }
 
         public RefPatchDescription(GitRefType type, Pattern pattern, PatchDescription description) {
             this.type = type;
-            this.pattern = pattern;
+            this.pattern = pattern != null ? pattern.pattern() : null;
             this.describeTagPattern = description.describeTagPattern;
             this.updatePom = description.updatePom;
             this.version = description.version;
@@ -87,15 +119,28 @@ public class Configuration {
     }
 
     public static class RelatedProject {
+
+        @JsonDeserialize(using = IgnoreWhitespaceDeserializer.class)
         public String groupId;
+
+        @JsonDeserialize(using = IgnoreWhitespaceDeserializer.class)
         public String artifactId;
 
         @JsonCreator
         public RelatedProject(
-                @JsonProperty(required = true,  value="groupId") String groupId,
-                @JsonProperty(required = true, value="artifactId") String artifactId) {
+                @JsonProperty(required = true, value = "groupId") String groupId,
+                @JsonProperty(required = true, value = "artifactId") String artifactId
+        ) {
             this.groupId = groupId;
             this.artifactId = artifactId;
+        }
+    }
+
+
+    public static class IgnoreWhitespaceDeserializer extends JsonDeserializer<Object> {
+        @Override
+        public Object deserialize(JsonParser jp, DeserializationContext context) throws IOException {
+            return jp.getText().replaceAll("\\s+", "");
         }
     }
 }

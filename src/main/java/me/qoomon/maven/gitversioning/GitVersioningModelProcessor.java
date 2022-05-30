@@ -193,9 +193,9 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         logger.info("matching ref: " + gitVersionDetails.getRefType().name() + " - " + gitVersionDetails.getRefName());
         final RefPatchDescription patchDescription = gitVersionDetails.getPatchDescription();
         logger.info("ref configuration: " + gitVersionDetails.getRefType().name() + " - pattern: " + patchDescription.pattern);
-        if (patchDescription.describeTagPattern != null && !patchDescription.describeTagPattern.pattern().equals(".*")) {
+        if (patchDescription.describeTagPattern != null && !patchDescription.describeTagPattern.equals(".*")) {
             logger.info("  describeTagPattern: " + patchDescription.describeTagPattern);
-            gitSituation.setDescribeTagPattern(patchDescription.describeTagPattern);
+            gitSituation.setDescribeTagPattern(patchDescription.describeTagPattern());
         }
         if (patchDescription.version != null) {
             logger.info("  version: " + patchDescription.version);
@@ -659,7 +659,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                 case TAG: {
                     if (gitSituation.isDetached() || config.refs.considerTagsOnBranches) {
                         for (String tag : sortedTags.get()) {
-                            if (refConfig.pattern == null || refConfig.pattern.matcher(tag).matches()) {
+                            if (refConfig.pattern == null || refConfig.pattern().matcher(tag).matches()) {
                                 return new GitVersionDetails(gitSituation.getRev(), TAG, tag, refConfig);
                             }
                         }
@@ -669,7 +669,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                 case BRANCH: {
                     if (!gitSituation.isDetached()) {
                         String branch = gitSituation.getBranch();
-                        if (refConfig.pattern == null || refConfig.pattern.matcher(branch).matches()) {
+                        if (refConfig.pattern == null || refConfig.pattern().matcher(branch).matches()) {
                             return new GitVersionDetails(gitSituation.getRev(), BRANCH, branch, refConfig);
                         }
                     }
@@ -755,7 +755,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         placeholderMap.put("ref", () -> refName);
         placeholderMap.put("ref" + ".slug", refNameSlug);
 
-        final Pattern refPattern = gitVersionDetails.getPatchDescription().pattern;
+        final Pattern refPattern = gitVersionDetails.getPatchDescription().pattern();
         if (refPattern != null) {
             // ref pattern groups
             for (Entry<String, String> patternGroup : patternGroupValues(refPattern, refName).entrySet()) {
