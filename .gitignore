@@ -8,3 +8,4 @@ target/
 .m2/
 .*-pom.xml
 
+pom.xml.versionsBackup

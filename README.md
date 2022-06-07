@@ -250,13 +250,6 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
 
 - `git.worktree` absolute path of git worktree directory
 
-- `git.commit` e.g. '0fc20459a8eceb2c4abb9bf0af45a6e8af17b94b'
-- `git.commit.short` e.g. '0fc2045'
-- `git.commit.timestamp` e.g. '1560694278'
-- `git.commit.timestamp.datetime` e.g. '2019-11-16T14:37:10Z'
-
-- `git.ref` `git.ref.slug` HEAD ref name (branch or tag name or commit hash)
-
 ---
 
 ## IDE Setup
@@ -313,13 +306,15 @@ export VERSIONING_GIT_TAG=$PROVIDED_TAG;
 
 ### Reproducible builds
 
-The [maven reproducible builds feature](https://maven.apache.org/guides/mini/guide-reproducible-builds.html) can be easily supported with this extension, by using the commit timestamp as build timestamps.
+The [maven reproducible builds feature](https://maven.apache.org/guides/mini/guide-reproducible-builds.html) can be easily supported with this extension e.g.
 
 ```xml
-
-<properties>
-    <project.build.outputTimestamp>${git.commit.timestamp.datetime}</project.build.outputTimestamp>
-</properties>
+<ref type="branch">
+  <pattern>.+</pattern>
+  <properties>
+    <project.build.outputTimestamp>${commit.timestamp}</project.build.outputTimestamp>
+  </properties>
+</ref>
 ```
 
 ---

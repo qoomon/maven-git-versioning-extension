@@ -1,45 +1,11 @@
 <configuration xmlns="https://github.com/qoomon/maven-git-versioning-extension"
                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-               xsi:schemaLocation="https://github.com/qoomon/maven-git-versioning-extension https://qoomon.github.io/maven-git-versioning-extension/configuration-7.0.0.xsd">
-
-    <describeTagPattern><![CDATA[v(?<version>.*)]]></describeTagPattern>
-
+               >
     <rev>
-        <version>foo</version>
-        <updatePom>true</updatePom>
+        <version>${version}-SNAPSHOT</version>
+        <properties>
+            <foo.bar>git</foo.bar>
+        </properties>
     </rev>
-
-    <refs>
-
-        <ref type="tag">
-            <pattern><![CDATA[v(?<version>.*)]]></pattern>
-            <version>${ref.version}</version>
-            <updatePom>true</updatePom>
-        </ref>
-
-        <ref type="branch">
-            <pattern>master</pattern>
-            <version>${describe.tag.version.major.next}-SNAPSHOT</version>
-            <properties>
-                <foo>new_new_new</foo>
-            </properties>
-        </ref>
-
-        <ref type="branch">
-            <pattern>feature/(.+)</pattern>
-            <version>${ref}-SNAPSHOT</version>
-            <properties>
-                <foo>new_new_new</foo>
-            </properties>
-        </ref>
-
-    </refs>
-
-<!--    <relatedProjects>-->
-<!--        <project>-->
-<!--            <groupId>com.google.guava</groupId>-->
-<!--            <artifactId>guava</artifactId>-->
-<!--        </project>-->
-<!--    </relatedProjects>-->
 
 </configuration>

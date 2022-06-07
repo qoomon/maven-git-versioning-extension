@@ -6,9 +6,11 @@
 
     <groupId>test</groupId>
     <artifactId>test-artifact</artifactId>
-    <version>0.0.0-SNAPSHOT</version>
+    <version>1.2.6-SNAPSHOT</version>
 
     <properties>
+        <foo.bar>xxx</foo.bar>
+        <project.build.outputTimestamp>xxx</project.build.outputTimestamp>
         <dep.dependency-management-plugin>0.4</dep.dependency-management-plugin>
         <dep.enforce-managed-deps-rule>1.3</dep.enforce-managed-deps-rule>
         <dep.extra-enforcer-rules>1.5.1</dep.extra-enforcer-rules>
@@ -34,22 +36,22 @@
 
     <build>
         <plugins>
-            <plugin>
-                <artifactId>maven-enforcer-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>fail</id>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                        <configuration>
-                            <rules>
-                                <requirePluginVersions/>
-                            </rules>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
+<!--            <plugin>-->
+<!--                <artifactId>maven-enforcer-plugin</artifactId>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <id>fail</id>-->
+<!--                        <goals>-->
+<!--                            <goal>enforce</goal>-->
+<!--                        </goals>-->
+<!--                        <configuration>-->
+<!--                            <rules>-->
+<!--                                <requirePluginVersions/>-->
+<!--                            </rules>-->
+<!--                        </configuration>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--            </plugin>-->
         </plugins>
 
         <pluginManagement>

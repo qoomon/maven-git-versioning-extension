@@ -4,6 +4,16 @@
 
 # Changelog
 
+## 9.0.0 - UNRELEASED
+##### BREAKING CHANGES
+* removed following project properties. Make use of properties configuration in config file.
+  * `git.commit` 
+  * `git.commit.short` 
+  * `git.commit.timestamp` 
+  * `git.commit.timestamp.datetime` 
+  * `git.ref` 
+  * `git.ref.slug` 
+
 ## 8.0.1
 ##### Fixes
 * handle multiline config elements in `maven-git-versioning-extension.xml`

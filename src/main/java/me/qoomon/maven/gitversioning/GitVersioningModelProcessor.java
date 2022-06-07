@@ -10,6 +10,7 @@ import me.qoomon.gitversioning.commons.GitSituation;
 import me.qoomon.gitversioning.commons.Lazy;
 import me.qoomon.maven.gitversioning.Configuration.PatchDescription;
 import me.qoomon.maven.gitversioning.Configuration.RefPatchDescription;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.apache.maven.building.Source;
 import org.apache.maven.execution.MavenSession;
@@ -24,9 +25,12 @@ import org.slf4j.Logger;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
+import javax.xml.stream.XMLStreamException;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -298,14 +302,12 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         if (versionFormat != null) {
             updateParentVersion(projectModel, versionFormat);
             updateVersion(projectModel, versionFormat);
-            logger.info("project version: " + GAV.of(projectModel).getVersion());
-
             updateDependencyVersions(projectModel, versionFormat);
             updatePluginVersions(projectModel, versionFormat);
         }
 
         final Map<String, String> propertyFormats = patchDescription.properties;
-        if (propertyFormats != null && !propertyFormats.isEmpty()) {
+        if (propertyFormats != null) {
             updatePropertyValues(projectModel, propertyFormats, originalProjectGAV);
         }
 
@@ -352,32 +354,26 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         if (projectModel.getVersion() != null) {
             GAV projectGAV = GAV.of(projectModel);
             String gitVersion = getGitVersion(versionFormat, projectGAV.getVersion());
-            logger.debug("set version to " + gitVersion);
+            logger.info("set version to " + gitVersion);
             projectModel.setVersion(gitVersion);
         }
     }
 
     private void updatePropertyValues(ModelBase model, Map<String, String> propertyFormats, GAV originalProjectGAV) {
-
-        boolean logHeader = true;
+        if (propertyFormats.isEmpty()) {
+            return;
+        }
         // properties section
-        for (Entry<Object, Object> modelProperty : model.getProperties().entrySet()) {
-            String modelPropertyName = (String) modelProperty.getKey();
-            String modelPropertyValue = (String) modelProperty.getValue();
-
-            String propertyFormat = propertyFormats.get(modelPropertyName);
+        model.getProperties().forEach((modelPropertyName, modelPropertyValue) -> {
+            String propertyFormat = propertyFormats.get((String) modelPropertyName);
             if (propertyFormat != null) {
-                String gitPropertyValue = getGitPropertyValue(propertyFormat, modelPropertyValue, originalProjectGAV.getVersion());
+                String gitPropertyValue = getGitPropertyValue(propertyFormat, (String) modelPropertyValue, originalProjectGAV.getVersion());
                 if (!gitPropertyValue.equals(modelPropertyValue)) {
-                    if (logHeader) {
-                        logger.info(sectionLogHeader("properties", model));
-                        logHeader = false;
-                    }
                     logger.info("set property " + modelPropertyName + " to " + gitPropertyValue);
-                    model.addProperty(modelPropertyName, gitPropertyValue);
+                    model.addProperty((String) modelPropertyName, gitPropertyValue);
                 }
             }
-        }
+        });
     }
 
     private void updatePluginVersions(ModelBase model, String versionFormat) {
@@ -828,19 +824,6 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
         properties.put("git.worktree", gitSituation.getRootDirectory().getAbsolutePath());
 
-        properties.put("git.commit", gitVersionDetails.getCommit());
-        properties.put("git.commit.short", gitVersionDetails.getCommit().substring(0, 7));
-
-        final ZonedDateTime headCommitDateTime = gitSituation.getTimestamp();
-        properties.put("git.commit.timestamp", String.valueOf(headCommitDateTime.toEpochSecond()));
-        properties.put("git.commit.timestamp.datetime", headCommitDateTime.toEpochSecond() > 0
-                ? headCommitDateTime.format(ISO_INSTANT) : "0000-00-00T00:00:00Z");
-
-        final String refName = gitVersionDetails.getRefName();
-        final String refNameSlug = slugify(refName);
-        properties.put("git.ref", refName);
-        properties.put("git.ref" + ".slug", refNameSlug);
-
         return properties;
     }
 
@@ -1073,13 +1056,10 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         // properties section
         Element propertiesElement = element.getChild("properties");
         if (propertiesElement != null) {
-            Properties modelProperties = model.getProperties();
-            gitVersionDetails.getPatchDescription().properties.keySet().forEach(propertyName -> {
-                Element propertyElement = propertiesElement.getChild(propertyName);
-                if (propertyElement != null) {
-                    String pomPropertyValue = propertyElement.getText();
-                    String modelPropertyValue = (String) modelProperties.get(propertyName);
-                    if (!Objects.equals(modelPropertyValue, pomPropertyValue)) {
+            propertiesElement.getChildren().forEach(propertyElement -> {
+                String modelPropertyValue = model.getProperties().getProperty(propertyElement.getName());
+                if (modelPropertyValue != null) {
+                    if (!Objects.equals(propertyElement.getText(), modelPropertyValue)) {
                         propertyElement.setText(modelPropertyValue);
                     }
                 }
