@@ -5,8 +5,11 @@
 # Changelog
 
 ## 9.0.0 - UNRELEASED
+##### Fixes
+* fix git describe tag selection, if multiple tags point to head
+
 ##### BREAKING CHANGES
-* removed following project properties. Make use of properties configuration in config file.
+* remove following project properties. Make use of properties configuration in config file instead.
   * `git.commit` 
   * `git.commit.short` 
   * `git.commit.timestamp` 

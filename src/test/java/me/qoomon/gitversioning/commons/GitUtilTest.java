@@ -4,6 +4,7 @@ package me.qoomon.gitversioning.commons;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.InvalidRefNameException;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.junit.jupiter.api.Test;
@@ -13,6 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.jgit.lib.Constants.HEAD;
@@ -88,7 +90,7 @@ class GitUtilTest {
         // given
         Git git = Git.init().setInitialBranch(MASTER).setDirectory(tempDir.toFile()).call();
         // when
-        
+
         List<String> tags = GitUtil.tagsPointAt(git.getRepository(), head(git));
 
         // then
@@ -167,10 +169,33 @@ class GitUtilTest {
         assertThat(tags).containsExactlyInAnyOrder(givenTagName);
     }
 
-    @Test
-
-
     private static ObjectId head(Git git) throws IOException {
         return git.getRepository().resolve(HEAD);
     }
+
+    @Test
+    void describe() throws Exception {
+        // given
+        Git git = Git.init().setInitialBranch(MASTER).setDirectory(tempDir.toFile()).call();
+
+        RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+
+        git.tag().setName("v2.1").setAnnotated(true).setObjectId(givenCommit).setMessage(".").call();
+        git.tag().setName("v1.2").setAnnotated(true).setObjectId(givenCommit).setMessage(".").call();
+        git.tag().setName("v2.3").setAnnotated(true).setObjectId(givenCommit).setMessage(".").call();
+        Thread.sleep(1000);
+        String givenTagName = "v1.3";
+        git.tag().setName(givenTagName).setAnnotated(true).setObjectId(givenCommit).setMessage(".").call();
+
+        // when
+        GitDescription description = GitUtil.describe(git.getRepository(), head(git), Pattern.compile("v.+"));
+
+        // then
+        assertThat(description).satisfies(it -> {
+            assertThat(it.getCommit()).isEqualTo(givenCommit.getName());
+            assertThat(it.getDistance()).isEqualTo(0);
+            assertThat(it.getTag()).isEqualTo(givenTagName);
+        });
+    }
+
 }

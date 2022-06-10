@@ -54,7 +54,7 @@ public final class GitUtil {
     public static List<String> tagsPointAt(Repository repository, ObjectId revObjectId,
                                            Map<ObjectId, List<Ref>> reverseTagRefMap) {
         return reverseTagRefMap.getOrDefault(revObjectId, emptyList()).stream()
-                .sorted(new RefNameComparator(repository))
+                .sorted(new TagComparator(repository))
                 .map(ref -> shortenRefName(ref.getName()))
                 .collect(toList());
     }
@@ -82,7 +82,7 @@ public final class GitUtil {
                 depth++;
 
                 Optional<Ref> matchingTag = reverseTagRefMap.getOrDefault(rev, emptyList()).stream()
-                        .sorted(new RefNameComparator(repository))
+                        .sorted(new TagComparator(repository))
                         .filter(tag -> tagPattern.matcher(shortenRefName(tag.getName())).matches())
                         .findFirst();
 
