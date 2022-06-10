@@ -10,7 +10,6 @@ import me.qoomon.gitversioning.commons.GitSituation;
 import me.qoomon.gitversioning.commons.Lazy;
 import me.qoomon.maven.gitversioning.Configuration.PatchDescription;
 import me.qoomon.maven.gitversioning.Configuration.RefPatchDescription;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.apache.maven.building.Source;
 import org.apache.maven.execution.MavenSession;
@@ -95,7 +94,6 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     boolean updatePom = false;
 
     private Map<String, Supplier<String>> globalFormatPlaceholderMap;
-    private Map<String, String> gitProjectProperties;
     private Set<GAV> relatedProjects;
 
 
@@ -214,7 +212,6 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         }
 
         globalFormatPlaceholderMap = generateGlobalFormatPlaceholderMap(gitSituation, gitVersionDetails, mavenSession);
-        gitProjectProperties = generateGitProjectProperties(gitSituation, gitVersionDetails);
 
         // determine related projects
         relatedProjects = determineRelatedProjects(projectModel);
@@ -487,7 +484,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     }
 
     private void addGitProperties(Model projectModel) {
-        gitProjectProperties.forEach(projectModel::addProperty);
+        projectModel.addProperty("git.worktree", gitSituation.getRootDirectory().getAbsolutePath());
     }
 
     private void addBuildPlugin(Model projectModel) {
@@ -819,7 +816,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         return placeholderMap;
     }
 
-    private static Map<String, String> generateGitProjectProperties(GitSituation gitSituation, GitVersionDetails gitVersionDetails) {
+    private static Map<String, String> generateGitProjectProperties(GitSituation gitSituation) {
         final Map<String, String> properties = new HashMap<>();
 
         properties.put("git.worktree", gitSituation.getRootDirectory().getAbsolutePath());
