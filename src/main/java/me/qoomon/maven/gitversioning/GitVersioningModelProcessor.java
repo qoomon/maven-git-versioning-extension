@@ -716,6 +716,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         placeholderMap.put("version.patch.next", Lazy.by(() -> increaseStringNumber(placeholderMap.get("version.patch").get())));
 
         placeholderMap.put("version.label", Lazy.by(() -> requireNonNullElse(versionComponents.get().group("label"), "")));
+        placeholderMap.put("version.label.prefixed", Lazy.by(() -> prefixString(placeholderMap.get("version.label").get(), "-")));
 
         final Lazy<String> versionRelease = Lazy.by(() -> projectVersion.replaceFirst("-.*$", ""));
         placeholderMap.put("version.release", versionRelease);
@@ -1252,5 +1253,11 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
     private static String increaseStringNumber(String majorVersion) {
         return String.format("%0" + majorVersion.length() + "d", Long.parseLong(majorVersion) + 1);
+    }
+
+    private static String prefixString(String string, String prefix) {
+        return string.isEmpty()
+            ? string
+            : prefix.concat(string);
     }
 }
