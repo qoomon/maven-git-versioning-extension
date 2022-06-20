@@ -4,19 +4,11 @@
 
 # Changelog
 
-## 9.0.0 - UNRELEASED
+## 8.0.2
 ##### Fixes
 * fix git describe tag selection, if multiple tags point to head
 * add missing `${version.label.prefixed}` placeholder
 
-##### BREAKING CHANGES
-* remove following project properties. Make use of properties configuration in config file instead.
-  * `git.commit` 
-  * `git.commit.short` 
-  * `git.commit.timestamp` 
-  * `git.commit.timestamp.datetime` 
-  * `git.ref` 
-  * `git.ref.slug` 
 
 ## 8.0.1
 ##### Fixes

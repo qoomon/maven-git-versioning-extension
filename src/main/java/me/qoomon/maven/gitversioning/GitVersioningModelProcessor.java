@@ -39,6 +39,7 @@ import java.util.regex.Pattern;
 import static com.fasterxml.jackson.databind.MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.Math.*;
+import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparing;
@@ -305,10 +306,10 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             updatePropertyValues(projectModel, propertyFormats, originalProjectGAV);
         }
 
+        addProjectProperties(projectModel);
+
         // profile section
         updateProfiles(projectModel, patchDescription, originalProjectGAV);
-
-        addGitProperties(projectModel);
     }
 
 
@@ -480,8 +481,29 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                 .collect(toList());
     }
 
-    private void addGitProperties(Model projectModel) {
-        projectModel.addProperty("git.worktree", gitSituation.getRootDirectory().getAbsolutePath());
+    private void addProjectProperties(Model projectModel) {
+        Properties projectProperties = projectModel.getProperties();
+
+        if (!projectProperties.contains("git.worktree"))
+            projectModel.addProperty("git.worktree", gitSituation.getRootDirectory().getAbsolutePath());
+
+        if (!projectProperties.contains("git.commit"))
+            projectModel.addProperty("git.commit", gitVersionDetails.getCommit());
+        if (!projectProperties.contains("git.commit.short"))
+            projectModel.addProperty("git.commit.short", gitVersionDetails.getCommit().substring(0, 7));
+
+        final ZonedDateTime headCommitDateTime = gitSituation.getTimestamp();
+        if (!projectProperties.contains("git.commit.timestamp"))
+            projectModel.addProperty("git.commit.timestamp", String.valueOf(headCommitDateTime.toEpochSecond()));
+        if (!projectProperties.contains("git.commit.timestamp.datetime"))
+            projectModel.addProperty("git.commit.timestamp.datetime", headCommitDateTime.toEpochSecond() > 0
+                    ? headCommitDateTime.format(ISO_INSTANT) : "0000-00-00T00:00:00Z");
+
+        final String refName = gitVersionDetails.getRefName();
+        if (!projectProperties.contains("git.ref"))
+            projectModel.addProperty("git.ref", refName);
+        if (!projectProperties.contains("git.ref.slug"))
+            projectModel.addProperty("git.ref.slug", slugify(refName));
     }
 
     private void addBuildPlugin(Model projectModel) {
@@ -587,12 +609,10 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                         String tagName = System.getenv("TAG_NAME");
                         logger.debug("  BRANCH_NAME: " + branchName);
                         logger.debug("  TAG_NAME: " + tagName);
-                        if (branchName != null && branchName.equals(tagName)) {
-                            overrideTag = tagName;
-                        } else {
+                        if (branchName == null || !branchName.equals(tagName)) {
                             overrideBranch = branchName;
-                            overrideTag = tagName;
                         }
+                        overrideTag = tagName;
                     }
                 }
 
@@ -817,15 +837,6 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         return placeholderMap;
     }
 
-    private static Map<String, String> generateGitProjectProperties(GitSituation gitSituation) {
-        final Map<String, String> properties = new HashMap<>();
-
-        properties.put("git.worktree", gitSituation.getRootDirectory().getAbsolutePath());
-
-        return properties;
-    }
-
-
     // ---- configuration -------------------------------------------------------------------------------------------------
 
     private static File findMvnDirectory(File baseDirectory) throws IOException {
@@ -886,6 +897,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             return parseBoolean(updatePomCommandOption);
         }
 
+        //noinspection ReplaceNullCheck
         if (gitRefConfig.updatePom != null) {
             return gitRefConfig.updatePom;
         }
@@ -1159,7 +1171,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         forEachPair(pluginsElement.getChildren(), plugins, (pluginElement, plugin) -> {
             // sanity check
             if (!Objects.equals(plugin.getKey(), getPluginKey(pluginElement))) {
-                throw new IllegalArgumentException("Unexpected difference of xml and model plugin order");
+                throw new IllegalArgumentException("Unexpected difference of xml and model report plugin order");
             }
 
             Element pluginVersionElement = pluginElement.getChild("version");
