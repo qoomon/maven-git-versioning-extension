@@ -24,12 +24,9 @@ import org.slf4j.Logger;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
-import javax.xml.stream.XMLStreamException;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -42,7 +39,6 @@ import java.util.regex.Pattern;
 import static com.fasterxml.jackson.databind.MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.Math.*;
-import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparing;
@@ -54,7 +50,8 @@ import static me.qoomon.maven.gitversioning.BuildProperties.projectArtifactId;
 import static me.qoomon.maven.gitversioning.GitVersioningMojo.asPlugin;
 import static me.qoomon.maven.gitversioning.MavenUtil.*;
 import static org.apache.commons.lang3.StringUtils.leftPad;
-import static org.apache.maven.shared.utils.StringUtils.*;
+import static org.apache.maven.shared.utils.StringUtils.repeat;
+import static org.apache.maven.shared.utils.StringUtils.rightPad;
 import static org.apache.maven.shared.utils.logging.MessageUtils.buffer;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -716,7 +713,10 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         placeholderMap.put("version.patch.next", Lazy.by(() -> increaseStringNumber(placeholderMap.get("version.patch").get())));
 
         placeholderMap.put("version.label", Lazy.by(() -> requireNonNullElse(versionComponents.get().group("label"), "")));
-        placeholderMap.put("version.label.prefixed", Lazy.by(() -> prefixString(placeholderMap.get("version.label").get(), "-")));
+        placeholderMap.put("version.label.prefixed", Lazy.by(() -> {
+            String label = placeholderMap.get("version.label").get();
+            return !label.isEmpty() ? "-" + label : "";
+        }));
 
         final Lazy<String> versionRelease = Lazy.by(() -> projectVersion.replaceFirst("-.*$", ""));
         placeholderMap.put("version.release", versionRelease);
@@ -1255,9 +1255,4 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         return String.format("%0" + majorVersion.length() + "d", Long.parseLong(majorVersion) + 1);
     }
 
-    private static String prefixString(String string, String prefix) {
-        return string.isEmpty()
-            ? string
-            : prefix.concat(string);
-    }
 }

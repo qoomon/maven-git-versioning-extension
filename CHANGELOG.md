@@ -7,6 +7,7 @@
 ## 9.0.0 - UNRELEASED
 ##### Fixes
 * fix git describe tag selection, if multiple tags point to head
+* add missing `${version.label.prefixed}` placeholder
 
 ##### BREAKING CHANGES
 * remove following project properties. Make use of properties configuration in config file instead.
