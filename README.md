@@ -158,6 +158,10 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
     - `${version.patch.next}` the `${version.patch}` increased by 1 e.g. '4'
   - `${version.label}` the version label of `${version}` e.g. 'SNAPSHOT'
     - `${version.label.prefixed}` like `${version.label}` with label separator e.g. '-SNAPSHOT'
+  - `${version.release.label}` the version label of `${version}` with the snapshot suffix removed e.g. 'java7'
+    - `${version.release.label.prefixed}` like `${version.release.label}` with label separator e.g. '-java7'
+  - `${version.snapshot.label}` the snapshot suffix of `${version}` (if any) e.g. 'snapshot'
+    - `${version.snapshot.label.prefixed}` like `${version.snapshot.label}` with label separator e.g. '-snapshot'
   - `${version.release}` like `${version}` without version labels like `-SNAPSHOT` e.g. '1.2.3'
         <br><br>
 

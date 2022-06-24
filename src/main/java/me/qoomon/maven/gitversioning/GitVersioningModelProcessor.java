@@ -733,10 +733,21 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         placeholderMap.put("version.patch.next", Lazy.by(() -> increaseStringNumber(placeholderMap.get("version.patch").get())));
 
         placeholderMap.put("version.label", Lazy.by(() -> requireNonNullElse(versionComponents.get().group("label"), "")));
-        placeholderMap.put("version.label.prefixed", Lazy.by(() -> {
+        placeholderMap.put("version.label.prefixed", Lazy.by(() -> prefixString(placeholderMap.get("version.label").get(), "-")));
+
+        placeholderMap.put("version.snapshot.label", Lazy.by(() -> placeholderMap.get("version.label.prefixed").get().replaceFirst(".*-((?i)SNAPSHOT)$", "$1")));
+        placeholderMap.put("version.snapshot.label.prefixed", Lazy.by(() -> prefixString(placeholderMap.get("version.snapshot.label").get(), "-")));
+
+        placeholderMap.put("version.release.label", Lazy.by(() -> {
             String label = placeholderMap.get("version.label").get();
-            return !label.isEmpty() ? "-" + label : "";
+            int labelLength = label.length();
+            int snapshotLabelPrefixedLength = placeholderMap.get("version.snapshot.label.prefixed").get().length();
+
+            return labelLength > snapshotLabelPrefixedLength
+                ? label.substring(0, labelLength - snapshotLabelPrefixedLength)
+                : "";
         }));
+        placeholderMap.put("version.release.label.prefixed", Lazy.by(() -> prefixString(placeholderMap.get("version.release.label").get(), "-")));
 
         final Lazy<String> versionRelease = Lazy.by(() -> projectVersion.replaceFirst("-.*$", ""));
         placeholderMap.put("version.release", versionRelease);
@@ -1265,6 +1276,12 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
     private static String increaseStringNumber(String majorVersion) {
         return String.format("%0" + majorVersion.length() + "d", Long.parseLong(majorVersion) + 1);
+    }
+
+    private static String prefixString(String string, String prefix) {
+        return string.isEmpty()
+            ? string
+            : prefix.concat(string);
     }
 
 }
