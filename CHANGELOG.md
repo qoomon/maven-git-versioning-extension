@@ -8,6 +8,7 @@
 
 ##### Fixes
 - handle lightweight tags
+- set `${version.minor.next}` placeholders properly
 
 ## 8.0.2
 ##### Fixes
