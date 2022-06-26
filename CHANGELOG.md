@@ -10,7 +10,8 @@
 - handle lightweight tags
 - set `${version.minor.next}` placeholders properly
 
-## 8.0.2
+
+## 9.0.0 (accidentally increased major version, D'OH )
 ##### Fixes
 * fix git describe tag selection, if multiple tags point to head
 * add missing `${version.label.prefixed}` placeholder
