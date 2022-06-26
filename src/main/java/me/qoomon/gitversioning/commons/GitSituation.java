@@ -1,8 +1,8 @@
 package me.qoomon.gitversioning.commons;
 
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.errors.NoWorkTreeException;
 import org.eclipse.jgit.lib.ObjectId;
-import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 
 import java.io.File;
@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.time.ZonedDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
@@ -31,7 +30,6 @@ public class GitSituation {
     private final Supplier<ZonedDateTime> timestamp = Lazy.by(this::timestamp);
     private Supplier<String> branch = Lazy.by(this::branch);
 
-    private final Supplier<Map<ObjectId, List<Ref>>> reverseTagRefMap = Lazy.by(this::reverseTagRefMap);
     private Supplier<List<String>> tags = Lazy.by(this::tags);
 
     private final Supplier<Boolean> clean = Lazy.by(this::clean);
@@ -127,19 +125,15 @@ public class GitSituation {
         return GitUtil.branch(repository);
     }
 
-    private List<String> tags() {
-        return head != null ? GitUtil.tagsPointAt(repository, head, reverseTagRefMap.get()) : emptyList();
+    private List<String> tags() throws IOException {
+        return head != null ? GitUtil.tagsPointAt(head, repository) : emptyList();
     }
 
-    private boolean clean() {
+    private boolean clean() throws GitAPIException {
         return GitUtil.status(repository).isClean();
     }
 
     private GitDescription describe() throws IOException {
-        return GitUtil.describe(repository, head, describeTagPattern, reverseTagRefMap.get());
-    }
-
-    private Map<ObjectId, List<Ref>> reverseTagRefMap() throws IOException {
-        return GitUtil.reverseTagRefMap(repository);
+        return GitUtil.describe(head, describeTagPattern, repository);
     }
 }

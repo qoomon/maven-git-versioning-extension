@@ -5,7 +5,6 @@ import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Ref;
-import org.eclipse.jgit.lib.RefDatabase;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
@@ -19,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static java.time.ZoneOffset.UTC;
 import static java.util.Collections.emptyList;
@@ -31,12 +31,8 @@ public final class GitUtil {
 
     public static String NO_COMMIT = "0000000000000000000000000000000000000000";
 
-    public static Status status(Repository repository) {
-        try {
-            return Git.wrap(repository).status().call();
-        } catch (GitAPIException e) {
-            throw new RuntimeException(e);
-        }
+    public static Status status(Repository repository) throws GitAPIException {
+        return Git.wrap(repository).status().call();
     }
 
     public static String branch(Repository repository) throws IOException {
@@ -47,28 +43,16 @@ public final class GitUtil {
         return branch;
     }
 
-    public static List<String> tagsPointAt(Repository repository, ObjectId revObjectId) throws IOException {
-        return tagsPointAt(repository, revObjectId, reverseTagRefMap(repository));
+    public static List<String> tagsPointAt(ObjectId revObjectId, Repository repository) throws IOException {
+        return reverseTagRefMap(repository).getOrDefault(revObjectId, emptyList());
     }
 
-    public static List<String> tagsPointAt(Repository repository, ObjectId revObjectId,
-                                           Map<ObjectId, List<Ref>> reverseTagRefMap) {
-        return reverseTagRefMap.getOrDefault(revObjectId, emptyList()).stream()
-                .sorted(new TagComparator(repository))
-                .map(ref -> shortenRefName(ref.getName()))
-                .collect(toList());
-    }
-
-    public static GitDescription describe(Repository repository, ObjectId revObjectId, Pattern tagPattern) throws IOException {
-        return describe(repository, revObjectId, tagPattern, reverseTagRefMap(repository));
-    }
-
-    public static GitDescription describe(Repository repository, ObjectId revObjectId, Pattern tagPattern,
-                                          Map<ObjectId, List<Ref>> reverseTagRefMap) throws IOException {
-
+    public static GitDescription describe(ObjectId revObjectId, Pattern tagPattern, Repository repository) throws IOException {
         if (revObjectId == null) {
             return new GitDescription(NO_COMMIT, "root", 0);
         }
+
+        Map<ObjectId, List<String>> objectIdListMap = reverseTagRefMap(repository);
 
         // Walk back commit ancestors looking for tagged one
         try (RevWalk walk = new RevWalk(repository)) {
@@ -80,14 +64,12 @@ public final class GitUtil {
             while (walkIterator.hasNext()) {
                 RevCommit rev = walkIterator.next();
                 depth++;
-
-                Optional<Ref> matchingTag = reverseTagRefMap.getOrDefault(rev, emptyList()).stream()
-                        .sorted(new TagComparator(repository))
-                        .filter(tag -> tagPattern.matcher(shortenRefName(tag.getName())).matches())
+                Optional<String> matchingTag = objectIdListMap.getOrDefault(rev, emptyList()).stream()
+                        .filter(tag -> tagPattern.matcher(tag).matches())
                         .findFirst();
 
                 if (matchingTag.isPresent()) {
-                    return new GitDescription(revObjectId.getName(), shortenRefName(matchingTag.get().getName()), depth);
+                    return new GitDescription(revObjectId.getName(), matchingTag.get(), depth);
                 }
             }
 
@@ -104,23 +86,31 @@ public final class GitUtil {
     }
 
     public static List<Ref> tags(Repository repository) throws IOException {
-        return tags(repository.getRefDatabase());
+        return repository.getRefDatabase().getRefsByPrefix(R_TAGS).stream()
+//                .sorted(new TagComparator(repository)) // TODO may can be removed
+                .collect(toList());
     }
 
-    public static List<Ref> tags(RefDatabase refDatabase) throws IOException {
-        return refDatabase.getRefsByPrefix(R_TAGS);
-    }
-
-    public static Map<ObjectId, List<Ref>> reverseTagRefMap(Repository repository) throws IOException {
-        RefDatabase refDatabase = repository.getRefDatabase();
-        return tags(refDatabase).stream().collect(groupingBy(ref -> {
-            try {
-                ObjectId peeledObjectId = refDatabase.peel(ref).getPeeledObjectId();
-                return peeledObjectId != null ? peeledObjectId : ref.getObjectId();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }));
+    public static Map<ObjectId, List<String>> reverseTagRefMap(Repository repository) throws IOException {
+        TagComparator tagComparator = new TagComparator(repository);
+        return tags(repository).stream()
+                .collect(groupingBy(r -> {
+                    try {
+                        Ref peel = repository.getRefDatabase().peel(r);
+                        return peel.getPeeledObjectId() != null
+                                ? peel.getPeeledObjectId()
+                                : peel.getObjectId();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }))
+                .entrySet().stream()
+                .collect(Collectors.toMap(
+                        e -> e.getKey(),
+                        e -> e.getValue().stream()
+                                .sorted(tagComparator)
+                                .map(v -> shortenRefName(v.getName())).collect(toList())
+                ));
     }
 
     public static ZonedDateTime revTimestamp(Repository repository, ObjectId rev) throws IOException {

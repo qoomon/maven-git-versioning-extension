@@ -4,6 +4,11 @@
 
 # Changelog
 
+## 9.0.1
+
+##### Fixes
+- handle lightweight tags
+
 ## 8.0.2
 ##### Fixes
 * fix git describe tag selection, if multiple tags point to head
