@@ -4,6 +4,14 @@
 
 # Changelog
 
+## 9.1.0
+
+##### Features
+- add config option for `<projectVersionPattern>` to use special parts of the project version as placeholders e.g. `${version.environment}`
+- add placeholder `${version.core}` the core version component of `${version}` e.g. '1.2.3'
+  - `${version.release}` is marked as deprecated
+
+
 ## 9.0.1
 
 ##### Fixes

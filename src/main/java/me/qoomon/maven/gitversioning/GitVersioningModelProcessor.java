@@ -63,7 +63,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 @Singleton
 public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
-    private static final Pattern VERSION_PATTERN = Pattern.compile("(:?(?<major>\\d+)(:?\\.(?<minor>\\d+)(:?\\.(?<patch>\\d+))?)?(:?-(?<label>.*))?)?");
+    private static final Pattern VERSION_PATTERN = Pattern.compile("(:?(?<core>(?<major>\\d+)(:?\\.(?<minor>\\d+)(:?\\.(?<patch>\\d+))?)?)(:?-(?<label>.*))?)?");
 
     private static final String OPTION_NAME_GIT_REF = "git.ref";
     private static final String OPTION_NAME_GIT_TAG = "git.tag";
@@ -723,6 +723,8 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             return matcher;
         });
 
+        placeholderMap.put("version.core", Lazy.by(() -> requireNonNullElse(versionComponents.get().group("core"), "0.0.0")));
+
         placeholderMap.put("version.major", Lazy.by(() -> requireNonNullElse(versionComponents.get().group("major"), "0")));
         placeholderMap.put("version.major.next", Lazy.by(() -> increaseStringNumber(placeholderMap.get("version.major").get())));
 
@@ -738,8 +740,18 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             return !label.isEmpty() ? "-" + label : "";
         }));
 
-        final Lazy<String> versionRelease = Lazy.by(() -> projectVersion.replaceFirst("-.*$", ""));
-        placeholderMap.put("version.release", versionRelease);
+        // deprecated
+        placeholderMap.put("version.release",  Lazy.by(() -> projectVersion.replaceFirst("-.*$", "")));
+
+        final Pattern projectVersionPattern = config.projectVersionPattern();
+        if (projectVersionPattern != null) {
+            // ref pattern groups
+            for (Entry<String, String> patternGroup : patternGroupValues(projectVersionPattern, projectVersion).entrySet()) {
+                final String groupName = patternGroup.getKey();
+                final String value = patternGroup.getValue() != null ? patternGroup.getValue() : "";
+                placeholderMap.put("version." + groupName, () -> value);
+            }
+        }
 
         return placeholderMap;
     }
@@ -810,6 +822,8 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             matcher.find();
             return matcher;
         });
+
+        placeholderMap.put("describe.tag.version.core", Lazy.by(() -> requireNonNullElse(descriptionTagVersionComponents.get().group("core"), "0")));
 
         placeholderMap.put("describe.tag.version.major", Lazy.by(() -> requireNonNullElse(descriptionTagVersionComponents.get().group("major"), "0")));
         placeholderMap.put("describe.tag.version.major.next", Lazy.by(() -> increaseStringNumber(placeholderMap.get("describe.tag.version.major").get())));
