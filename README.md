@@ -160,8 +160,6 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
     - `${version.patch.next}` the `${version.patch}` increased by 1 e.g. '4'
   - `${version.label}` the version label of `${version}` e.g. 'SNAPSHOT'
     - `${version.label.prefixed}` like `${version.label}` with label separator e.g. '-SNAPSHOT'
-        <br><br>
-
 - Project Version Pattern Groups
   - Content of regex groups in `<projectVersionPattern>` can be addressed like this:
   - `${version.GROUP_NAME}`
