@@ -27,6 +27,7 @@ import javax.inject.Singleton;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -775,6 +776,18 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         placeholderMap.put("commit.timestamp.second", Lazy.by(() -> leftPad(String.valueOf(headCommitDateTime.get().getSecond()), 2, "0")));
         placeholderMap.put("commit.timestamp.datetime", Lazy.by(() -> headCommitDateTime.get().toEpochSecond() > 0
                 ? headCommitDateTime.get().format(DateTimeFormatter.ofPattern("yyyyMMdd.HHmmss")) : "00000000.000000"));
+
+        final Lazy<ZonedDateTime> buildCommitDateTime = Lazy.by(() -> mavenSession.getStartTime().toInstant().atZone(ZoneId.systemDefault()));
+        placeholderMap.put("build.timestamp", Lazy.by(() -> String.valueOf(buildCommitDateTime.get().toEpochSecond())));
+        placeholderMap.put("build.timestamp.year", Lazy.by(() -> String.valueOf(buildCommitDateTime.get().getYear())));
+        placeholderMap.put("build.timestamp.year.2digit", Lazy.by(() -> String.valueOf(buildCommitDateTime.get().getYear() % 100)));
+        placeholderMap.put("build.timestamp.month", Lazy.by(() -> leftPad(String.valueOf(buildCommitDateTime.get().getMonthValue()), 2, "0")));
+        placeholderMap.put("build.timestamp.day", Lazy.by(() -> leftPad(String.valueOf(buildCommitDateTime.get().getDayOfMonth()), 2, "0")));
+        placeholderMap.put("build.timestamp.hour", Lazy.by(() -> leftPad(String.valueOf(buildCommitDateTime.get().getHour()), 2, "0")));
+        placeholderMap.put("build.timestamp.minute", Lazy.by(() -> leftPad(String.valueOf(buildCommitDateTime.get().getMinute()), 2, "0")));
+        placeholderMap.put("build.timestamp.second", Lazy.by(() -> leftPad(String.valueOf(buildCommitDateTime.get().getSecond()), 2, "0")));
+        placeholderMap.put("build.timestamp.datetime", Lazy.by(() -> buildCommitDateTime.get().toEpochSecond() > 0
+                ? buildCommitDateTime.get().format(DateTimeFormatter.ofPattern("yyyyMMdd.HHmmss")) : "00000000.000000"));
 
         final String refName = gitVersionDetails.getRefName();
         final Lazy<String> refNameSlug = Lazy.by(() -> slugify(refName));

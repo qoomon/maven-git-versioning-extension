@@ -205,6 +205,17 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
 - `${commit.timestamp.datetime}` commit timestamp formatted as `yyyyMMdd.HHmmss`e.g. '20190616.161442'
       <br><br>
 
+- `${build.timestamp}` maven-build-timestamp (epoch seconds) e.g. '1560694278'
+- `${build.timestamp.year}` maven-build-timestamp year e.g. '2021'
+- `${build.timestamp.year.2digit}` 2-digit maven-build-timestamp year.g. '21'
+- `${build.timestamp.month}` maven-build-timestamp month of year e.g. '12'
+- `${build.timestamp.day}` maven-build-timestamp day of month e.g. '23'
+- `${build.timestamp.hour}` maven-build-timestamp hour of day (24h)e.g. '13'
+- `${build.timestamp.minute}` maven-build-timestamp minute of hour e.g. '59'
+- `${build.timestamp.second}` maven-build-timestamp second of minute e.g. '30'
+- `${build.timestamp.datetime}` maven-build-timestamp formatted as `yyyyMMdd.HHmmss`e.g. '20190616.161442'
+     <br><br>
+
 - `${describe}` Will resolve to `git describe` output
 - `${describe.distance}` The distance count to last matching tag
 - `${describe.tag}` The matching tag of `git describe`
