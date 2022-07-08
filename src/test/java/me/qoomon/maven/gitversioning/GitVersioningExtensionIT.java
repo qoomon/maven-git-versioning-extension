@@ -21,9 +21,11 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.regex.Pattern;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
-import static me.qoomon.gitversioning.commons.GitRefType.*;
+import static me.qoomon.gitversioning.commons.GitRefType.BRANCH;
+import static me.qoomon.gitversioning.commons.GitRefType.TAG;
 import static me.qoomon.maven.gitversioning.GitVersioningModelProcessor.GIT_VERSIONING_POM_NAME;
 import static me.qoomon.maven.gitversioning.MavenUtil.readModel;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -661,6 +663,33 @@ class GitVersioningExtensionIT {
                     softly.assertThat(dependency.getVersion()).isEqualTo(expectedVersion);
                 });
             }));
+        }
+    }
+
+    @Test
+    void branchVersioning_WithBuildTime() throws Exception {
+
+        try (Git git = Git.init().setInitialBranch("feature/test").setDirectory(projectDir.toFile()).call()) {
+            // Given
+            git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+
+            writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
+            writeExtensionsFile(projectDir);
+            writeExtensionConfigFile(projectDir, new Configuration() {{
+                refs.list.add(createVersionDescription(BRANCH, "${build.timestamp.year}${build.timestamp.month}${build.timestamp.day}-gitVersioning"));
+            }});
+
+            // When
+            Verifier verifier = getVerifier(projectDir);
+            verifier.executeGoal("verify");
+
+            // Then
+            verifier.verifyErrorFreeLog();
+            String expectedVersion = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + "-gitVersioning";
+            verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
+
+            Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
+            assertThat(gitVersionedPomModel.getVersion()).isEqualTo(expectedVersion);
         }
     }
 
