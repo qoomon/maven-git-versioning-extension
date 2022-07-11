@@ -21,10 +21,12 @@ This extension can virtually set project version and properties, based on curren
 
 ## Usage
 
-⚠️ minimal required java version is `11`
-⚠️ minimal required maven version is `3.6.3`
-
 ⚠️ If you're using **IntelliJ** have a look at [IntelliJ Setup Instructions](#intellij---multi-modules-projects)
+
+#### Requirements
+* ⚠️ minimal required java version is `11`
+* ⚠️ minimal required maven version is `3.6.3`
+
 
 ### Add Extension to Maven Project
 
