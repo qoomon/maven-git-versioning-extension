@@ -37,7 +37,7 @@ create or update `${rootProjectDir}/.mvn/extensions.xml` file
     <extension>
         <groupId>me.qoomon</groupId>
         <artifactId>maven-git-versioning-extension</artifactId>
-        <version>7.4.0</version>
+        <version>9.0.0</version>
     </extension>
 
 </extensions>
@@ -158,6 +158,7 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
     - `${version.patch.next}` the `${version.patch}` increased by 1 e.g. '4'
   - `${version.label}` the version label of `${version}` e.g. 'SNAPSHOT'
     - `${version.label.prefixed}` like `${version.label}` with label separator e.g. '-SNAPSHOT'
+    - `${version.label.number}` used to extract the label as a number (build will fail if non-numeric label encountered for this)
   - `${version.release}` like `${version}` without version labels like `-SNAPSHOT` e.g. '1.2.3'
         <br><br>
 
@@ -194,10 +195,17 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
   - `${describe.tag.version}` the tag version determined by regex `\d+\.\d+\.\d+`
     - `${describe.tag.version.major}` the major version component of `${describe.tag.version}` e.g. '1'
       - `${describe.tag.version.major.next}` the `${describe.tag.version.major}` increased by 1 e.g. '2'
-    - `${describe.tag.version.minor}` the major version component of `${describe.tag.version}` e.g. '2'
+      - `${describe.tag.version.major.nextByDistance}` the `${describe.tag.version.major}` increased by `${describe.distance}` + 1 e.g. '2'
+    - `${describe.tag.version.minor}` the minor version component of `${describe.tag.version}` e.g. '2'
       - `${describe.tag.version.minor.next}` the `${describe.tag.version.minor}` increased by 1 e.g. '3'
-    - `${describe.tag.version.path}` the major version component of `${describe.tag.version}` e.g. '3'
+      - `${describe.tag.version.minor.nextByDistance}` the `${describe.tag.version.minor}` increased by `${describe.distance}` + 1 e.g. '2'
+    - `${describe.tag.version.patch}` the patch version component of `${describe.tag.version}` e.g. '3'
       - `${describe.tag.version.patch.next}` the `${describe.tag.version.patch}` increased by 1 e.g. '4'
+      - `${describe.tag.version.patch.nextByDistance}` the `${describe.tag.version.patch}` increased by `${describe.distance}` + 1 e.g. '2'
+    - `${describe.tag.version.label}` the label version component of `${describe.tag.version}` e.g. 'SNAPSHOT'
+    - `${describe.tag.version.label.number}` the `${describe.tag.version.label}` assuming numeric e,g, '5', will cause build failure if a non-numeric label is found
+      - `${describe.tag.version.label.number.next}` the `${describe.tag.version.label.number}` increased by 1 e.g. '6', will cause build failure if a non-numeric label is found
+      - `${describe.tag.version.label.number.nextByDistance}` the `${describe.tag.version.label.number}` increased by `${describe.distance}` + 1 e.g. '9', will cause build failure if a non-numeric label is found
 - Describe Tag Pattern Groups
     - Content of regex groups in `<describeTagPattern>` can be addressed like this:
     - `${describe.tag.GROUP_NAME}` `${describe.tag.GROUP_NAME.slug}`
