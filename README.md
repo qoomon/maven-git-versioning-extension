@@ -163,7 +163,6 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
     - `${version.patch.next}` the `${version.patch}` increased by 1 e.g. '4'
   - `${version.label}` the version label of `${version}` e.g. 'SNAPSHOT'
     - `${version.label.prefixed}` like `${version.label}` with label separator e.g. '-SNAPSHOT'
-    - `${version.label.number}` used to extract the label as a number (build will fail if non-numeric label encountered for this)
 - Project Version Pattern Groups
   - Content of regex groups in `<projectVersionPattern>` can be addressed like this:
   - `${version.GROUP_NAME}`
@@ -235,9 +234,8 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
       - `${describe.tag.version.patch.next}` the `${describe.tag.version.patch}` increased by 1 e.g. '4'
       - `${describe.tag.version.patch.nextByDistance}` the `${describe.tag.version.patch}` increased by `${describe.distance}` + 1 e.g. '2'
     - `${describe.tag.version.label}` the label version component of `${describe.tag.version}` e.g. 'SNAPSHOT'
-    - `${describe.tag.version.label.number}` the `${describe.tag.version.label}` assuming numeric e,g, '5', will cause build failure if a non-numeric label is found
-      - `${describe.tag.version.label.number.next}` the `${describe.tag.version.label.number}` increased by 1 e.g. '6', will cause build failure if a non-numeric label is found
-      - `${describe.tag.version.label.number.nextByDistance}` the `${describe.tag.version.label.number}` increased by `${describe.distance}` + 1 e.g. '9', will cause build failure if a non-numeric label is found
+      - `${describe.tag.version.label.asInt.next}` the `${describe.tag.version.label}` converted to an integer and increased by 1 e.g. '6'
+      - `${describe.tag.version.label.asInt.nextByDistance}` the `${describe.tag.version.label}` converted to an integer increased by `${describe.distance}` + 1 e.g. '9'
 - Describe Tag Pattern Groups
     - Content of regex groups in `<describeTagPattern>` can be addressed like this:
     - `${describe.tag.GROUP_NAME}` `${describe.tag.GROUP_NAME.slug}`
