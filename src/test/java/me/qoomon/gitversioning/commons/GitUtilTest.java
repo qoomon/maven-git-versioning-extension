@@ -4,7 +4,6 @@ package me.qoomon.gitversioning.commons;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.api.errors.InvalidRefNameException;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.junit.jupiter.api.Test;
@@ -91,7 +90,7 @@ class GitUtilTest {
         Git git = Git.init().setInitialBranch(MASTER).setDirectory(tempDir.toFile()).call();
         // when
 
-        List<String> tags = GitUtil.tagsPointAt(git.getRepository(), head(git));
+        List<String> tags = GitUtil.tagsPointAt(head(git), git.getRepository());
 
         // then
         assertThat(tags).isEmpty();
@@ -106,7 +105,7 @@ class GitUtilTest {
         git.commit().setMessage("initial commit").setAllowEmpty(true).call();
 
         // when
-        List<String> tags = GitUtil.tagsPointAt(git.getRepository(), head(git));
+        List<String> tags = GitUtil.tagsPointAt(head(git), git.getRepository());
 
         // then
         assertThat(tags).isEmpty();
@@ -123,7 +122,7 @@ class GitUtilTest {
         git.tag().setName(givenTagName).setObjectId(givenCommit).call();
 
         // when
-        List<String> tags = GitUtil.tagsPointAt(git.getRepository(), head(git));
+        List<String> tags = GitUtil.tagsPointAt(head(git), git.getRepository());
 
         // then
         assertThat(tags).containsExactly(givenTagName);
@@ -145,7 +144,7 @@ class GitUtilTest {
         git.tag().setName(givenTagName3).setObjectId(givenCommit).call();
 
         // when
-        List<String> tags = GitUtil.tagsPointAt(git.getRepository(), head(git));
+        List<String> tags = GitUtil.tagsPointAt(head(git), git.getRepository());
 
         // then
         assertThat(tags).containsExactly(givenTagName2, givenTagName3, givenTagName1);
@@ -163,7 +162,7 @@ class GitUtilTest {
         git.tag().setName(givenTagName).setAnnotated(false).setObjectId(givenCommit).call();
 
         // when
-        List<String> tags = GitUtil.tagsPointAt(git.getRepository(), head(git));
+        List<String> tags = GitUtil.tagsPointAt(head(git), git.getRepository());
 
         // then
         assertThat(tags).containsExactlyInAnyOrder(givenTagName);
@@ -188,7 +187,7 @@ class GitUtilTest {
         git.tag().setName(givenTagName).setAnnotated(true).setObjectId(givenCommit).setMessage(".").call();
 
         // when
-        GitDescription description = GitUtil.describe(git.getRepository(), head(git), Pattern.compile("v.+"));
+        GitDescription description = GitUtil.describe(head(git), Pattern.compile("v.+"), git.getRepository());
 
         // then
         assertThat(description).satisfies(it -> {

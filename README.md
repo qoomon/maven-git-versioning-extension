@@ -21,9 +21,12 @@ This extension can virtually set project version and properties, based on curren
 
 ## Usage
 
-⚠️ minimal required maven version is `3.6.3`
-
 ⚠️ If you're using **IntelliJ** have a look at [IntelliJ Setup Instructions](#intellij---multi-modules-projects)
+
+#### Requirements
+* ⚠️ minimal required java version is `11`
+* ⚠️ minimal required maven version is `3.6.3`
+
 
 ### Add Extension to Maven Project
 
@@ -87,6 +90,7 @@ You can configure the version and properties adjustments for specific branches a
 - `<disable>` global disable(`true`)/enable(`false`) extension, default is `false`.
     - Can be overridden by command option, see [Parameters & Environment Variables](#parameters--environment-variables).
 
+- `<projectVersionPattern>` An arbitrary regex to match project version, matching groups can be used as [Format Placeholders](#format-placeholders) (has to be a **full match pattern**)
 - `<describeTagPattern>` An arbitrary regex to match tag names for git describe command (has to be a **full match pattern** e.g. `v(.+)`, default is `.*`
 - `<updatePom>` Enable(`true`)/disable(`false`) version and properties update in original pom file, default is `false`
     - Can be overridden by command option, see [Parameters & Environment Variables](#parameters--environment-variables).
@@ -150,6 +154,7 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
       <br><br>
 
 - `${version}` `<version>` set in `pom.xml` e.g. '1.2.3-SNAPSHOT'
+  - `${version.core}` the core version component of `${version}` e.g. '1.2.3'
   - `${version.major}` the major version component of `${version}` e.g. '1'
     - `${version.major.next}` the `${version.major}` increased by 1 e.g. '2'
   - `${version.minor}` the minor version component of `${version}` e.g. '2'
@@ -159,8 +164,23 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
   - `${version.label}` the version label of `${version}` e.g. 'SNAPSHOT'
     - `${version.label.prefixed}` like `${version.label}` with label separator e.g. '-SNAPSHOT'
     - `${version.label.number}` used to extract the label as a number (build will fail if non-numeric label encountered for this)
-  - `${version.release}` like `${version}` without version labels like `-SNAPSHOT` e.g. '1.2.3'
-        <br><br>
+- Project Version Pattern Groups
+  - Content of regex groups in `<projectVersionPattern>` can be addressed like this:
+  - `${version.GROUP_NAME}`
+  - `${version.GROUP_INDEX}`
+  - Named Group Example
+      ```xml
+      <configuration>
+        <projectVersionPattern><![CDATA[^.+-(?<environment>.+)-SNAPSHOT$]]></projectVersionPattern>
+    
+        <refs>
+          <ref type="branch">
+            <version>${version.environment}-SNAPSHOT</version>
+          </ref>
+        </refs>
+      </configuration>
+      ```
+      <br>
 
 - `${ref}` `${ref.slug}` ref name (branch or tag name or commit hash)
 - Ref Pattern Groups
@@ -189,10 +209,22 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
 - `${commit.timestamp.datetime}` commit timestamp formatted as `yyyyMMdd.HHmmss`e.g. '20190616.161442'
       <br><br>
 
+- `${build.timestamp}` maven-build-timestamp (epoch seconds) e.g. '1560694278'
+- `${build.timestamp.year}` maven-build-timestamp year e.g. '2021'
+- `${build.timestamp.year.2digit}` 2-digit maven-build-timestamp year.g. '21'
+- `${build.timestamp.month}` maven-build-timestamp month of year e.g. '12'
+- `${build.timestamp.day}` maven-build-timestamp day of month e.g. '23'
+- `${build.timestamp.hour}` maven-build-timestamp hour of day (24h)e.g. '13'
+- `${build.timestamp.minute}` maven-build-timestamp minute of hour e.g. '59'
+- `${build.timestamp.second}` maven-build-timestamp second of minute e.g. '30'
+- `${build.timestamp.datetime}` maven-build-timestamp formatted as `yyyyMMdd.HHmmss`e.g. '20190616.161442'
+     <br><br>
+
 - `${describe}` Will resolve to `git describe` output
 - `${describe.distance}` The distance count to last matching tag
 - `${describe.tag}` The matching tag of `git describe`
   - `${describe.tag.version}` the tag version determined by regex `\d+\.\d+\.\d+`
+    - `${describe.tag.version.core}` the core version component of `${describe.tag.version}` e.g. '1.2.3' 
     - `${describe.tag.version.major}` the major version component of `${describe.tag.version}` e.g. '1'
       - `${describe.tag.version.major.next}` the `${describe.tag.version.major}` increased by 1 e.g. '2'
       - `${describe.tag.version.major.nextByDistance}` the `${describe.tag.version.major}` increased by `${describe.distance}` + 1 e.g. '2'

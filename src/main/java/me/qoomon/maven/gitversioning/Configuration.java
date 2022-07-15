@@ -34,7 +34,17 @@ public class Configuration {
     public Boolean disable = false;
 
     @JsonDeserialize(using = IgnoreWhitespaceDeserializer.class)
-    public String describeTagPattern = MATCH_ALL;
+    public String projectVersionPattern = null;
+
+    public Pattern projectVersionPattern() {
+        if(projectVersionPattern == null) {
+            return null;
+        }
+        return Pattern.compile(projectVersionPattern);
+    }
+
+    @JsonDeserialize(using = IgnoreWhitespaceDeserializer.class)
+    public String describeTagPattern = null;
 
     public Pattern describeTagPattern() {
         if(describeTagPattern == null) {
