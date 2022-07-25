@@ -844,19 +844,19 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
         placeholderMap.put("describe.tag.version.major", Lazy.by(() -> requireNonNullElse(descriptionTagVersionComponents.get().group("major"), "0")));
         placeholderMap.put("describe.tag.version.major.next", Lazy.by(() -> increaseStringNumber(placeholderMap.get("describe.tag.version.major").get())));
-        placeholderMap.put("describe.tag.version.major.nextPlusDistance", Lazy.by(() -> increaseStringNumberBy(placeholderMap.get("describe.tag.version.major").get(), distance.get() + 1)));
 
         placeholderMap.put("describe.tag.version.minor", Lazy.by(() -> requireNonNullElse(descriptionTagVersionComponents.get().group("minor"), "0")));
         placeholderMap.put("describe.tag.version.minor.next", Lazy.by(() -> increaseStringNumber(placeholderMap.get("describe.tag.version.minor").get())));
-        placeholderMap.put("describe.tag.version.minor.nextPlusDistance", Lazy.by(() -> increaseStringNumberBy(placeholderMap.get("describe.tag.version.minor").get(), distance.get() + 1)));
 
         placeholderMap.put("describe.tag.version.patch", Lazy.by(() -> requireNonNullElse(descriptionTagVersionComponents.get().group("patch"), "0")));
         placeholderMap.put("describe.tag.version.patch.next", Lazy.by(() -> increaseStringNumber(placeholderMap.get("describe.tag.version.patch").get())));
-        placeholderMap.put("describe.tag.version.patch.nextPlusDistance", Lazy.by(() -> increaseStringNumberBy(placeholderMap.get("describe.tag.version.patch").get(), distance.get() + 1)));
+        placeholderMap.put("describe.tag.version.patch.plus.describe.distance", Lazy.by(() -> increaseStringNumberBy(placeholderMap.get("describe.tag.version.patch").get(), distance.get())));
+        placeholderMap.put("describe.tag.version.patch.next.plus.describe.distance", Lazy.by(() -> increaseStringNumberBy(placeholderMap.get("describe.tag.version.patch").get(), distance.get() + 1)));
 
         placeholderMap.put("describe.tag.version.label", Lazy.by(() -> requireNonNullElse(descriptionTagVersionComponents.get().group("label"), "")));
         placeholderMap.put("describe.tag.version.label.next", Lazy.by(() -> increaseStringNumber(labelAsInteger.get())));
-        placeholderMap.put("describe.tag.version.label.nextPlusDistance", Lazy.by(() -> increaseStringNumberBy(labelAsInteger.get(), distance.get() + 1)));
+        placeholderMap.put("describe.tag.version.label.plus.describe.distance", Lazy.by(() -> increaseStringNumberBy(labelAsInteger.get(), distance.get())));
+        placeholderMap.put("describe.tag.version.label.next.plus.describe.distance", Lazy.by(() -> increaseStringNumberBy(labelAsInteger.get(), distance.get() + 1)));
 
         placeholderMap.put("describe.distance", Lazy.by(() -> String.valueOf(description.get().getDistance())));
 

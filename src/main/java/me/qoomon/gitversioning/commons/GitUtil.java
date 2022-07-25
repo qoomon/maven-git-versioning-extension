@@ -77,7 +77,9 @@ public final class GitUtil {
                 throw new IllegalStateException("couldn't find matching tag in shallow git repository");
             }
 
-            return new GitDescription(revObjectId.getName(), "root", depth);
+            // If no matching tag found, then we should presumably return the number of commits on the branch
+            // but we started from -1 so need to compensate here
+            return new GitDescription(revObjectId.getName(), "root", depth + 1);
         }
     }
 
