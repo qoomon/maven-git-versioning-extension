@@ -60,10 +60,9 @@ public final class GitUtil {
             walk.setFirstParent(true);
             walk.markStart(walk.parseCommit(revObjectId));
             Iterator<RevCommit> walkIterator = walk.iterator();
-            int depth = -1;
+            int depth = 0;
             while (walkIterator.hasNext()) {
                 RevCommit rev = walkIterator.next();
-                depth++;
                 Optional<String> matchingTag = objectIdListMap.getOrDefault(rev, emptyList()).stream()
                         .filter(tag -> tagPattern.matcher(tag).matches())
                         .findFirst();
@@ -71,15 +70,14 @@ public final class GitUtil {
                 if (matchingTag.isPresent()) {
                     return new GitDescription(revObjectId.getName(), matchingTag.get(), depth);
                 }
+                depth++;
             }
 
             if (isShallowRepository(repository)) {
                 throw new IllegalStateException("couldn't find matching tag in shallow git repository");
             }
 
-            // If no matching tag found, then we should presumably return the number of commits on the branch
-            // but we started from -1 so need to compensate here
-            return new GitDescription(revObjectId.getName(), "root", depth + 1);
+            return new GitDescription(revObjectId.getName(), "root", depth);
         }
     }
 

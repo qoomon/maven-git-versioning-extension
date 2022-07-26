@@ -824,8 +824,6 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             placeholderMap.put("describe.tag." + groupName + ".slug", Lazy.by(() -> slugify(groupValue.get())));
         }
 
-        final Lazy<Integer> distance = Lazy.by(() -> description.get().getDistance());
-
         Supplier<String> descriptionTagVersion = placeholderMap.computeIfAbsent("describe.tag.version", key -> Lazy.by(() -> {
             Matcher matcher = VERSION_PATTERN.matcher(descriptionTag.get());
             return matcher.find() ? matcher.group() : "0.0.0";
@@ -838,8 +836,6 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             return matcher;
         });
 
-        final Lazy<String> labelAsInteger = Lazy.by(() -> extractLabelNumber(descriptionTagVersionComponents));
-
         placeholderMap.put("describe.tag.version.core", Lazy.by(() -> requireNonNullElse(descriptionTagVersionComponents.get().group("core"), "0")));
 
         placeholderMap.put("describe.tag.version.major", Lazy.by(() -> requireNonNullElse(descriptionTagVersionComponents.get().group("major"), "0")));
@@ -850,15 +846,16 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
         placeholderMap.put("describe.tag.version.patch", Lazy.by(() -> requireNonNullElse(descriptionTagVersionComponents.get().group("patch"), "0")));
         placeholderMap.put("describe.tag.version.patch.next", Lazy.by(() -> increaseStringNumber(placeholderMap.get("describe.tag.version.patch").get())));
-        placeholderMap.put("describe.tag.version.patch.plus.describe.distance", Lazy.by(() -> increaseStringNumberBy(placeholderMap.get("describe.tag.version.patch").get(), distance.get())));
-        placeholderMap.put("describe.tag.version.patch.next.plus.describe.distance", Lazy.by(() -> increaseStringNumberBy(placeholderMap.get("describe.tag.version.patch").get(), distance.get() + 1)));
 
-        placeholderMap.put("describe.tag.version.label", Lazy.by(() -> requireNonNullElse(descriptionTagVersionComponents.get().group("label"), "")));
-        placeholderMap.put("describe.tag.version.label.next", Lazy.by(() -> increaseStringNumber(labelAsInteger.get())));
-        placeholderMap.put("describe.tag.version.label.plus.describe.distance", Lazy.by(() -> increaseStringNumberBy(labelAsInteger.get(), distance.get())));
-        placeholderMap.put("describe.tag.version.label.next.plus.describe.distance", Lazy.by(() -> increaseStringNumberBy(labelAsInteger.get(), distance.get() + 1)));
+        placeholderMap.put("describe.tag.version.version.label", Lazy.by(() -> requireNonNullElse(descriptionTagVersionComponents.get().group("label"), "")));
+        placeholderMap.put("describe.tag.version.label.next", Lazy.by(() -> increaseStringNumber(placeholderMap.get("describe.tag.version.label").get())));
 
+        final Lazy<Integer> descriptionDistance = Lazy.by(() -> description.get().getDistance());
         placeholderMap.put("describe.distance", Lazy.by(() -> String.valueOf(description.get().getDistance())));
+        placeholderMap.put("describe.tag.version.patch.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.patch").get(), descriptionDistance.get() )));
+        placeholderMap.put("describe.tag.version.patch.next.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.patch").get(), descriptionDistance.get() + 1)));
+        placeholderMap.put("describe.tag.version.label.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.version.label").get(), descriptionDistance.get())));
+        placeholderMap.put("describe.tag.version.label.next.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.label.next").get(), descriptionDistance.get())));
 
         // command parameters e.g. mvn -Dfoo=123 will be available as ${property.foo}
         for (Entry<Object, Object> property : mavenSession.getUserProperties().entrySet()) {
@@ -1300,18 +1297,11 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     }
 
     private static String increaseStringNumber(String majorVersion) {
-        return increaseStringNumberBy(majorVersion, 1);
+        return increase(majorVersion, 1);
     }
 
-    private static String increaseStringNumberBy(String toIncrease, long by) {
-        return String.format("%0" + toIncrease.length() + "d", Long.parseLong(toIncrease) + by);
+    private static String increase(String toIncrease, long by) {
+        String sanitized = toIncrease.isEmpty() ? "0" : toIncrease;
+        return String.format("%0" + sanitized.length() + "d", Long.parseLong(toIncrease.isEmpty() ? "0" : toIncrease) + by);
     }
-
-    private static String extractLabelNumber(Lazy<Matcher> versionComponents) {
-        String label = requireNonNullElse(versionComponents.get().group("label"), "0");
-        // This should throw a build-killing error if we are unparseable as a numeric
-        return String.valueOf(Integer.parseInt(label));
-    }
-
-
 }
