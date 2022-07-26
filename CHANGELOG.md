@@ -4,6 +4,15 @@
 
 # Changelog
 
+## 9.3.0
+
+##### Features
+- add new placeholders
+  - `${describe.tag.version.patch.plus.describe.distance}`
+  - `${describe.tag.version.patch.next.plus.describe.distance}`
+  - `${describe.tag.version.label.plus.describe.distance}`
+  - `${describe.tag.version.label.next.plus.describe.distance}`
+
 ## 9.2.0
 
 ##### Features

@@ -40,7 +40,7 @@ create or update `${rootProjectDir}/.mvn/extensions.xml` file
     <extension>
         <groupId>me.qoomon</groupId>
         <artifactId>maven-git-versioning-extension</artifactId>
-        <version>9.2.0</version>
+        <version>9.3.0</version>
     </extension>
 
 </extensions>
