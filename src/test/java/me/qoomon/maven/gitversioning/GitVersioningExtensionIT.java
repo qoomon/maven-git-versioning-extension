@@ -30,6 +30,7 @@ import static me.qoomon.maven.gitversioning.GitVersioningModelProcessor.GIT_VERS
 import static me.qoomon.maven.gitversioning.MavenUtil.readModel;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
+import static org.eclipse.jgit.lib.Constants.MASTER;
 
 class GitVersioningExtensionIT {
 
@@ -692,6 +693,122 @@ class GitVersioningExtensionIT {
             assertThat(gitVersionedPomModel.getVersion()).isEqualTo(expectedVersion);
         }
     }
+
+    @Test
+    void apply_emptyRepoGivesExpectedPlusDistanceResult() throws Exception {
+        // This can only be a local build so the specifics of the build number don't really matter, but 0 makes reasonable sense
+        // given
+        try (Git git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call()) {
+            writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
+            writeExtensionsFile(projectDir);
+            writeExtensionConfigFile(projectDir, new Configuration() {{
+                refs.list.add(createVersionDescription(BRANCH, "${describe.tag.version.label.plus.describe.distance}"));
+            }});
+
+            // When
+            Verifier verifier = getVerifier(projectDir);
+            verifier.executeGoal("verify");
+
+            // Then
+            verifier.verifyErrorFreeLog();
+            String expectedVersion = "0";
+            verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
+
+            Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
+            assertThat(gitVersionedPomModel.getVersion()).isEqualTo(expectedVersion);
+        }
+
+     }
+
+    @Test
+    void apply_singleCommitUntaggedRepoGivesExpectedPlusDistanceResult() throws Exception {
+        // This can only be a local build so the specifics of the build number don't really matter, but 0 makes reasonable sense
+        // given
+        try (Git git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call()) {
+            git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+            writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
+            writeExtensionsFile(projectDir);
+            writeExtensionConfigFile(projectDir, new Configuration() {{
+                refs.list.add(createVersionDescription(BRANCH, "${describe.tag.version.label.plus.describe.distance}"));
+            }});
+
+            // When
+            Verifier verifier = getVerifier(projectDir);
+            verifier.executeGoal("verify");
+
+            // Then
+            verifier.verifyErrorFreeLog();
+            String expectedVersion = "1";
+            verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
+
+            Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
+            assertThat(gitVersionedPomModel.getVersion()).isEqualTo(expectedVersion);
+        }
+
+     }
+
+    @Test
+    void apply_NoCommitsSinceLastTagGivesExpectedPlusDistanceResult() throws Exception {
+        // This can only be a local build so the specifics of the build number don't really matter, but 0 makes reasonable sense
+        // given
+        try (Git git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call()) {
+            git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+            String givenTag = "2.0.4-677";
+            git.tag().setName(givenTag).call();
+
+            writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
+            writeExtensionsFile(projectDir);
+            writeExtensionConfigFile(projectDir, new Configuration() {{
+                refs.list.add(createVersionDescription(BRANCH, "${describe.tag.version.label.plus.describe.distance}"));
+            }});
+
+            // When
+            Verifier verifier = getVerifier(projectDir);
+            verifier.executeGoal("verify");
+
+            // Then
+            verifier.verifyErrorFreeLog();
+            String expectedVersion = "677";
+            verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
+
+            Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
+            assertThat(gitVersionedPomModel.getVersion()).isEqualTo(expectedVersion);
+        }
+
+     }
+
+    @Test
+    void apply_TwoCommitsSinceLastTagGivesExpectedPlusDistanceResult() throws Exception {
+        // This can only be a local build so the specifics of the build number don't really matter, but 0 makes reasonable sense
+        // given
+        try (Git git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call()) {
+            git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+            String givenTag = "2.0.4-677";
+            git.tag().setName(givenTag).call();
+            git.commit().setMessage("commit two").setAllowEmpty(true).call();
+            git.commit().setMessage("commit three").setAllowEmpty(true).call();
+
+            writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
+            writeExtensionsFile(projectDir);
+            writeExtensionConfigFile(projectDir, new Configuration() {{
+                refs.list.add(createVersionDescription(BRANCH, "${describe.tag.version.label.plus.describe.distance}"));
+            }});
+
+            // When
+            Verifier verifier = getVerifier(projectDir);
+            verifier.executeGoal("verify");
+
+            // Then
+            verifier.verifyErrorFreeLog();
+            String expectedVersion = "679";
+            verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
+
+            Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
+            assertThat(gitVersionedPomModel.getVersion()).isEqualTo(expectedVersion);
+        }
+
+     }
+
 
     // TODO add tests for property updates
 

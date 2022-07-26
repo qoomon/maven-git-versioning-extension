@@ -60,10 +60,9 @@ public final class GitUtil {
             walk.setFirstParent(true);
             walk.markStart(walk.parseCommit(revObjectId));
             Iterator<RevCommit> walkIterator = walk.iterator();
-            int depth = -1;
+            int depth = 0;
             while (walkIterator.hasNext()) {
                 RevCommit rev = walkIterator.next();
-                depth++;
                 Optional<String> matchingTag = objectIdListMap.getOrDefault(rev, emptyList()).stream()
                         .filter(tag -> tagPattern.matcher(tag).matches())
                         .findFirst();
@@ -71,6 +70,7 @@ public final class GitUtil {
                 if (matchingTag.isPresent()) {
                     return new GitDescription(revObjectId.getName(), matchingTag.get(), depth);
                 }
+                depth++;
             }
 
             if (isShallowRepository(repository)) {

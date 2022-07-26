@@ -40,7 +40,7 @@ create or update `${rootProjectDir}/.mvn/extensions.xml` file
     <extension>
         <groupId>me.qoomon</groupId>
         <artifactId>maven-git-versioning-extension</artifactId>
-        <version>7.4.0</version>
+        <version>9.2.0</version>
     </extension>
 
 </extensions>
@@ -226,10 +226,16 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
     - `${describe.tag.version.core}` the core version component of `${describe.tag.version}` e.g. '1.2.3' 
     - `${describe.tag.version.major}` the major version component of `${describe.tag.version}` e.g. '1'
       - `${describe.tag.version.major.next}` the `${describe.tag.version.major}` increased by 1 e.g. '2'
-    - `${describe.tag.version.minor}` the major version component of `${describe.tag.version}` e.g. '2'
+    - `${describe.tag.version.minor}` the minor version component of `${describe.tag.version}` e.g. '2'
       - `${describe.tag.version.minor.next}` the `${describe.tag.version.minor}` increased by 1 e.g. '3'
-    - `${describe.tag.version.path}` the major version component of `${describe.tag.version}` e.g. '3'
+    - `${describe.tag.version.patch}` the patch version component of `${describe.tag.version}` e.g. '3'
       - `${describe.tag.version.patch.next}` the `${describe.tag.version.patch}` increased by 1 e.g. '4'
+      - `${describe.tag.version.patch.plus.describe.distance}` the `${describe.tag.version.patch}` increased by `${describe.distance}` e.g. '2'
+      - `${describe.tag.version.patch.next.plus.describe.distance}` the `${describe.tag.version.patch.next}` increased by `${describe.distance}` e.g. '3'
+    - `${describe.tag.version.label}` the label version component of `${describe.tag.version}` e.g. 'SNAPSHOT'
+      - `${describe.tag.version.label.next}` the `${describe.tag.version.label}` converted to an integer and increased by 1 e.g. '6'
+      - `${describe.tag.version.label.plus.describe.distance}` the `${describe.tag.version.label}` increased by `${describe.distance}` e.g. '2'
+      - `${describe.tag.version.label.next.plus.describe.distance}` the `${describe.tag.version.label.next}` increased by `${describe.distance}` e.g. '3'
 - Describe Tag Pattern Groups
     - Content of regex groups in `<describeTagPattern>` can be addressed like this:
     - `${describe.tag.GROUP_NAME}` `${describe.tag.GROUP_NAME.slug}`

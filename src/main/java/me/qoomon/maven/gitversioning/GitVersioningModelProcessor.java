@@ -848,8 +848,14 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         placeholderMap.put("describe.tag.version.patch.next", Lazy.by(() -> increaseStringNumber(placeholderMap.get("describe.tag.version.patch").get())));
 
         placeholderMap.put("describe.tag.version.version.label", Lazy.by(() -> requireNonNullElse(descriptionTagVersionComponents.get().group("label"), "")));
+        placeholderMap.put("describe.tag.version.label.next", Lazy.by(() -> increaseStringNumber(placeholderMap.get("describe.tag.version.label").get())));
 
+        final Lazy<Integer> descriptionDistance = Lazy.by(() -> description.get().getDistance());
         placeholderMap.put("describe.distance", Lazy.by(() -> String.valueOf(description.get().getDistance())));
+        placeholderMap.put("describe.tag.version.patch.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.patch").get(), descriptionDistance.get() )));
+        placeholderMap.put("describe.tag.version.patch.next.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.patch").get(), descriptionDistance.get() + 1)));
+        placeholderMap.put("describe.tag.version.label.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.version.label").get(), descriptionDistance.get())));
+        placeholderMap.put("describe.tag.version.label.next.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.label.next").get(), descriptionDistance.get())));
 
         // command parameters e.g. mvn -Dfoo=123 will be available as ${property.foo}
         for (Entry<Object, Object> property : mavenSession.getUserProperties().entrySet()) {
@@ -1291,7 +1297,11 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     }
 
     private static String increaseStringNumber(String majorVersion) {
-        return String.format("%0" + majorVersion.length() + "d", Long.parseLong(majorVersion) + 1);
+        return increase(majorVersion, 1);
     }
 
+    private static String increase(String toIncrease, long by) {
+        String sanitized = toIncrease.isEmpty() ? "0" : toIncrease;
+        return String.format("%0" + sanitized.length() + "d", Long.parseLong(toIncrease.isEmpty() ? "0" : toIncrease) + by);
+    }
 }
