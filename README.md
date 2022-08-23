@@ -19,14 +19,13 @@ This extension can virtually set project version and properties, based on curren
     * managing project versions within files and Git tags
     * git merge conflicts
 
-## Usage
-
-⚠️ If you're using **IntelliJ** have a look at [IntelliJ Setup Instructions](#intellij---multi-modules-projects)
-
 #### Requirements
 * ⚠️ minimal required java version is `11`
 * ⚠️ minimal required maven version is `3.6.3`
 
+## Usage
+
+⚠️ If you're using **IntelliJ** have a look at [IntelliJ Setup Instructions](#intellij---multi-modules-projects)
 
 ### Add Extension to Maven Project
 
@@ -46,7 +45,7 @@ create or update `${rootProjectDir}/.mvn/extensions.xml` file
 </extensions>
 ```
 
-## Configure Extension
+### Configure Extension
 
 ℹ Consider [CI/CD](#cicd-setup) section when running this extension in a CI/CD environment
 
@@ -57,7 +56,6 @@ You can configure the version and properties adjustments for specific branches a
 **Example:** `maven-git-versioning-extension.xml`
 
 ```xml
-
 <configuration xmlns="https://github.com/qoomon/maven-git-versioning-extension"
                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                xsi:schemaLocation="https://github.com/qoomon/maven-git-versioning-extension https://qoomon.github.io/maven-git-versioning-extension/configuration-7.0.0.xsd">
