@@ -307,7 +307,7 @@ You can provide those, by using [Parameters & Environment Variables](#parameters
 ### Native Support
 
 * GitHub Actions: if `$GITHUB_ACTIONS == true`, `GITHUB_REF` is considered
-* GitLab CI: if `$GITLAB_CI == true`, `CI_COMMIT_BRANCH` and `CI_COMMIT_TAG` are considered
+* GitLab CI: if `$GITLAB_CI == true`, `CI_COMMIT_BRANCH`, `CI_COMMIT_TAG` and `CI_MERGE_REQUEST_SOURCE_BRANCH_NAME` are considered
 * Circle CI: if `$CIRCLECI == true`, `CIRCLE_BRANCH` and `CIRCLE_TAG` are considered
 * Jenkins: if `JENKINS_HOME` is set, `BRANCH_NAME` and `TAG_NAME` are considered
 
