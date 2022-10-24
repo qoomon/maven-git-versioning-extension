@@ -64,7 +64,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 @Singleton
 public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
-    private static final Pattern VERSION_PATTERN = Pattern.compile("(:?(?<core>(?<major>\\d+)(:?\\.(?<minor>\\d+)(:?\\.(?<patch>\\d+))?)?)(:?-(?<label>.*))?)?");
+    private static final Pattern VERSION_PATTERN = Pattern.compile(".*?(?<core>(?<major>\\d+)(?:\\.(?<minor>\\d+)(?:\\.(?<patch>\\d+))?)?)(?:-(?<label>.*))?|");
 
     private static final String OPTION_NAME_GIT_REF = "git.ref";
     private static final String OPTION_NAME_GIT_TAG = "git.tag";
@@ -719,12 +719,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
         placeholderMap.put("version", Lazy.of(projectVersion));
 
-        final Lazy<Matcher> versionComponents = Lazy.by(() -> {
-            Matcher matcher = VERSION_PATTERN.matcher(projectVersion);
-            //noinspection ResultOfMethodCallIgnored
-            matcher.find();
-            return matcher;
-        });
+        final Lazy<Matcher> versionComponents = Lazy.by(() -> matchVersion(projectVersion));
 
         placeholderMap.put("version.core", Lazy.by(() -> requireNonNullElse(versionComponents.get().group("core"), "0.0.0")));
 
@@ -826,30 +821,22 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             placeholderMap.put("describe.tag." + groupName + ".slug", Lazy.by(() -> slugify(groupValue.get())));
         }
 
-        Supplier<String> descriptionTagVersion = placeholderMap.computeIfAbsent("describe.tag.version", key -> Lazy.by(() -> {
-            Matcher matcher = VERSION_PATTERN.matcher(descriptionTag.get());
-            return matcher.find() ? matcher.group() : "0.0.0";
-        }));
+        final Lazy<Matcher> descriptionTagVersionMatcher = Lazy.by(() -> matchVersion(descriptionTag.get()));
 
-        final Lazy<Matcher> descriptionTagVersionComponents = Lazy.by(() -> {
-            Matcher matcher = VERSION_PATTERN.matcher(descriptionTagVersion.get());
-            //noinspection ResultOfMethodCallIgnored
-            matcher.find();
-            return matcher;
-        });
+        placeholderMap.put("describe.tag.version", Lazy.by(() -> requireNonNullElse(descriptionTagVersionMatcher.get().group(), "0.0.0")));
 
-        placeholderMap.put("describe.tag.version.core", Lazy.by(() -> requireNonNullElse(descriptionTagVersionComponents.get().group("core"), "0")));
+        placeholderMap.put("describe.tag.version.core", Lazy.by(() -> requireNonNullElse(descriptionTagVersionMatcher.get().group("core"), "0")));
 
-        placeholderMap.put("describe.tag.version.major", Lazy.by(() -> requireNonNullElse(descriptionTagVersionComponents.get().group("major"), "0")));
+        placeholderMap.put("describe.tag.version.major", Lazy.by(() -> requireNonNullElse(descriptionTagVersionMatcher.get().group("major"), "0")));
         placeholderMap.put("describe.tag.version.major.next", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.major").get(), 1)));
 
-        placeholderMap.put("describe.tag.version.minor", Lazy.by(() -> requireNonNullElse(descriptionTagVersionComponents.get().group("minor"), "0")));
+        placeholderMap.put("describe.tag.version.minor", Lazy.by(() -> requireNonNullElse(descriptionTagVersionMatcher.get().group("minor"), "0")));
         placeholderMap.put("describe.tag.version.minor.next", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.minor").get(), 1)));
 
-        placeholderMap.put("describe.tag.version.patch", Lazy.by(() -> requireNonNullElse(descriptionTagVersionComponents.get().group("patch"), "0")));
+        placeholderMap.put("describe.tag.version.patch", Lazy.by(() -> requireNonNullElse(descriptionTagVersionMatcher.get().group("patch"), "0")));
         placeholderMap.put("describe.tag.version.patch.next", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.patch").get(), 1)));
 
-        placeholderMap.put("describe.tag.version.version.label", Lazy.by(() -> requireNonNullElse(descriptionTagVersionComponents.get().group("label"), "")));
+        placeholderMap.put("describe.tag.version.version.label", Lazy.by(() -> requireNonNullElse(descriptionTagVersionMatcher.get().group("label"), "")));
         placeholderMap.put("describe.tag.version.label.next", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.label").get(), 1)));
 
         final Lazy<Integer> descriptionDistance = Lazy.by(() -> description.get().getDistance());
@@ -872,6 +859,14 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         System.getenv().forEach((key, value) -> placeholderMap.put("env." + key, () -> value));
 
         return placeholderMap;
+    }
+
+    private Matcher matchVersion(String input) {
+        Matcher matcher = VERSION_PATTERN.matcher(input);
+        //noinspection ResultOfMethodCallIgnored
+        matcher.find();
+
+        return matcher;
     }
 
     // ---- configuration -------------------------------------------------------------------------------------------------
