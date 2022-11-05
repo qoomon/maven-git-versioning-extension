@@ -17,6 +17,7 @@ import org.apache.maven.model.*;
 import org.apache.maven.model.building.DefaultModelProcessor;
 import org.apache.maven.model.building.ModelProcessor;
 import org.apache.maven.session.scope.internal.SessionScope;
+import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.slf4j.Logger;
@@ -508,22 +509,54 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     }
 
     private void addBuildPlugin(Model projectModel) {
+
         logger.debug("add version build plugin");
 
-        Plugin plugin = asPlugin();
-
-        PluginExecution execution = new PluginExecution();
-        execution.setId(GitVersioningMojo.GOAL);
-        execution.getGoals().add(GitVersioningMojo.GOAL);
-
-        plugin.getExecutions().add(execution);
+        Plugin gitVersioningPlugin = asPlugin();
+        {
+            PluginExecution execution = new PluginExecution();
+            execution.setId(GitVersioningMojo.GOAL);
+            execution.getGoals().add(GitVersioningMojo.GOAL);
+            gitVersioningPlugin.getExecutions().add(execution);
+        }
 
         if (projectModel.getBuild() == null) {
             projectModel.setBuild(new Build());
         }
+
         // add at index 0 to be executed before any other project plugin,
         // to prevent malfunctions with other plugins
-        projectModel.getBuild().getPlugins().add(0, plugin);
+        projectModel.getBuild().getPlugins().add(0, gitVersioningPlugin);
+
+        // exclude this plugin from maven enforce plugin
+        {
+            LinkedList<Plugin> plugins = new LinkedList<>(projectModel.getBuild().getPlugins());
+            if (projectModel.getBuild().getPluginManagement() != null) {
+                plugins.addAll(projectModel.getBuild().getPluginManagement().getPlugins());
+            }
+            plugins.stream().filter(it -> it.getKey().equals("org.apache.maven.plugins:maven-enforcer-plugin")).forEach(plugin -> {
+                plugin.getExecutions().forEach(execution -> {
+                    Xpp3Dom configuration = (Xpp3Dom) execution.getConfiguration();
+                    if (configuration != null) {
+                        Xpp3Dom rules = configuration.getChild("rules");
+                        if (rules != null) {
+                            Xpp3Dom requirePluginVersions = rules.getChild("requirePluginVersions");
+                            if (requirePluginVersions != null) {
+                                Xpp3Dom unCheckedPluginList = requirePluginVersions.getChild("unCheckedPluginList");
+                                if (unCheckedPluginList == null) {
+                                    unCheckedPluginList = new Xpp3Dom("unCheckedPluginList");
+                                    requirePluginVersions.addChild(unCheckedPluginList);
+                                }
+                                // prepend git versioning plugin to unCheckedPluginList
+                                unCheckedPluginList.setValue(gitVersioningPlugin.getKey() + ","
+                                        + Objects.requireNonNullElse(unCheckedPluginList.getValue(), "")
+                                );
+                            }
+                        }
+                    }
+                });
+            });
+        }
     }
 
 
@@ -739,7 +772,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         }));
 
         // deprecated
-        placeholderMap.put("version.release",  Lazy.by(() -> projectVersion.replaceFirst("-.*$", "")));
+        placeholderMap.put("version.release", Lazy.by(() -> projectVersion.replaceFirst("-.*$", "")));
 
         final Pattern projectVersionPattern = config.projectVersionPattern();
         if (projectVersionPattern != null) {
@@ -842,7 +875,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         final Lazy<Integer> descriptionDistance = Lazy.by(() -> description.get().getDistance());
         placeholderMap.put("describe.distance", Lazy.by(() -> String.valueOf(descriptionDistance.get())));
 
-        placeholderMap.put("describe.tag.version.patch.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.patch").get(), descriptionDistance.get() )));
+        placeholderMap.put("describe.tag.version.patch.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.patch").get(), descriptionDistance.get())));
         placeholderMap.put("describe.tag.version.patch.next.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.patch.next").get(), descriptionDistance.get())));
 
         placeholderMap.put("describe.tag.version.label.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.version.label").get(), descriptionDistance.get())));

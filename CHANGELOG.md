@@ -7,6 +7,11 @@
 ## 9.3.1
 
 ##### Fixes
+- automatically add git version plugin to maven enforcer unCheckedPluginList #171
+
+## 9.3.1
+
+##### Fixes
 - Extend gitlab ci support for env var CI_MERGE_REQUEST_SOURCE_BRANCH_NAME #218
 
 ## 9.3.0
