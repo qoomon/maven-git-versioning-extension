@@ -4,7 +4,13 @@
 
 # Changelog
 
-## 9.3.1
+## 9.3.3
+
+##### Fixes
+- fix value of describe.tag.version placeholder
+
+
+## 9.3.2
 
 ##### Fixes
 - automatically add git version plugin to maven enforcer unCheckedPluginList #171

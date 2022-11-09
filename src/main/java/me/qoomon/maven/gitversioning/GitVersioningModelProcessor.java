@@ -65,7 +65,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 @Singleton
 public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
-    private static final Pattern VERSION_PATTERN = Pattern.compile(".*?(?<core>(?<major>\\d+)(?:\\.(?<minor>\\d+)(?:\\.(?<patch>\\d+))?)?)(?:-(?<label>.*))?|");
+    private static final Pattern VERSION_PATTERN = Pattern.compile(".*?(?<version>(?<core>(?<major>\\d+)(?:\\.(?<minor>\\d+)(?:\\.(?<patch>\\d+))?)?)(?:-(?<label>.*))?)|");
 
     private static final String OPTION_NAME_GIT_REF = "git.ref";
     private static final String OPTION_NAME_GIT_TAG = "git.tag";
@@ -856,7 +856,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
         final Lazy<Matcher> descriptionTagVersionMatcher = Lazy.by(() -> matchVersion(descriptionTag.get()));
 
-        placeholderMap.put("describe.tag.version", Lazy.by(() -> requireNonNullElse(descriptionTagVersionMatcher.get().group(), "0.0.0")));
+        placeholderMap.put("describe.tag.version", Lazy.by(() -> requireNonNullElse(descriptionTagVersionMatcher.get().group("version"), "0.0.0")));
 
         placeholderMap.put("describe.tag.version.core", Lazy.by(() -> requireNonNullElse(descriptionTagVersionMatcher.get().group("core"), "0")));
 
