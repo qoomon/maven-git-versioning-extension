@@ -9,14 +9,17 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static java.time.Instant.EPOCH;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toList;
 import static me.qoomon.gitversioning.commons.GitUtil.NO_COMMIT;
 import static org.eclipse.jgit.lib.Constants.HEAD;
 
@@ -80,8 +83,19 @@ public class GitSituation {
         return branch.get();
     }
 
-    public void setBranch(String branch) {
-        this.branch = () -> branch;
+    protected void setBranch(String branch) {
+        if (branch != null) {
+            if (branch.startsWith("refs/tags/")) {
+                throw new IllegalArgumentException("invalid branch ref" + branch);
+            }
+            branch = branch
+                    // support default branches (heads)
+                    .replaceFirst("^refs/heads/", "")
+                    // support other refs e.g. GitHub pull requests refs/pull/1000/head
+                    .replaceFirst("^refs/", "");
+        }
+        final String finalBranch = branch;
+        this.branch = () -> finalBranch;
     }
 
     public boolean isDetached() {
@@ -92,8 +106,38 @@ public class GitSituation {
         return tags.get();
     }
 
-    public void setTags(List<String> tags) {
-        this.tags = () -> requireNonNull(tags);
+    protected void addTag(String tag) {
+        requireNonNull(tag);
+
+        if (tag.startsWith("refs/") && !tag.startsWith("refs/tags/")) {
+            throw new IllegalArgumentException("invalid tag ref" + tag);
+        }
+
+        final String finalTag = tag.replaceFirst("^refs/tags/", "");
+
+        final Supplier<List<String>> currentTags = this.tags;
+        this.tags = Lazy.by(() -> {
+            List<String> tags = new ArrayList<>(currentTags.get());
+            tags.add(finalTag);
+            return tags;
+        });
+    }
+
+    protected void setTags(List<String> tags) {
+        requireNonNull(tags);
+        tags.forEach(tag -> {
+            requireNonNull(tag);
+            if (tag.startsWith("refs/") && !tag.startsWith("refs/tags/")) {
+                throw new IllegalArgumentException("invalid tag ref" + tag);
+            }
+        });
+
+        tags = tags.stream()
+                .map(tag -> tag.replaceFirst("^refs/tags/", ""))
+                .collect(toList());
+
+        final List<String> finalTags = tags;
+        this.tags = () -> finalTags;
     }
 
     public boolean isClean() {

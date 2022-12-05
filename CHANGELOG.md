@@ -4,6 +4,11 @@
 
 # Changelog
 
+## 9.3.4
+
+##### Fixes
+- ignore ci/cd environment if head SHA hash is not matching environment variable commit hash
+
 ## 9.3.3
 
 ##### Fixes
