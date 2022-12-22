@@ -679,7 +679,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
                 // Jenkins support
                 if (System.getenv("JENKINS_HOME") != null && !System.getenv("JENKINS_HOME").trim().isEmpty()) {
-                    if (System.getenv("GIT_COMMIT").equals(this.getRev())) {
+                    if (!this.getRev().equals(System.getenv("GIT_COMMIT"))) {
                         return;
                     }
                     logger.info("gather git situation from jenkins environment variables: BRANCH_NAME and TAG_NAME");
