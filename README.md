@@ -39,7 +39,7 @@ create or update `${rootProjectDir}/.mvn/extensions.xml` file
     <extension>
         <groupId>me.qoomon</groupId>
         <artifactId>maven-git-versioning-extension</artifactId>
-        <version>9.3.3</version>
+        <version>9.4.0</version>
     </extension>
 
 </extensions>
@@ -58,7 +58,7 @@ You can configure the version and properties adjustments for specific branches a
 ```xml
 <configuration xmlns="https://github.com/qoomon/maven-git-versioning-extension"
                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-               xsi:schemaLocation="https://github.com/qoomon/maven-git-versioning-extension https://qoomon.github.io/maven-git-versioning-extension/configuration-9.1.0.xsd">
+               xsi:schemaLocation="https://github.com/qoomon/maven-git-versioning-extension https://qoomon.github.io/maven-git-versioning-extension/configuration-9.4.0.xsd">
 
     <refs>
         <ref type="branch">
@@ -119,6 +119,9 @@ You can configure the version and properties adjustments for specific branches a
 
       - `<updatePom>` Enable(`true`) or disable(`false`) version and properties update in original pom file
         - will override global `<updatePom>` value
+
+      - `<firstParent>` Enable(`true`) or disable(`false`) following only the first parent in a merge commit
+        - default is `true`
 
 - `<rev>` Rev configuration will be used if no ref configuration is matching current git situation.
     - same as `<ref>` configuration, except `type` attribute and `<pattern>` element.

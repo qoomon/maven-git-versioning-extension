@@ -4,6 +4,11 @@
 
 # Changelog
 
+## 9.4.0
+
+##### Features
+- allow overriding of firstParent in git describe evaluation
+
 ## 9.3.4
 
 ##### Fixes

@@ -86,6 +86,8 @@ public class Configuration {
         public Map<String, String> properties = new HashMap<>();
 
         public Boolean updatePom;
+
+        public Boolean firstParent;
     }
 
     @JsonInclude(NON_NULL)
@@ -112,6 +114,7 @@ public class Configuration {
             this.pattern = pattern != null ? pattern.pattern() : null;
             this.describeTagPattern = description.describeTagPattern;
             this.updatePom = description.updatePom;
+            this.firstParent = description.firstParent;
             this.version = description.version;
             this.properties = new HashMap<>(description.properties);
         }
