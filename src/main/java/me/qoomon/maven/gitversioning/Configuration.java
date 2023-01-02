@@ -87,7 +87,7 @@ public class Configuration {
 
         public Boolean updatePom;
 
-        public Boolean firstParent;
+        public Boolean describeTagFirstParent;
     }
 
     @JsonInclude(NON_NULL)
@@ -114,7 +114,7 @@ public class Configuration {
             this.pattern = pattern != null ? pattern.pattern() : null;
             this.describeTagPattern = description.describeTagPattern;
             this.updatePom = description.updatePom;
-            this.firstParent = description.firstParent;
+            this.describeTagFirstParent = description.describeTagFirstParent;
             this.version = description.version;
             this.properties = new HashMap<>(description.properties);
         }

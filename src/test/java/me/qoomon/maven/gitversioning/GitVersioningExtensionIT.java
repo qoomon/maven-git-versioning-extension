@@ -840,7 +840,7 @@ class GitVersioningExtensionIT {
             writeExtensionsFile(projectDir);
             writeExtensionConfigFile(projectDir, new Configuration() {{
                 RefPatchDescription versionDescription = createVersionDescription(BRANCH, "${describe.tag.version}");
-                versionDescription.firstParent = firstParent;
+                versionDescription.describeTagFirstParent = firstParent;
                 refs.list.add(versionDescription);
             }});
 

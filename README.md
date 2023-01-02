@@ -120,7 +120,7 @@ You can configure the version and properties adjustments for specific branches a
       - `<updatePom>` Enable(`true`) or disable(`false`) version and properties update in original pom file
         - will override global `<updatePom>` value
 
-      - `<firstParent>` Enable(`true`) or disable(`false`) following only the first parent in a merge commit
+      - `<describeTagFirstParent>` Enable(`true`) or disable(`false`) following only the first parent in a merge commit
         - default is `true`
 
 - `<rev>` Rev configuration will be used if no ref configuration is matching current git situation.

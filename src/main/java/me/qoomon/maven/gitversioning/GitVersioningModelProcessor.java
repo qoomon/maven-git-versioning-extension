@@ -199,9 +199,9 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             logger.info("  describeTagPattern: " + patchDescription.describeTagPattern);
             gitSituation.setDescribeTagPattern(patchDescription.describeTagPattern());
         }
-        if (patchDescription.firstParent != null) {
-            logger.info("  firstParent: " + patchDescription.firstParent);
-            gitSituation.setFirstParent(patchDescription.firstParent);
+        if (patchDescription.describeTagFirstParent != null) {
+            logger.info("  describeTagFirstParent: " + patchDescription.describeTagFirstParent);
+            gitSituation.setFirstParent(patchDescription.describeTagFirstParent);
         }
         if (patchDescription.version != null) {
             logger.info("  version: " + patchDescription.version);
