@@ -4,6 +4,12 @@
 
 # Changelog
 
+## 9.4.1
+
+##### Fixes
+- prevent null pointer exceptions if ci environment variables are missing (#225 kudos to @jycr)
+
+
 ## 9.4.0
 
 ##### Features
