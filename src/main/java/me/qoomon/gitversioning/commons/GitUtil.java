@@ -47,7 +47,7 @@ public final class GitUtil {
         return reverseTagRefMap(repository).getOrDefault(revObjectId, emptyList());
     }
 
-    public static GitDescription describe(ObjectId revObjectId, Pattern tagPattern, Repository repository) throws IOException {
+    public static GitDescription describe(ObjectId revObjectId, Pattern tagPattern, Repository repository, boolean firstParent) throws IOException {
         if (revObjectId == null) {
             return new GitDescription(NO_COMMIT, "root", 0);
         }
@@ -57,7 +57,7 @@ public final class GitUtil {
         // Walk back commit ancestors looking for tagged one
         try (RevWalk walk = new RevWalk(repository)) {
             walk.setRetainBody(false);
-            walk.setFirstParent(true);
+            walk.setFirstParent(firstParent);
             walk.markStart(walk.parseCommit(revObjectId));
             Iterator<RevCommit> walkIterator = walk.iterator();
             int depth = 0;

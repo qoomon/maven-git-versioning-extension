@@ -187,7 +187,7 @@ class GitUtilTest {
         git.tag().setName(givenTagName).setAnnotated(true).setObjectId(givenCommit).setMessage(".").call();
 
         // when
-        GitDescription description = GitUtil.describe(head(git), Pattern.compile("v.+"), git.getRepository());
+        GitDescription description = GitUtil.describe(head(git), Pattern.compile("v.+"), git.getRepository(), true);
 
         // then
         assertThat(description).satisfies(it -> {

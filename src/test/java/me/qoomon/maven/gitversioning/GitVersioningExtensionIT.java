@@ -12,6 +12,7 @@ import org.apache.maven.model.DependencyManagement;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.MergeCommand;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.junit.jupiter.api.Test;
@@ -807,9 +808,55 @@ class GitVersioningExtensionIT {
             assertThat(gitVersionedPomModel.getVersion()).isEqualTo(expectedVersion);
         }
 
-     }
+    }
 
+    @Test
+    void apply_TagOnMergedBranchWithFirstParent() throws Exception {
+        apply_TagOnMerged(true);
+    }
 
+    @Test
+    void apply_TagOnMergedBranchWithoutFirstParent() throws Exception {
+        apply_TagOnMerged(false);
+    }
+
+    private void apply_TagOnMerged(final boolean firstParent) throws Exception {
+        String tagOnMaster = "2.0.4-tag-on-master";
+        String tagOnBranch = "2.0.4-tag-on-branch";
+        try (Git git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call()) {
+            RevCommit initialCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+            git.tag().setName("2.0.4-tag-on-initial").call();
+            git.commit().setMessage("commit on master").setAllowEmpty(true).call();
+            git.tag().setName(tagOnMaster).call();
+            git.checkout().setStartPoint(initialCommit).setCreateBranch(true).setName("branch").call();
+            // make sure the commit on the branch is newer
+            Thread.sleep(2000);
+            RevCommit branchCommit = git.commit().setMessage("commit on branch").setAllowEmpty(true).call();
+            git.tag().setName(tagOnBranch).call();
+            git.checkout().setName(MASTER).call();
+            git.merge().include(branchCommit).setFastForward(MergeCommand.FastForwardMode.NO_FF).setCommit(true).call();
+
+            writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
+            writeExtensionsFile(projectDir);
+            writeExtensionConfigFile(projectDir, new Configuration() {{
+                RefPatchDescription versionDescription = createVersionDescription(BRANCH, "${describe.tag.version}");
+                versionDescription.describeTagFirstParent = firstParent;
+                refs.list.add(versionDescription);
+            }});
+
+            // When
+            Verifier verifier = getVerifier(projectDir);
+            verifier.executeGoal("verify");
+
+            // Then
+            verifier.verifyErrorFreeLog();
+            String expectedVersion = firstParent ? tagOnMaster : tagOnBranch;
+            verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
+
+            Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
+            assertThat(gitVersionedPomModel.getVersion()).isEqualTo(expectedVersion);
+        }
+    }
     // TODO add tests for property updates
 
 

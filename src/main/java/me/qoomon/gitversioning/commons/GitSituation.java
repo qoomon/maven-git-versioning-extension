@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static java.time.Instant.EPOCH;
 import static java.time.ZoneOffset.UTC;
@@ -38,6 +37,9 @@ public class GitSituation {
     private final Supplier<Boolean> clean = Lazy.by(this::clean);
 
     private Pattern describeTagPattern = Pattern.compile(".*");
+
+    private boolean firstParent = true;
+
     private Supplier<GitDescription> description = Lazy.by(this::describe);
 
     public GitSituation(Repository repository) throws IOException {
@@ -153,6 +155,14 @@ public class GitSituation {
         return describeTagPattern;
     }
 
+    public boolean isFirstParent() {
+        return firstParent;
+    }
+
+    public void setFirstParent(boolean firstParent) {
+        this.firstParent = firstParent;
+    }
+
     public GitDescription getDescription() {
         return description.get();
     }
@@ -178,6 +188,6 @@ public class GitSituation {
     }
 
     private GitDescription describe() throws IOException {
-        return GitUtil.describe(head, describeTagPattern, repository);
+        return GitUtil.describe(head, describeTagPattern, repository, firstParent);
     }
 }
