@@ -125,6 +125,12 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         logger.info("");
         logger.info(extensionLogHeader(BuildProperties.projectGAV()));
 
+        if(!projectModel.getPomFile().isFile()){
+            logger.debug("skip - pom is not part of executionRootDirectory");
+            disabled = true;
+            return;
+        }
+
         // check if session is available
         try {
             mavenSession = sessionScope.scope(Key.get(MavenSession.class), null).get();
