@@ -146,7 +146,10 @@ You can configure the version and properties adjustments for specific branches a
 e.g `${env.BUILD_NUMBER:-0}` or `${env.BUILD_NUMBER:-local}`
 
 ℹ define placeholder overwrite value (placeholder is defined) like this `${name:+OVERWRITE_VALUE}`<br>
-e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
+e.g `${dirty:+-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
+
+ℹ define combined placeholder overwrite or default value like this `${name:+OVERWRITE_VALUE:-DEFAULT_VALUE}`<br>
+e.g `${name:+foo:-bar}` resolves to `foo` if `${name}` is defined; otherwise `bar`
 
 ###### Placeholders
 

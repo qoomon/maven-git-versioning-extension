@@ -85,6 +85,28 @@ class StringUtilTest {
         assertThat(outputText).isEqualTo("xxx");
     }
 
+    @Test
+    void substituteText_combined_overwrite_default_value() {
+        // Given
+        String givenText = "${name:+foo:-bar}";
+        Map<String, Supplier<String>> givenSubstitutionMap = new HashMap<>();
+
+        // check existing value
+        givenSubstitutionMap.put("name", () -> "aaa");
+
+        // When
+        String outputText = StringUtil.substituteText(givenText, givenSubstitutionMap);
+        // Then
+        assertThat(outputText).isEqualTo("foo");
+
+        // check non-existing value
+        givenSubstitutionMap.clear();
+
+        // When
+        outputText = StringUtil.substituteText(givenText, givenSubstitutionMap);
+        // Then
+        assertThat(outputText).isEqualTo("bar");
+    }
 
     @Test
     void valueGroupMap() {

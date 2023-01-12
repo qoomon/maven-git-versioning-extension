@@ -12,20 +12,18 @@ public final class StringUtil {
 
     public static String substituteText(String text, Map<String, Supplier<String>> replacements) {
         StringBuffer result = new StringBuffer();
-        Pattern placeholderPattern = Pattern.compile("\\$\\{(?<key>[^}:]+)(?::(?<modifier>[-+])(?<value>[^}]*))?}");
+        Pattern placeholderPattern = Pattern.compile("\\$\\{(?<key>[^}:]+)(?::(?<positivemodifier>[+])(?<positivevalue>[^:}]*))?(?::(?<negativemodifier>-)(?<negativevalue>[^}]*))?}");
         Matcher placeholderMatcher = placeholderPattern.matcher(text);
         while (placeholderMatcher.find()) {
             String placeholderKey = placeholderMatcher.group("key");
             Supplier<String> replacementSupplier = replacements.get(placeholderKey);
             String replacement = replacementSupplier != null ? replacementSupplier.get() : null;
-            String placeholderModifier = placeholderMatcher.group("modifier");
-            if(placeholderModifier != null){
-                if (placeholderModifier.equals("-") && replacement == null) {
-                    replacement = placeholderMatcher.group("value");
-                }
-                if (placeholderModifier.equals("+") && replacement != null) {
-                    replacement = placeholderMatcher.group("value");
-                }
+            String positiveModifier = placeholderMatcher.group("positivemodifier");
+            String negativeModifier = placeholderMatcher.group("negativemodifier");
+            if (positiveModifier != null && replacement != null) {
+            	replacement = placeholderMatcher.group("positivevalue");
+            } else if (negativeModifier != null && replacement == null) {
+            	replacement = placeholderMatcher.group("negativevalue");
             }
             if (replacement != null) {
                 // avoid group name replacement behaviour of replacement parameter value
