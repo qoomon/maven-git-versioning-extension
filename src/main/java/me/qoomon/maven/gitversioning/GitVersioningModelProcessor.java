@@ -125,8 +125,15 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         logger.info("");
         logger.info(extensionLogHeader(BuildProperties.projectGAV()));
 
-        if(!projectModel.getPomFile().isFile()){
-            logger.debug("skip - pom is not part of executionRootDirectory");
+        File pomFile = projectModel.getPomFile();
+        if(pomFile == null ){
+            logger.debug("skip - project model does not belong to a local project");
+            disabled = true;
+            return;
+        }
+
+        if(!pomFile.isFile()){
+            logger.debug("skip - pom file does not exist " + pomFile);
             disabled = true;
             return;
         }
@@ -139,18 +146,10 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             disabled = true;
             return;
         }
-        String requestBaseDirectory = mavenSession.getRequest().getBaseDirectory();
-        if(requestBaseDirectory == null){
-            logger.warn("skip - maven base directory is not set");
-            disabled = true;
-            return;
-        }
-        final File executionRootDirectory = new File(requestBaseDirectory);
-        logger.debug("execution root directory: " + executionRootDirectory);
 
-        mvnDirectory = findMvnDirectory(executionRootDirectory);
+        logger.debug("pom file: " + pomFile);
+        mvnDirectory = findMvnDirectory(pomFile);
         logger.debug(".mvn directory: " + mvnDirectory);
-
         final File configFile = new File(mvnDirectory, projectArtifactId() + ".xml");
         logger.debug("read config from " + configFile);
         config = readConfig(configFile);
@@ -173,7 +172,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         }
 
         // determine git situation
-        gitSituation = getGitSituation(executionRootDirectory);
+        gitSituation = getGitSituation(pomFile);
         if (gitSituation == null) {
             logger.warn("skip - project is not part of a git repository");
             disabled = true;
@@ -577,8 +576,9 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
     // ---- versioning -------------------------------------------------------------------------------------------------
 
-    private GitSituation getGitSituation(File executionRootDirectory) throws IOException {
-        final FileRepositoryBuilder repositoryBuilder = new FileRepositoryBuilder().findGitDir(executionRootDirectory);
+    private GitSituation getGitSituation(File pomFile) throws IOException {
+        final File baseDirectory = pomFile.getParentFile();
+        final FileRepositoryBuilder repositoryBuilder = new FileRepositoryBuilder().findGitDir(baseDirectory);
         if (repositoryBuilder.getGitDir() == null) {
             return null;
         }
@@ -941,8 +941,8 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
     // ---- configuration -------------------------------------------------------------------------------------------------
 
-    private static File findMvnDirectory(File baseDirectory) throws IOException {
-        File searchDirectory = baseDirectory;
+    private static File findMvnDirectory(File pomFile) throws IOException {
+        File searchDirectory = pomFile.getParentFile();
         while (searchDirectory != null) {
             File mvnDir = new File(searchDirectory, ".mvn");
             if (mvnDir.exists()) {
@@ -951,7 +951,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             searchDirectory = searchDirectory.getParentFile();
         }
 
-        throw new FileNotFoundException("Can not find .mvn directory in hierarchy of " + baseDirectory);
+        throw new FileNotFoundException("Can not find .mvn directory in hierarchy of " + pomFile);
     }
 
     private static Configuration readConfig(File configFile) throws IOException {
