@@ -139,8 +139,13 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             disabled = true;
             return;
         }
-
-        final File executionRootDirectory = new File(mavenSession.getRequest().getBaseDirectory());
+        String requestBaseDirectory = mavenSession.getRequest().getBaseDirectory();
+        if(requestBaseDirectory == null){
+            logger.warn("skip - maven base directory is not set");
+            disabled = true;
+            return;
+        }
+        final File executionRootDirectory = new File(requestBaseDirectory);
         logger.debug("execution root directory: " + executionRootDirectory);
 
         mvnDirectory = findMvnDirectory(executionRootDirectory);
