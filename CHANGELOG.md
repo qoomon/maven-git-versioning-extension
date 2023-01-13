@@ -4,6 +4,13 @@
 
 # Changelog
 
+## 9.4.2
+
+##### Fixes
+- handel situations where no base directory is set
+- skip versioning if no pom.xml is available
+
+
 ## 9.4.1
 
 ##### Fixes
