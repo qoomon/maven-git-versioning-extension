@@ -378,4 +378,6 @@ gpg --list-keys
 
 ##### Debug
 
-`mvn help:evaluate -Dexpression=project.version -Dorg.slf4j.simpleLogger.log.me.qoomon.maven.gitversioning=debug`
+```shell
+mvn help:evaluate -Dexpression=project.version -Dorg.slf4j.simpleLogger.log.me.qoomon.maven.gitversioning=debug
+```
