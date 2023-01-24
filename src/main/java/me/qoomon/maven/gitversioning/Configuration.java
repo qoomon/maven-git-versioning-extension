@@ -46,6 +46,8 @@ public class Configuration {
     @JsonDeserialize(using = IgnoreWhitespaceDeserializer.class)
     public String describeTagPattern = null;
 
+    public Boolean describeTagFirstParent = true;
+
     public Pattern describeTagPattern() {
         if(describeTagPattern == null) {
             return null;

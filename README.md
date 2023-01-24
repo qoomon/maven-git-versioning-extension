@@ -89,9 +89,13 @@ You can configure the version and properties adjustments for specific branches a
     - Can be overridden by command option, see [Parameters & Environment Variables](#parameters--environment-variables).
 
 - `<projectVersionPattern>` An arbitrary regex to match project version, matching groups can be used as [Format Placeholders](#format-placeholders) (has to be a **full match pattern**)
-- `<describeTagPattern>` An arbitrary regex to match tag names for git describe command (has to be a **full match pattern** e.g. `v(.+)`, default is `.*`
+- `<describeTagPattern>` An arbitrary regex to match tag names for git describe command
+  - has to be a **full match pattern** e.g. `v(.+)`, default is `.*`
+- `<describeTagFirstParent>` Enable(`true`) or disable(`false`) following only the first parent in a merge commit
+  - default is `true`
+
 - `<updatePom>` Enable(`true`)/disable(`false`) version and properties update in original pom file, default is `false`
-    - Can be overridden by command option, see [Parameters & Environment Variables](#parameters--environment-variables).
+  - Can be overridden by command option, see [Parameters & Environment Variables](#parameters--environment-variables).
 
 - `<refs considerTagsOnBranches="BOOLEAN">` List of ref configurations, ordered by priority. First matching
   configuration will be used.
@@ -108,8 +112,10 @@ You can configure the version and properties adjustments for specific branches a
       - `<describeTagPattern>` An arbitrary regex to match tag names for git describe command
         - has to be a **full match pattern** e.g. `v.+`)
         - will override global `<describeTagPattern>` value
+      - `<describeTagFirstParent>` Enable(`true`) or disable(`false`) following only the first parent in a merge commit
+        - default is `true`
           <br><br>
-
+        
       - `<version>` The new version format, see [Format Placeholders](#format-placeholders)
       - `<properties>`
         - `<name>value</name>` A property definition to update the value of a property.
@@ -120,8 +126,6 @@ You can configure the version and properties adjustments for specific branches a
       - `<updatePom>` Enable(`true`) or disable(`false`) version and properties update in original pom file
         - will override global `<updatePom>` value
 
-      - `<describeTagFirstParent>` Enable(`true`) or disable(`false`) following only the first parent in a merge commit
-        - default is `true`
 
 - `<rev>` Rev configuration will be used if no ref configuration is matching current git situation.
     - same as `<ref>` configuration, except `type` attribute and `<pattern>` element.

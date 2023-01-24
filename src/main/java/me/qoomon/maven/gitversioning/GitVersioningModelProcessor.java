@@ -968,6 +968,9 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             if (patchDescription.describeTagPattern == null) {
                 patchDescription.describeTagPattern = config.describeTagPattern;
             }
+            if (patchDescription.describeTagFirstParent == null) {
+                patchDescription.describeTagFirstParent = config.describeTagFirstParent;
+            }
             if (patchDescription.updatePom == null) {
                 patchDescription.updatePom = config.updatePom;
             }

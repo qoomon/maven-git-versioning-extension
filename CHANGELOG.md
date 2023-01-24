@@ -4,6 +4,11 @@
 
 # Changelog
 
+## 9.5.0
+
+##### Features
+- add global option `describeTagFirstParent` option to enable/disable follow first parent only
+
 ## 9.4.2
 
 ##### Fixes
