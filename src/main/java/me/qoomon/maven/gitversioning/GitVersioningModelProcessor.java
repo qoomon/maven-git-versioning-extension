@@ -224,9 +224,10 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         }
         if (!patchDescription.userProperties.isEmpty()) {
             logger.info("  userProperties: ");
+            String projectVersion = GAV.of(projectModel).getVersion();
             patchDescription.userProperties.forEach((key, value) -> {
                 logger.info("    " + key + " - " + value);
-                mavenSession.getUserProperties().put(key, getGitPropertyValue(value, "", GAV.of(projectModel).getVersion()))
+                mavenSession.getUserProperties().put(key, getGitPropertyValue(value, "", projectVersion))
             });
         }
         updatePom = getUpdatePomOption(patchDescription);
