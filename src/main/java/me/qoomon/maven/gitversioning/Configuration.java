@@ -87,6 +87,11 @@ public class Configuration {
         // TODO  @JsonDeserialize(using = IgnoreWhitespaceDeserializer.class)
         public Map<String, String> properties = new HashMap<>();
 
+        @JsonInclude(NON_EMPTY)
+        @JacksonXmlElementWrapper(useWrapping = false)
+        // TODO  @JsonDeserialize(using = IgnoreWhitespaceDeserializer.class)
+        public Map<String, String> userProperties = new HashMap<>();
+
         public Boolean updatePom;
 
         public Boolean describeTagFirstParent;
