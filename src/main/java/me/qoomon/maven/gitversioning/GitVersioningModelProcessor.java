@@ -222,7 +222,10 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         }
         if (!patchDescription.userProperties.isEmpty()) {
             logger.info("  userProperties: ");
-            patchDescription.userProperties.forEach((key, value) -> logger.info("    " + key + " - " + value));
+            patchDescription.userProperties.forEach((key, value) -> {
+                logger.info("    " + key + " - " + value);
+                mavenSession.getUserProperties().put(k, getGitPropertyValue(value, "", GAV.of(projectModel).getVersion()))
+            });
         }
         updatePom = getUpdatePomOption(patchDescription);
         if (updatePom) {
@@ -237,8 +240,6 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             logger.debug(buffer().strong("related projects:").toString());
             relatedProjects.forEach(gav -> logger.debug("  " + gav));
         }
-
-        patchDescription.userProperties.forEach((k, v) -> mavenSession.getUserProperties().put(k,getGitPropertyValue(v, "", GAV.of(projectModel).getVersion())));
 
         logger.info("");
     }
