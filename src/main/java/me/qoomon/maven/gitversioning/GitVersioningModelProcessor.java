@@ -222,20 +222,21 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                 logger.info("    " + key + " - " + value);
             });
         }
+
+        globalFormatPlaceholderMap = generateGlobalFormatPlaceholderMap(gitSituation, gitVersionDetails, mavenSession);
+
         if (!patchDescription.userProperties.isEmpty()) {
             logger.info("  userProperties: ");
             String projectVersion = GAV.of(projectModel).getVersion();
             patchDescription.userProperties.forEach((key, value) -> {
                 logger.info("    " + key + " - " + value);
-                mavenSession.getUserProperties().put(key, getGitPropertyValue(value, "", projectVersion))
+                mavenSession.getUserProperties().put(key, getGitPropertyValue(value, "", projectVersion));
             });
         }
         updatePom = getUpdatePomOption(patchDescription);
         if (updatePom) {
             logger.info("  updatePom: " + updatePom);
         }
-
-        globalFormatPlaceholderMap = generateGlobalFormatPlaceholderMap(gitSituation, gitVersionDetails, mavenSession);
 
         // determine related projects
         relatedProjects = determineRelatedProjects(projectModel);
