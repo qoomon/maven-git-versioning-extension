@@ -123,6 +123,16 @@ You can configure the version and properties adjustments for specific branches a
           - `value` The new value format of the property, see [Format Placeholders](#format-placeholders)
             <br><br>
 
+      - `<userProperties>`
+        - `<name>value</name>` A property definition to add a user property to the maven session, active during the build. UserProperties with the same name of a property in the pom or this configuration file will take precedence as that is how maven handles user properties.
+          - `<name>` The property name
+          - `value` The new value format of the property, see [Format Placeholders](#format-placeholders)
+        ```xml
+        <userProperties>
+            <test.property>${ref}</test.property>
+        </userProperties>
+        ```
+      
       - `<updatePom>` Enable(`true`) or disable(`false`) version and properties update in original pom file
         - will override global `<updatePom>` value
 
