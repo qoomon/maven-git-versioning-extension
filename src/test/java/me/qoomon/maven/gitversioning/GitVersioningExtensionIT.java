@@ -5,12 +5,12 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import me.qoomon.gitversioning.commons.GitRefType;
 import me.qoomon.maven.gitversioning.Configuration.PatchDescription;
 import me.qoomon.maven.gitversioning.Configuration.RefPatchDescription;
-import org.apache.maven.it.VerificationException;
-import org.apache.maven.it.Verifier;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.DependencyManagement;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;
+import org.apache.maven.shared.verifier.VerificationException;
+import org.apache.maven.shared.verifier.Verifier;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.MergeCommand;
 import org.eclipse.jgit.lib.Ref;
@@ -63,7 +63,7 @@ class GitVersioningExtensionIT {
         String expectedVersion = "0.0.0";
         verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
         verifier.verifyTextInLog("[WARNING] skip - project is not part of a git repository");
-        verifier.assertFileNotPresent(GIT_VERSIONING_POM_NAME);
+        verifier.verifyFileNotPresent(GIT_VERSIONING_POM_NAME);
     }
 
     private static Verifier getVerifier(Path projectDir) throws VerificationException {
@@ -92,7 +92,7 @@ class GitVersioningExtensionIT {
             verifier.verifyTextInLog("skip - versioning is disabled by command option");
             String expectedVersion = pomModel.getVersion();
             verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
-            verifier.assertFileNotPresent(GIT_VERSIONING_POM_NAME);
+            verifier.verifyFileNotPresent(GIT_VERSIONING_POM_NAME);
         }
     }
 
