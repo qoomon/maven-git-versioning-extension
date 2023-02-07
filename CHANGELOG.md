@@ -3,6 +3,11 @@
 [![Maven Central](https://img.shields.io/maven-central/v/me.qoomon/maven-git-versioning-extension.svg)](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22me.qoomon%22%20AND%20a%3A%22maven-git-versioning-extension%22)
 
 # Changelog
+## 9.6.1
+
+##### Features
+- add support for user properties (kudos to @frelibert #237)
+
 
 ## 9.5.0
 
