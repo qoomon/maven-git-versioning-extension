@@ -380,14 +380,14 @@ gpg --list-keys
 ```
 
 ```shell
-  mvn verify
+  ./mvnw verify
   # Publishes this plugin to local Maven
-  mvn install
+  ./mvnw install
   # Run integration tests after install, 
   # integration tests will run with LATEST version of extension installed
-  mvn failsafe:integration-test
+  ./mvnw failsafe:integration-test
   # Publishes this plugin to OSS Nexus.
-  GPG_TTY=$(tty) mvn clean deploy -P release -Dgpg.keyname=???
+  GPG_TTY=$(tty) ./mvnw clean deploy -P release -Dgpg.keyname=???
 ```
 
 ##### Debug
