@@ -27,12 +27,17 @@ public class GitVersioningMojo extends AbstractMojo {
 
     @Override
     public synchronized void execute() {
+        getLog().debug("mojo run");
+
         File gitVersionedPomFile = new File(project.getBasedir(), GitVersioningModelProcessor.GIT_VERSIONING_POM_NAME);
         project.setPomFile(gitVersionedPomFile);
 
-        getLog().debug("remove version build plugin");
-        project.getModel().getBuild().getPlugins().remove(asPlugin());
-        project.getOriginalModel().getBuild().getPlugins().remove(asPlugin());
+        if(project.getModel().getBuild() != null){
+            project.getModel().getBuild().getPlugins().remove(asPlugin());
+        }
+        if(project.getOriginalModel().getBuild() != null) {
+            project.getOriginalModel().getBuild().getPlugins().remove(asPlugin());
+        }
     }
 
     static Plugin asPlugin() {
