@@ -94,8 +94,14 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+
     </build>
 
+    <profiles>
+        <profile>
+            <id>foo </id>
+        </profile>
+    </profiles>
 </project>
 
 <!--mvn install -Dmaven.repo.local=$PWD/.m2/repository-->

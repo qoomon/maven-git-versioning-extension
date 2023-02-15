@@ -1309,7 +1309,8 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             Map<String, Profile> profileMap = profiles.stream()
                     .collect(toMap(Profile::getId, it -> it));
             for (Element profileElement : profilesElement.getChildren("profile")) {
-                Profile profile = profileMap.get(profileElement.getChild("id").getText());
+                String profileId = profileElement.getChild("id").getText().trim();
+                Profile profile = profileMap.get(profileId);
                 updatePropertyValues(profileElement, profile);
                 updateDependencyVersions(profileElement, profile);
                 updatePluginVersions(profileElement, profile.getBuild(), profile.getReporting());

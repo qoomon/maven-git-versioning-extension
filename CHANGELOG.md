@@ -4,6 +4,12 @@
 
 # Changelog
 
+## 9.6.3
+
+##### Fixes
+- fix null pointer exception if profile id has leading or trailing whitespaces #239
+
+
 ## 9.6.2
 
 ##### Fixes
