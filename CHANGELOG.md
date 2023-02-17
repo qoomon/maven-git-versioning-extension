@@ -4,6 +4,12 @@
 
 # Changelog
 
+## 9.6.4
+
+##### Fixes
+- handle tags within git worktrees directories
+
+
 ## 9.6.3
 
 ##### Fixes

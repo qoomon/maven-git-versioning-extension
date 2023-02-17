@@ -1,13 +1,11 @@
 package me.qoomon.gitversioning.commons;
 
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.errors.NoWorkTreeException;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Repository;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,8 +17,7 @@ import static java.time.ZoneOffset.UTC;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
-import static me.qoomon.gitversioning.commons.GitUtil.NO_COMMIT;
-import static org.eclipse.jgit.lib.Constants.HEAD;
+import static me.qoomon.gitversioning.commons.GitUtil.*;
 
 public class GitSituation {
 
@@ -28,7 +25,6 @@ public class GitSituation {
     private final File rootDirectory;
 
     private final ObjectId head;
-    private final String rev;
     private final Supplier<ZonedDateTime> timestamp = Lazy.by(this::timestamp);
     private Supplier<String> branch = Lazy.by(this::branch);
 
@@ -44,29 +40,8 @@ public class GitSituation {
 
     public GitSituation(Repository repository) throws IOException {
         this.repository = repository;
-        this.rootDirectory = getWorkTree(repository);
-        this.head = repository.resolve(HEAD);
-        this.rev = head != null ? head.getName() : NO_COMMIT;
-    }
-
-    /**
-     * fixed version repository.getWorkTree()
-     * handle worktrees as well
-     *
-     * @param repository
-     * @return .git directory
-     */
-    private File getWorkTree(Repository repository) throws IOException {
-        try {
-            return repository.getWorkTree();
-        } catch (NoWorkTreeException e) {
-            File gitDirFile = new File(repository.getDirectory(), "gitdir");
-            if (gitDirFile.exists()) {
-                String gitDirPath = Files.readAllLines(gitDirFile.toPath()).get(0);
-                return new File(gitDirPath).getParentFile();
-            }
-            throw e;
-        }
+        this.rootDirectory = worktreesFix_getWorkTree(repository);
+        this.head = worktreesFix_resolveHead(repository);
     }
 
     public File getRootDirectory() {
@@ -74,7 +49,7 @@ public class GitSituation {
     }
 
     public String getRev() {
-        return rev;
+        return head != null ? head.getName() : NO_COMMIT;
     }
 
     public ZonedDateTime getTimestamp() {
