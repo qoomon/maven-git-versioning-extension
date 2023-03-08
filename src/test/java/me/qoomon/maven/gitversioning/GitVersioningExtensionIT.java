@@ -870,7 +870,7 @@ class GitVersioningExtensionIT {
             writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
             writeExtensionsFile(projectDir);
             writeExtensionConfigFile(projectDir, new Configuration() {{
-                refs.list.add(createVersionDescription(BRANCH, "${describe.tag.version.version.label}"));
+                refs.list.add(createVersionDescription(BRANCH, "${describe.tag.version.label}"));
             }});
 
             // When

@@ -917,7 +917,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         placeholderMap.put("describe.tag.version.patch", Lazy.by(() -> requireNonNullElse(descriptionTagVersionMatcher.get().group("patch"), "0")));
         placeholderMap.put("describe.tag.version.patch.next", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.patch").get(), 1)));
 
-        placeholderMap.put("describe.tag.version.version.label", Lazy.by(() -> requireNonNullElse(descriptionTagVersionMatcher.get().group("label"), "")));
+        placeholderMap.put("describe.tag.version.label", Lazy.by(() -> requireNonNullElse(descriptionTagVersionMatcher.get().group("label"), "")));
         placeholderMap.put("describe.tag.version.label.next", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.label").get(), 1)));
 
         final Lazy<Integer> descriptionDistance = Lazy.by(() -> description.get().getDistance());
@@ -926,7 +926,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         placeholderMap.put("describe.tag.version.patch.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.patch").get(), descriptionDistance.get())));
         placeholderMap.put("describe.tag.version.patch.next.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.patch.next").get(), descriptionDistance.get())));
 
-        placeholderMap.put("describe.tag.version.label.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.version.label").get(), descriptionDistance.get())));
+        placeholderMap.put("describe.tag.version.label.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.label").get(), descriptionDistance.get())));
         placeholderMap.put("describe.tag.version.label.next.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.label.next").get(), descriptionDistance.get())));
 
         // command parameters e.g. mvn -Dfoo=123 will be available as ${property.foo}
