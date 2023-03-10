@@ -828,9 +828,16 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             for (Entry<String, String> patternGroup : patternGroupValues(projectVersionPattern, projectVersion).entrySet()) {
                 final String groupName = patternGroup.getKey();
                 final String value = patternGroup.getValue() != null ? patternGroup.getValue() : "";
-                placeholderMap.put("version." + groupName, () -> value);
+
+                final var placeholderKey = "version." + groupName;
+                // ensure no placeholder overwrites
+                if(placeholderMap.containsKey(placeholderKey)){
+                    throw new IllegalArgumentException("project version pattern capture group can not be named '" + groupName + "', because this would overwrite extension placeholder ${" + placeholderKey + "}");
+                }
+                placeholderMap.put(placeholderKey, () -> value);
             }
         }
+
 
         return placeholderMap;
     }
@@ -878,8 +885,14 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             for (Entry<String, String> patternGroup : patternGroupValues(refPattern, refName).entrySet()) {
                 final String groupName = patternGroup.getKey();
                 final String value = patternGroup.getValue() != null ? patternGroup.getValue() : "";
-                placeholderMap.put("ref." + groupName, () -> value);
-                placeholderMap.put("ref." + groupName + ".slug", Lazy.by(() -> slugify(value)));
+
+                final var placeholderKey = "ref." + groupName;
+                // ensure no placeholder overwrites
+                if(placeholderMap.containsKey(placeholderKey)){
+                    throw new IllegalArgumentException("ref pattern capture group can not be named '" + groupName + "', because this would overwrite extension placeholder ${" + placeholderKey + "}");
+                }
+                placeholderMap.put(placeholderKey, () -> value);
+                placeholderMap.put(placeholderKey + ".slug", Lazy.by(() -> slugify(value)));
             }
         }
 
@@ -893,14 +906,6 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         placeholderMap.put("describe", Lazy.by(() -> description.get().toString()));
         final Lazy<String> descriptionTag = Lazy.by(() -> description.get().getTag());
         placeholderMap.put("describe.tag", descriptionTag);
-        // describe tag pattern groups
-        final Lazy<Map<String, String>> describeTagPatternValues = Lazy.by(
-                () -> patternGroupValues(gitSituation.getDescribeTagPattern(), descriptionTag.get()));
-        for (String groupName : patternGroups(gitSituation.getDescribeTagPattern())) {
-            Lazy<String> groupValue = Lazy.by(() -> describeTagPatternValues.get().get(groupName));
-            placeholderMap.put("describe.tag." + groupName, groupValue);
-            placeholderMap.put("describe.tag." + groupName + ".slug", Lazy.by(() -> slugify(groupValue.get())));
-        }
 
         final Lazy<Matcher> descriptionTagVersionMatcher = Lazy.by(() -> matchVersion(descriptionTag.get()));
 
@@ -928,6 +933,20 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
         placeholderMap.put("describe.tag.version.label.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.label").get(), descriptionDistance.get())));
         placeholderMap.put("describe.tag.version.label.next.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.label.next").get(), descriptionDistance.get())));
+
+        // describe tag pattern groups
+        final Lazy<Map<String, String>> describeTagPatternValues = Lazy.by(
+                () -> patternGroupValues(gitSituation.getDescribeTagPattern(), descriptionTag.get()));
+        for (String groupName : patternGroups(gitSituation.getDescribeTagPattern())) {
+            final var placeholderKey = "describe.tag." + groupName;
+            // ensure no placeholder overwrites
+            if(placeholderMap.containsKey(placeholderKey)){
+                throw new IllegalArgumentException("describe tag pattern capture group can not be named '" + groupName + "', because this would overwrite extension placeholder ${" + placeholderKey + "}");
+            }
+            Lazy<String> groupValue = Lazy.by(() -> describeTagPatternValues.get().get(groupName));
+            placeholderMap.put(placeholderKey, groupValue);
+            placeholderMap.put(placeholderKey+ ".slug", Lazy.by(() -> slugify(groupValue.get())));
+        }
 
         // command parameters e.g. mvn -Dfoo=123 will be available as ${property.foo}
         for (Entry<Object, Object> property : mavenSession.getUserProperties().entrySet()) {
