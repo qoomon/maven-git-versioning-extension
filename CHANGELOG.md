@@ -4,6 +4,12 @@
 
 # Changelog
 
+## 9.6.5
+
+##### Fixes
+- fix ``{describe.tag.version.label}` placeholder
+
+
 ## 9.6.4
 
 ##### Fixes
