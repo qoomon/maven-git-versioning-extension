@@ -259,8 +259,8 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
         ```xml
         <ref type="branch">
             <pattern>main</pattern>
-            <describeTagPattern><![CDATA[v(?<version>.*)]]></describeTagPattern>
-            <version>${describe.tag.version}-SNAPSHOT</version>
+            <describeTagPattern><![CDATA[v(?<name>.*)]]></describeTagPattern>
+            <version>${describe.tag.name}-SNAPSHOT</version>
         </ref>
         ```
         <br> 
