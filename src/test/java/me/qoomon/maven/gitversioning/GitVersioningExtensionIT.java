@@ -859,6 +859,33 @@ class GitVersioningExtensionIT {
     }
     // TODO add tests for property updates
 
+    @Test
+    void apply_UseDescribeTagVersionLabel() throws Exception {
+
+        try (Git git = Git.init().setInitialBranch("master").setDirectory(projectDir.toFile()).call()) {
+            // Given
+            git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+            git.tag().setAnnotated(true).setName("v1.0.0-label").call();
+
+            writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
+            writeExtensionsFile(projectDir);
+            writeExtensionConfigFile(projectDir, new Configuration() {{
+                refs.list.add(createVersionDescription(BRANCH, "${describe.tag.version.label}"));
+            }});
+
+            // When
+            Verifier verifier = getVerifier(projectDir);
+            verifier.executeGoal("verify");
+
+            // Then
+            verifier.verifyErrorFreeLog();
+            String expectedVersion = "label";
+            verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
+
+            Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
+            assertThat(gitVersionedPomModel.getVersion()).isEqualTo(expectedVersion);
+        }
+    }
 
     // -----------------------------------------------------------------------------------------------------------------
 
