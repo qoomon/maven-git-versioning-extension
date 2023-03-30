@@ -5,9 +5,9 @@
 [![Build Workflow](https://github.com/qoomon/maven-git-versioning-extension/workflows/Build/badge.svg)](https://github.com/qoomon/maven-git-versioning-extension/actions?query=workflow%3ABuild)
 [![LGTM Grade](https://img.shields.io/lgtm/grade/java/github/qoomon/maven-git-versioning-extension)](https://lgtm.com/projects/g/qoomon/maven-git-versioning-extension)
 
-![Example](docs/MavenGitVersioningExtension.png)
-
 **ℹ Also available as [Gradle Plugin](https://github.com/qoomon/gradle-git-versioning-plugin)**
+
+![Example](docs/MavenGitVersioningExtension.png)
 
 This extension can virtually set project version and properties, based on current **Git status**
 
