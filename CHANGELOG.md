@@ -4,6 +4,12 @@
 
 # Changelog
 
+## 9.6.6
+
+##### Fixes
+- fix tag sorting by version (fixes #250)
+
+
 ## 9.6.5
 
 ##### Fixes

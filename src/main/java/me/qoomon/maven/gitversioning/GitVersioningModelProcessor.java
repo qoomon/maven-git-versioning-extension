@@ -746,8 +746,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     }
 
     private static GitVersionDetails getGitVersionDetails(GitSituation gitSituation, Configuration config) {
-        final Lazy<List<String>> sortedTags = Lazy.by(() -> gitSituation.getTags().stream()
-                .sorted(comparing(DefaultArtifactVersion::new)).collect(toList()));
+        final Lazy<List<String>> sortedTags = Lazy.by(gitSituation::getTags);
         for (RefPatchDescription refConfig : config.refs.list) {
             switch (refConfig.type) {
                 case TAG: {
