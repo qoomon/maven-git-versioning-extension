@@ -19,6 +19,8 @@ import org.apache.maven.session.scope.internal.SessionScope;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
+import org.eclipse.sisu.BeanEntry;
+import org.eclipse.sisu.inject.BeanLocator;
 import org.slf4j.Logger;
 
 import javax.inject.Inject;
@@ -32,10 +34,15 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Properties;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.StreamSupport;
 
 import static com.fasterxml.jackson.databind.MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS;
 import static java.lang.Boolean.parseBoolean;
@@ -57,11 +64,11 @@ import static org.apache.maven.shared.utils.logging.MessageUtils.buffer;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
- * Replacement for {@link ModelProcessor} to adapt versions.
+ * Wrapper for {@link ModelProcessor} to adapt versions.
  */
 @Named("core-default")
 @Singleton
-public class GitVersioningModelProcessor extends DefaultModelProcessor {
+public class GitVersioningModelProcessor implements ModelProcessor {
 
     private static final Pattern VERSION_PATTERN = Pattern.compile(".*?(?<version>(?<core>(?<major>\\d+)(?:\\.(?<minor>\\d+)(?:\\.(?<patch>\\d+))?)?)(?:-(?<label>.*))?)|");
 
@@ -75,8 +82,9 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
     final private Logger logger = getLogger(GitVersioningModelProcessor.class);
 
-    @Inject
-    private SessionScope sessionScope;
+    private final SessionScope sessionScope;
+
+    private final ModelProcessor delegatedModelProcessor;
 
     private boolean initialized = false;
 
@@ -99,23 +107,37 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
     private final Map<File, Model> sessionModelCache = new HashMap<>();
 
+    @Inject
+    public GitVersioningModelProcessor(
+            final BeanLocator beanLocator,
+            final SessionScope sessionScope
+    ) {
+        this.sessionScope = sessionScope;
+        this.delegatedModelProcessor = StreamSupport.stream(beanLocator.locate(Key.get(ModelProcessor.class)).spliterator(), false)
+                // Avoid circular dependency
+                .filter(beanEntry -> !beanEntry.getImplementationClass().equals(GitVersioningModelProcessor.class))
+                .findFirst()
+                .map(BeanEntry::getValue)
+                // There is normally always at least one implementation available: org.apache.maven.model.building.DefaultModelProcessor
+                .orElseThrow(() -> new NoSuchElementException("Unable to find default ModelProcessor"));
+    }
 
     @Override
     public Model read(File input, Map<String, ?> options) throws IOException {
         // clone model before return to prevent concurrency issues
-        return processModel(super.read(input, options), options).clone();
+        return processModel(delegatedModelProcessor.read(input, options), options).clone();
     }
 
     @Override
     public Model read(Reader input, Map<String, ?> options) throws IOException {
         // clone model before return to prevent concurrency issues
-        return processModel(super.read(input, options), options).clone();
+        return processModel(delegatedModelProcessor.read(input, options), options).clone();
     }
 
     @Override
     public Model read(InputStream input, Map<String, ?> options) throws IOException {
         // clone model before return to prevent concurrency issues
-        return processModel(super.read(input, options), options).clone();
+        return processModel(delegatedModelProcessor.read(input, options), options).clone();
     }
 
 
@@ -1179,7 +1201,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         logger.debug("generate {}", gitVersionedPomFile);
 
         // read original pom file
-        Document gitVersionedPomDocument = readXml(projectModel.getPomFile());
+        Document gitVersionedPomDocument = readXml(this.locatePom(projectModel.getProjectDirectory()));
         Element projectElement = gitVersionedPomDocument.getChild("project");
 
         // update project
@@ -1417,5 +1439,12 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     private static String increase(String number, long increment) {
         String sanitized = number.isEmpty() ? "0" : number;
         return String.format("%0" + sanitized.length() + "d", Long.parseLong(number.isEmpty() ? "0" : number) + increment);
+    }
+
+    @Override
+    public File locatePom(File projectDirectory) {
+        File result = delegatedModelProcessor.locatePom(projectDirectory);
+        logger.debug("locatePom in: {} -> {}", projectDirectory, result,new Exception());
+        return result;
     }
 }
