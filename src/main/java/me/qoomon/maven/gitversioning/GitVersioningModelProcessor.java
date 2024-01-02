@@ -233,9 +233,7 @@ public class GitVersioningModelProcessor implements ModelProcessor {
         }
         if (!patchDescription.properties.isEmpty()) {
             logger.info("  properties: ");
-            patchDescription.properties.forEach((key, value) -> {
-                logger.info("    {} - {}", key, value);
-            });
+            patchDescription.properties.forEach((key, value) -> logger.info("    {} - {}", key, value));
         }
 
         globalFormatPlaceholderMap = generateGlobalFormatPlaceholderMap(gitSituation, gitVersionDetails, mavenSession);
@@ -308,8 +306,10 @@ public class GitVersioningModelProcessor implements ModelProcessor {
         // add current project model to session project models
         sessionModelCache.put(canonicalProjectPomFile, projectModel);
 
-        // log project header
-        logger.info(projectLogHeader(projectGAV));
+        if (logger.isInfoEnabled()) {
+            // log project header
+            logger.info(projectLogHeader(projectGAV));
+        }
 
         updateModel(projectModel, gitVersionDetails.getPatchDescription());
 
@@ -381,7 +381,7 @@ public class GitVersioningModelProcessor implements ModelProcessor {
             GAV parentGAV = GAV.of(parent);
             if (isRelatedProject(parentGAV)) {
                 String gitVersion = getGitVersion(versionFormat, parentGAV.getVersion());
-                logger.debug("set parent version to " + gitVersion + " (" + parentGAV + ")");
+                logger.debug("set parent version to {} ({})", gitVersion, parentGAV);
                 parent.setVersion(gitVersion);
             }
         }
@@ -406,7 +406,7 @@ public class GitVersioningModelProcessor implements ModelProcessor {
             if (propertyFormat != null) {
                 String gitPropertyValue = getGitPropertyValue(propertyFormat, (String) modelPropertyValue, originalProjectGAV.getVersion());
                 if (!gitPropertyValue.equals(modelPropertyValue)) {
-                    logger.info("set property " + modelPropertyName + " to " + gitPropertyValue);
+                    logger.info("set property {} to {}", modelPropertyName, gitPropertyValue);
                     model.addProperty((String) modelPropertyName, gitPropertyValue);
                 }
             }
@@ -700,9 +700,9 @@ public class GitVersioningModelProcessor implements ModelProcessor {
                     String commitBranch = System.getenv("CI_COMMIT_BRANCH");
                     String commitTag = System.getenv("CI_COMMIT_TAG");
                     String mrSourceBranch = System.getenv("CI_MERGE_REQUEST_SOURCE_BRANCH_NAME");
-                    logger.debug("  CI_COMMIT_BRANCH: " + commitBranch);
-                    logger.debug("  CI_COMMIT_TAG: " + commitTag);
-                    logger.debug("  CI_MERGE_REQUEST_SOURCE_BRANCH_NAME: " + mrSourceBranch);
+                    logger.debug("  CI_COMMIT_BRANCH: {}", commitBranch);
+                    logger.debug("  CI_COMMIT_TAG: {}", commitTag);
+                    logger.debug("  CI_MERGE_REQUEST_SOURCE_BRANCH_NAME: {}", mrSourceBranch);
 
                     if (commitBranch != null) {
                         setBranch(commitBranch);
@@ -723,8 +723,8 @@ public class GitVersioningModelProcessor implements ModelProcessor {
                     logger.info("gather git situation from Circle CI environment variables: CIRCLE_BRANCH and CIRCLE_TAG");
                     String commitBranch = System.getenv("CIRCLE_BRANCH");
                     String commitTag = System.getenv("CIRCLE_TAG");
-                    logger.debug("  CIRCLE_BRANCH: " + commitBranch);
-                    logger.debug("  CIRCLE_TAG: " + commitTag);
+                    logger.debug("  CIRCLE_BRANCH: {}", commitBranch);
+                    logger.debug("  CIRCLE_TAG: {}", commitTag);
 
                     if (commitBranch != null) {
                         setBranch(commitBranch);
@@ -742,8 +742,8 @@ public class GitVersioningModelProcessor implements ModelProcessor {
                     logger.info("gather git situation from jenkins environment variables: BRANCH_NAME and TAG_NAME");
                     String commitBranch = System.getenv("BRANCH_NAME");
                     String commitTag = System.getenv("TAG_NAME");
-                    logger.debug("  BRANCH_NAME: " + commitBranch);
-                    logger.debug("  TAG_NAME: " + commitTag);
+                    logger.debug("  BRANCH_NAME: {}", commitBranch);
+                    logger.debug("  TAG_NAME: {}", commitTag);
 
                     if (commitBranch != null) {
                         if (commitBranch.equals(commitTag)) {
@@ -760,17 +760,17 @@ public class GitVersioningModelProcessor implements ModelProcessor {
 
 
             protected void setBranch(String branch) {
-                logger.debug("override git branch with " + branch);
+                logger.debug("override git branch with {}", branch);
                 super.setBranch(branch);
             }
 
             protected void setTags(List<String> tags) {
-                logger.debug("override git tags with single tag " + tags);
+                logger.debug("override git tags with single tag {}", tags);
                 super.setTags(tags);
             }
 
             protected void addTag(String tag) {
-                logger.debug("add git tag " + tag);
+                logger.debug("add git tag {}", tag);
                 super.addTag(tag);
             }
         };
