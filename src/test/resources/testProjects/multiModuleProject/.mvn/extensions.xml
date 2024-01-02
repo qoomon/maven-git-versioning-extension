@@ -5,4 +5,10 @@
         <artifactId>maven-git-versioning-extension</artifactId>
         <version>LATEST</version>
     </extension>
+
+    <extension>
+        <groupId>io.takari.polyglot</groupId>
+        <artifactId>polyglot-yaml</artifactId>
+        <version>LATEST</version>
+    </extension>
 </extensions>
