@@ -30,8 +30,8 @@ final class MavenUtil {
      * @throws IOException IOException
      */
     static Model readModel(File pomFile) throws IOException {
-        try (InputStream inputStream = new FileInputStream(pomFile)) {
-            Model model = new MavenXpp3Reader().read(inputStream);
+        try (FileReader fileReader = new FileReader(pomFile)) {
+            Model model = new MavenXpp3Reader().read(fileReader);
             model.setPomFile(pomFile);
             return model;
         } catch (XmlPullParserException e) {
