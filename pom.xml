@@ -238,7 +238,7 @@
                                 <configuration>
                                     <gpgArguments>
                                         <arg>--pinentry-mode</arg>
-                                        <arg>loopback</arg>j
+                                        <arg>loopback</arg>
                                     </gpgArguments>
                                 </configuration>
                             </execution>
