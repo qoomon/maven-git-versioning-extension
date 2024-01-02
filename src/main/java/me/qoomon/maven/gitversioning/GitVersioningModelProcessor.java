@@ -116,7 +116,10 @@ public class GitVersioningModelProcessor implements ModelProcessor {
 
     private final Map<File, Model> sessionModelCache = new HashMap<>();
 
-   
+    @Override
+    public File locatePom(File projectDirectory) {
+        return delegatedModelProcessor.locatePom(projectDirectory);
+    }
 
     @Override
     public Model read(File input, Map<String, ?> options) throws IOException {
@@ -1440,10 +1443,5 @@ public class GitVersioningModelProcessor implements ModelProcessor {
     private static String increase(String number, long increment) {
         String sanitized = number.isEmpty() ? "0" : number;
         return String.format("%0" + sanitized.length() + "d", Long.parseLong(number.isEmpty() ? "0" : number) + increment);
-    }
-
-    @Override
-    public File locatePom(File projectDirectory) {
-        return delegatedModelProcessor.locatePom(projectDirectory);
     }
 }
