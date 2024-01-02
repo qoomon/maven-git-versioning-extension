@@ -318,7 +318,7 @@ public class GitVersioningModelProcessor implements ModelProcessor {
             logger.debug("updating original POM file");
             Files.copy(
                     gitVersionedPomFile.toPath(),
-                    projectModel.getPomFile().toPath(),
+                    locatePom(projectModel.getProjectDirectory()).toPath(),
                     StandardCopyOption.REPLACE_EXISTING);
         }
 
