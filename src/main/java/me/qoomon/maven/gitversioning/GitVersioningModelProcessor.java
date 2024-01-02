@@ -13,14 +13,11 @@ import me.qoomon.maven.gitversioning.Configuration.RefPatchDescription;
 import org.apache.maven.building.Source;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.*;
-import org.apache.maven.model.building.DefaultModelProcessor;
 import org.apache.maven.model.building.ModelProcessor;
 import org.apache.maven.session.scope.internal.SessionScope;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
-import org.eclipse.sisu.BeanEntry;
-import org.eclipse.sisu.inject.BeanLocator;
 import org.slf4j.Logger;
 
 import javax.inject.Inject;
@@ -42,7 +39,6 @@ import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.StreamSupport;
 
 import static com.fasterxml.jackson.databind.MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS;
 import static java.lang.Boolean.parseBoolean;
@@ -82,9 +78,10 @@ public class GitVersioningModelProcessor implements ModelProcessor {
 
     final private Logger logger = getLogger(GitVersioningModelProcessor.class);
 
-    private final SessionScope sessionScope;
+    @Inject
+    private SessionScope sessionScope;
 
-    private final ModelProcessor delegatedModelProcessor;
+    private ModelProcessor delegatedModelProcessor;
 
     private boolean initialized = false;
 
@@ -108,18 +105,14 @@ public class GitVersioningModelProcessor implements ModelProcessor {
     private final Map<File, Model> sessionModelCache = new HashMap<>();
 
     @Inject
-    public GitVersioningModelProcessor(
-            final BeanLocator beanLocator,
-            final SessionScope sessionScope
-    ) {
-        this.sessionScope = sessionScope;
-        this.delegatedModelProcessor = StreamSupport.stream(beanLocator.locate(Key.get(ModelProcessor.class)).spliterator(), false)
+    void setDelegatedModelProcessor(List<ModelProcessor> modelProcessors) {
+        this.delegatedModelProcessor = modelProcessors.stream()
                 // Avoid circular dependency
-                .filter(beanEntry -> !beanEntry.getImplementationClass().equals(GitVersioningModelProcessor.class))
+                .filter(modelProcessor -> !Objects.equals(modelProcessor, this))
                 .findFirst()
-                .map(BeanEntry::getValue)
                 // There is normally always at least one implementation available: org.apache.maven.model.building.DefaultModelProcessor
                 .orElseThrow(() -> new NoSuchElementException("Unable to find default ModelProcessor"));
+        logger.debug("Delegated ModelProcessor: {}", this.delegatedModelProcessor);
     }
 
     @Override
@@ -147,7 +140,7 @@ public class GitVersioningModelProcessor implements ModelProcessor {
             logger.info(extensionLogHeader(BuildProperties.projectGAV()));
         }
 
-        File pomFile = projectModel.getPomFile();
+        File pomFile = locatePom(projectModel.getProjectDirectory());
         if (pomFile == null) {
             logger.debug("skip - project model does not belong to a local project");
             disabled = true;
@@ -1443,8 +1436,6 @@ public class GitVersioningModelProcessor implements ModelProcessor {
 
     @Override
     public File locatePom(File projectDirectory) {
-        File result = delegatedModelProcessor.locatePom(projectDirectory);
-        logger.debug("locatePom in: {} -> {}", projectDirectory, result,new Exception());
-        return result;
+        return delegatedModelProcessor.locatePom(projectDirectory);
     }
 }
