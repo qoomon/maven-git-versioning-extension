@@ -13,7 +13,6 @@ import me.qoomon.maven.gitversioning.Configuration.RefPatchDescription;
 import org.apache.maven.building.Source;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.*;
-import org.apache.maven.model.building.DefaultModelProcessor;
 import org.apache.maven.model.building.ModelProcessor;
 import org.apache.maven.session.scope.internal.SessionScope;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
@@ -32,6 +31,10 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Properties;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
@@ -57,11 +60,11 @@ import static org.apache.maven.shared.utils.logging.MessageUtils.buffer;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
- * Replacement for {@link ModelProcessor} to adapt versions.
+ * Wrapper for {@link ModelProcessor} to adapt versions.
  */
 @Named("core-default")
 @Singleton
-public class GitVersioningModelProcessor extends DefaultModelProcessor {
+public class GitVersioningModelProcessor implements ModelProcessor {
 
     private static final Pattern VERSION_PATTERN = Pattern.compile(".*?(?<version>(?<core>(?<major>\\d+)(?:\\.(?<minor>\\d+)(?:\\.(?<patch>\\d+))?)?)(?:-(?<label>.*))?)|");
 
@@ -74,6 +77,20 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
     static final String GIT_VERSIONING_POM_NAME = ".git-versioned-pom.xml";
 
     final private Logger logger = getLogger(GitVersioningModelProcessor.class);
+
+    // gets injected by setter, see below
+    private ModelProcessor delegatedModelProcessor;
+    
+    @Inject
+    void setDelegatedModelProcessor(List<ModelProcessor> modelProcessors) {
+        this.delegatedModelProcessor = modelProcessors.stream()
+                // Avoid circular dependency
+                .filter(modelProcessor -> !Objects.equals(modelProcessor, this))
+                .findFirst()
+                // There is normally always at least one implementation available: org.apache.maven.model.building.DefaultModelProcessor
+                .orElseThrow(() -> new NoSuchElementException("Unable to find default ModelProcessor"));
+        logger.debug("Delegated ModelProcessor: {}", this.delegatedModelProcessor);
+    }
 
     @Inject
     private SessionScope sessionScope;
@@ -99,23 +116,27 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
     private final Map<File, Model> sessionModelCache = new HashMap<>();
 
+    @Override
+    public File locatePom(File projectDirectory) {
+        return delegatedModelProcessor.locatePom(projectDirectory);
+    }
 
     @Override
     public Model read(File input, Map<String, ?> options) throws IOException {
         // clone model before return to prevent concurrency issues
-        return processModel(super.read(input, options), options).clone();
+        return processModel(delegatedModelProcessor.read(input, options), options).clone();
     }
 
     @Override
     public Model read(Reader input, Map<String, ?> options) throws IOException {
         // clone model before return to prevent concurrency issues
-        return processModel(super.read(input, options), options).clone();
+        return processModel(delegatedModelProcessor.read(input, options), options).clone();
     }
 
     @Override
     public Model read(InputStream input, Map<String, ?> options) throws IOException {
         // clone model before return to prevent concurrency issues
-        return processModel(super.read(input, options), options).clone();
+        return processModel(delegatedModelProcessor.read(input, options), options).clone();
     }
 
 
@@ -125,7 +146,9 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             logger.info(extensionLogHeader(BuildProperties.projectGAV()));
         }
 
-        File pomFile = projectModel.getPomFile();
+        // In case another ModelProcessor is used (like for example polyglot extension),
+        // we need to work on the POM possibly translated into XML
+        File pomFile = locatePom(projectModel.getProjectDirectory());
         if (pomFile == null) {
             logger.debug("skip - project model does not belong to a local project");
             disabled = true;
@@ -218,9 +241,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         }
         if (!patchDescription.properties.isEmpty()) {
             logger.info("  properties: ");
-            patchDescription.properties.forEach((key, value) -> {
-                logger.info("    {} - {}", key, value);
-            });
+            patchDescription.properties.forEach((key, value) -> logger.info("    {} - {}", key, value));
         }
 
         globalFormatPlaceholderMap = generateGlobalFormatPlaceholderMap(gitSituation, gitVersionDetails, mavenSession);
@@ -293,8 +314,10 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         // add current project model to session project models
         sessionModelCache.put(canonicalProjectPomFile, projectModel);
 
-        // log project header
-        logger.info(projectLogHeader(projectGAV));
+        if (logger.isInfoEnabled()) {
+            // log project header
+            logger.info(projectLogHeader(projectGAV));
+        }
 
         updateModel(projectModel, gitVersionDetails.getPatchDescription());
 
@@ -303,7 +326,9 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             logger.debug("updating original POM file");
             Files.copy(
                     gitVersionedPomFile.toPath(),
-                    projectModel.getPomFile().toPath(),
+                    // In case another ModelProcessor is used (like for example polyglot extension),
+                    // we need to work on the POM possibly translated into XML
+                    locatePom(projectModel.getProjectDirectory()).toPath(),
                     StandardCopyOption.REPLACE_EXISTING);
         }
 
@@ -366,7 +391,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             GAV parentGAV = GAV.of(parent);
             if (isRelatedProject(parentGAV)) {
                 String gitVersion = getGitVersion(versionFormat, parentGAV.getVersion());
-                logger.debug("set parent version to " + gitVersion + " (" + parentGAV + ")");
+                logger.debug("set parent version to {} ({})", gitVersion, parentGAV);
                 parent.setVersion(gitVersion);
             }
         }
@@ -391,7 +416,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             if (propertyFormat != null) {
                 String gitPropertyValue = getGitPropertyValue(propertyFormat, (String) modelPropertyValue, originalProjectGAV.getVersion());
                 if (!gitPropertyValue.equals(modelPropertyValue)) {
-                    logger.info("set property " + modelPropertyName + " to " + gitPropertyValue);
+                    logger.info("set property {} to {}", modelPropertyName, gitPropertyValue);
                     model.addProperty((String) modelPropertyName, gitPropertyValue);
                 }
             }
@@ -685,9 +710,9 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                     String commitBranch = System.getenv("CI_COMMIT_BRANCH");
                     String commitTag = System.getenv("CI_COMMIT_TAG");
                     String mrSourceBranch = System.getenv("CI_MERGE_REQUEST_SOURCE_BRANCH_NAME");
-                    logger.debug("  CI_COMMIT_BRANCH: " + commitBranch);
-                    logger.debug("  CI_COMMIT_TAG: " + commitTag);
-                    logger.debug("  CI_MERGE_REQUEST_SOURCE_BRANCH_NAME: " + mrSourceBranch);
+                    logger.debug("  CI_COMMIT_BRANCH: {}", commitBranch);
+                    logger.debug("  CI_COMMIT_TAG: {}", commitTag);
+                    logger.debug("  CI_MERGE_REQUEST_SOURCE_BRANCH_NAME: {}", mrSourceBranch);
 
                     if (commitBranch != null) {
                         setBranch(commitBranch);
@@ -708,8 +733,8 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                     logger.info("gather git situation from Circle CI environment variables: CIRCLE_BRANCH and CIRCLE_TAG");
                     String commitBranch = System.getenv("CIRCLE_BRANCH");
                     String commitTag = System.getenv("CIRCLE_TAG");
-                    logger.debug("  CIRCLE_BRANCH: " + commitBranch);
-                    logger.debug("  CIRCLE_TAG: " + commitTag);
+                    logger.debug("  CIRCLE_BRANCH: {}", commitBranch);
+                    logger.debug("  CIRCLE_TAG: {}", commitTag);
 
                     if (commitBranch != null) {
                         setBranch(commitBranch);
@@ -727,8 +752,8 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
                     logger.info("gather git situation from jenkins environment variables: BRANCH_NAME and TAG_NAME");
                     String commitBranch = System.getenv("BRANCH_NAME");
                     String commitTag = System.getenv("TAG_NAME");
-                    logger.debug("  BRANCH_NAME: " + commitBranch);
-                    logger.debug("  TAG_NAME: " + commitTag);
+                    logger.debug("  BRANCH_NAME: {}", commitBranch);
+                    logger.debug("  TAG_NAME: {}", commitTag);
 
                     if (commitBranch != null) {
                         if (commitBranch.equals(commitTag)) {
@@ -745,17 +770,17 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
 
             protected void setBranch(String branch) {
-                logger.debug("override git branch with " + branch);
+                logger.debug("override git branch with {}", branch);
                 super.setBranch(branch);
             }
 
             protected void setTags(List<String> tags) {
-                logger.debug("override git tags with single tag " + tags);
+                logger.debug("override git tags with single tag {}", tags);
                 super.setTags(tags);
             }
 
             protected void addTag(String tag) {
-                logger.debug("add git tag " + tag);
+                logger.debug("add git tag {}", tag);
                 super.addTag(tag);
             }
         };
@@ -1178,8 +1203,9 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         File gitVersionedPomFile = new File(projectModel.getProjectDirectory(), GIT_VERSIONING_POM_NAME);
         logger.debug("generate {}", gitVersionedPomFile);
 
-        // read original pom file
-        Document gitVersionedPomDocument = readXml(projectModel.getPomFile());
+        // In case another ModelProcessor is used (like for example polyglot extension),
+        // we need to work on the POM possibly translated into XML
+        Document gitVersionedPomDocument = readXml(this.locatePom(projectModel.getProjectDirectory()));
         Element projectElement = gitVersionedPomDocument.getChild("project");
 
         // update project
