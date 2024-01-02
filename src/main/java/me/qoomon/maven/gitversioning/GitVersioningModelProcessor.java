@@ -78,10 +78,22 @@ public class GitVersioningModelProcessor implements ModelProcessor {
 
     final private Logger logger = getLogger(GitVersioningModelProcessor.class);
 
+    // gets injected by setter, see below
+    private ModelProcessor delegatedModelProcessor;
+    
+    @Inject
+    void setDelegatedModelProcessor(List<ModelProcessor> modelProcessors) {
+        this.delegatedModelProcessor = modelProcessors.stream()
+                // Avoid circular dependency
+                .filter(modelProcessor -> !Objects.equals(modelProcessor, this))
+                .findFirst()
+                // There is normally always at least one implementation available: org.apache.maven.model.building.DefaultModelProcessor
+                .orElseThrow(() -> new NoSuchElementException("Unable to find default ModelProcessor"));
+        logger.debug("Delegated ModelProcessor: {}", this.delegatedModelProcessor);
+    }
+
     @Inject
     private SessionScope sessionScope;
-
-    private ModelProcessor delegatedModelProcessor;
 
     private boolean initialized = false;
 
@@ -104,16 +116,7 @@ public class GitVersioningModelProcessor implements ModelProcessor {
 
     private final Map<File, Model> sessionModelCache = new HashMap<>();
 
-    @Inject
-    void setDelegatedModelProcessor(List<ModelProcessor> modelProcessors) {
-        this.delegatedModelProcessor = modelProcessors.stream()
-                // Avoid circular dependency
-                .filter(modelProcessor -> !Objects.equals(modelProcessor, this))
-                .findFirst()
-                // There is normally always at least one implementation available: org.apache.maven.model.building.DefaultModelProcessor
-                .orElseThrow(() -> new NoSuchElementException("Unable to find default ModelProcessor"));
-        logger.debug("Delegated ModelProcessor: {}", this.delegatedModelProcessor);
-    }
+   
 
     @Override
     public Model read(File input, Map<String, ?> options) throws IOException {
