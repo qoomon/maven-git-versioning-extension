@@ -10,7 +10,6 @@ import me.qoomon.gitversioning.commons.GitSituation;
 import me.qoomon.gitversioning.commons.Lazy;
 import me.qoomon.maven.gitversioning.Configuration.PatchDescription;
 import me.qoomon.maven.gitversioning.Configuration.RefPatchDescription;
-import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.apache.maven.building.Source;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.*;
@@ -44,7 +43,6 @@ import static java.lang.Math.*;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
-import static java.util.Comparator.comparing;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.stream.Collectors.*;
 import static me.qoomon.gitversioning.commons.GitRefType.*;
@@ -122,18 +120,20 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
 
     private void init(Model projectModel) throws IOException {
-        logger.info("");
-        logger.info(extensionLogHeader(BuildProperties.projectGAV()));
+        if (logger.isInfoEnabled()) {
+            logger.info("");
+            logger.info(extensionLogHeader(BuildProperties.projectGAV()));
+        }
 
         File pomFile = projectModel.getPomFile();
-        if(pomFile == null ){
+        if (pomFile == null) {
             logger.debug("skip - project model does not belong to a local project");
             disabled = true;
             return;
         }
 
-        if(!pomFile.isFile()){
-            logger.debug("skip - pom file does not exist " + pomFile);
+        if (!pomFile.isFile()) {
+            logger.debug("skip - pom file does not exist {}", pomFile);
             disabled = true;
             return;
         }
@@ -147,11 +147,11 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             return;
         }
 
-        logger.debug("pom file: " + pomFile);
+        logger.debug("pom file: {}", pomFile);
         mvnDirectory = findMvnDirectory(pomFile);
-        logger.debug(".mvn directory: " + mvnDirectory);
+        logger.debug(".mvn directory: {}", mvnDirectory);
         final File configFile = new File(mvnDirectory, projectArtifactId() + ".xml");
-        logger.debug("read config from " + configFile);
+        logger.debug("read config from {}", configFile);
         config = readConfig(configFile);
 
         // check if extension is disabled by command option
@@ -181,12 +181,12 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
         if (logger.isDebugEnabled()) {
             logger.debug("git situation:");
-            logger.debug("  root directory: " + gitSituation.getRootDirectory());
-            logger.debug("  head commit: " + gitSituation.getRev());
-            logger.debug("  head commit timestamp: " + gitSituation.getTimestamp());
-            logger.debug("  head branch: " + gitSituation.getBranch());
-            logger.debug("  head tags: " + gitSituation.getTags());
-            logger.debug("  head description: " + gitSituation.getDescription());
+            logger.debug("  root directory: {}", gitSituation.getRootDirectory());
+            logger.debug("  head commit: {}", gitSituation.getRev());
+            logger.debug("  head commit timestamp: {}", gitSituation.getTimestamp());
+            logger.debug("  head branch: {}", gitSituation.getBranch());
+            logger.debug("  head tags: {}", gitSituation.getTags());
+            logger.debug("  head description: {}", gitSituation.getDescription());
         }
 
         // determine git version details
@@ -194,32 +194,32 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         if (gitVersionDetails == null) {
             logger.warn("skip - no matching <ref> configuration and no <rev> configuration defined");
             logger.warn("git refs:");
-            logger.warn("  branch: " + gitSituation.getBranch());
-            logger.warn("  tags: " + gitSituation.getTags());
+            logger.warn("  branch: {}", gitSituation.getBranch());
+            logger.warn("  tags: {}", gitSituation.getTags());
             logger.warn("defined ref configurations:");
-            config.refs.list.forEach(ref -> logger.warn("  " + rightPad(ref.type.name(), 6) + " - pattern: " + ref.pattern));
+            config.refs.list.forEach(ref -> logger.warn("  {} - pattern: {}", rightPad(ref.type.name(), 6), ref.pattern));
             disabled = true;
             return;
         }
 
-        logger.info("matching ref: " + gitVersionDetails.getRefType().name() + " - " + gitVersionDetails.getRefName());
+        logger.info("matching ref: {} - {}", gitVersionDetails.getRefType().name(), gitVersionDetails.getRefName());
         final RefPatchDescription patchDescription = gitVersionDetails.getPatchDescription();
-        logger.info("ref configuration: " + gitVersionDetails.getRefType().name() + " - pattern: " + patchDescription.pattern);
+        logger.info("ref configuration: {} - pattern: {}", gitVersionDetails.getRefType().name(), patchDescription.pattern);
         if (patchDescription.describeTagPattern != null && !patchDescription.describeTagPattern.equals(".*")) {
-            logger.info("  describeTagPattern: " + patchDescription.describeTagPattern);
+            logger.info("  describeTagPattern: {}", patchDescription.describeTagPattern);
             gitSituation.setDescribeTagPattern(patchDescription.describeTagPattern());
         }
         if (patchDescription.describeTagFirstParent != null) {
-            logger.info("  describeTagFirstParent: " + patchDescription.describeTagFirstParent);
+            logger.info("  describeTagFirstParent: {}", patchDescription.describeTagFirstParent);
             gitSituation.setFirstParent(patchDescription.describeTagFirstParent);
         }
         if (patchDescription.version != null) {
-            logger.info("  version: " + patchDescription.version);
+            logger.info("  version: {}", patchDescription.version);
         }
         if (!patchDescription.properties.isEmpty()) {
             logger.info("  properties: ");
             patchDescription.properties.forEach((key, value) -> {
-                logger.info("    " + key + " - " + value);
+                logger.info("    {} - {}", key, value);
             });
         }
 
@@ -229,20 +229,20 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
             logger.info("  userProperties: ");
             String projectVersion = GAV.of(projectModel).getVersion();
             patchDescription.userProperties.forEach((key, value) -> {
-                logger.info("    " + key + " - " + value);
+                logger.info("    {} - {}", key, value);
                 mavenSession.getUserProperties().put(key, getGitPropertyValue(value, "", projectVersion));
             });
         }
         updatePom = getUpdatePomOption(patchDescription);
         if (updatePom) {
-            logger.info("  updatePom: " + updatePom);
+            logger.info("  updatePom: {}", updatePom);
         }
 
         // determine related projects
         relatedProjects = determineRelatedProjects(projectModel);
         if (logger.isDebugEnabled()) {
             logger.debug(buffer().strong("related projects:").toString());
-            relatedProjects.forEach(gav -> logger.debug("  " + gav));
+            relatedProjects.forEach(gav -> logger.debug("  {}", gav));
         }
 
         logger.info("");
@@ -271,13 +271,13 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
         GAV projectGAV = GAV.of(projectModel);
         if (projectGAV.getVersion() == null) {
-            logger.debug("skip model - can not determine project version - " + projectModel.getPomFile());
+            logger.debug("skip model - can not determine project version - {}", projectModel.getPomFile());
             return projectModel;
         }
 
         if (!isRelatedProject(projectGAV)) {
             if (logger.isTraceEnabled()) {
-                logger.trace("skip model - unrelated project - " + projectModel.getPomFile());
+                logger.trace("skip model - unrelated project - {}", projectModel.getPomFile());
             }
             return projectModel;
         }
@@ -376,7 +376,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         if (projectModel.getVersion() != null) {
             GAV projectGAV = GAV.of(projectModel);
             String gitVersion = getGitVersion(versionFormat, projectGAV.getVersion());
-            logger.info("set version to " + gitVersion);
+            logger.info("set version to {}", gitVersion);
             projectModel.setVersion(gitVersion);
         }
     }
@@ -407,7 +407,9 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         {
             List<Plugin> relatedPlugins = filterRelatedPlugins(build.getPlugins());
             if (!relatedPlugins.isEmpty()) {
-                logger.debug(sectionLogHeader("plugins", model));
+                if (logger.isDebugEnabled()) {
+                    logger.debug(sectionLogHeader("plugins", model));
+                }
                 for (Plugin plugin : relatedPlugins) {
                     updateVersion(plugin, versionFormat);
                 }
@@ -419,7 +421,9 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         if (pluginManagement != null) {
             List<Plugin> relatedPlugins = filterRelatedPlugins(pluginManagement.getPlugins());
             if (!relatedPlugins.isEmpty()) {
-                logger.debug(sectionLogHeader("plugin management", model));
+                if (logger.isDebugEnabled()) {
+                    logger.debug(sectionLogHeader("plugin management", model));
+                }
                 for (Plugin plugin : relatedPlugins) {
                     updateVersion(plugin, versionFormat);
                 }
@@ -431,7 +435,9 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         if (reporting != null) {
             List<ReportPlugin> relatedPlugins = filterRelatedReportPlugins(reporting.getPlugins());
             if (!relatedPlugins.isEmpty()) {
-                logger.debug(sectionLogHeader("reporting plugins", model));
+                if (logger.isDebugEnabled()) {
+                    logger.debug(sectionLogHeader("reporting plugins", model));
+                }
                 for (ReportPlugin plugin : relatedPlugins) {
                     updateVersion(plugin, versionFormat);
                 }
@@ -443,7 +449,9 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         if (plugin.getVersion() != null) {
             GAV pluginGAV = GAV.of(plugin);
             String gitVersion = getGitVersion(versionFormat, pluginGAV.getVersion());
-            logger.debug(pluginGAV.getProjectId() + ": set version to " + gitVersion);
+            if (logger.isDebugEnabled()) {
+                logger.debug("{}: set version to {}", pluginGAV.getProjectId(), gitVersion);
+            }
             plugin.setVersion(gitVersion);
         }
     }
@@ -452,7 +460,9 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         if (plugin.getVersion() != null) {
             GAV pluginGAV = GAV.of(plugin);
             String gitVersion = getGitVersion(versionFormat, pluginGAV.getVersion());
-            logger.debug(pluginGAV.getProjectId() + ": set version to " + gitVersion);
+            if (logger.isDebugEnabled()) {
+                logger.debug("{}: set version to {}", pluginGAV.getProjectId(), gitVersion);
+            }
             plugin.setVersion(gitVersion);
         }
     }
@@ -474,7 +484,9 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         {
             List<Dependency> relatedDependencies = filterRelatedDependencies(model.getDependencies());
             if (!relatedDependencies.isEmpty()) {
-                logger.debug(sectionLogHeader("dependencies", model));
+                if (logger.isDebugEnabled()) {
+                    logger.debug(sectionLogHeader("dependencies", model));
+                }
                 for (Dependency dependency : relatedDependencies) {
                     updateVersion(dependency, versionFormat);
                 }
@@ -485,7 +497,9 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         if (dependencyManagement != null) {
             List<Dependency> relatedDependencies = filterRelatedDependencies(dependencyManagement.getDependencies());
             if (!relatedDependencies.isEmpty()) {
-                logger.debug(sectionLogHeader("dependency management", model));
+                if (logger.isDebugEnabled()) {
+                    logger.debug(sectionLogHeader("dependency management", model));
+                }
                 for (Dependency dependency : relatedDependencies) {
                     updateVersion(dependency, versionFormat);
                 }
@@ -497,7 +511,9 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         if (dependency.getVersion() != null) {
             GAV dependencyGAV = GAV.of(dependency);
             String gitVersion = getGitVersion(versionFormat, dependencyGAV.getVersion());
-            logger.debug(dependencyGAV.getProjectId() + ": set version to " + gitVersion);
+            if (logger.isDebugEnabled()) {
+                logger.debug("{}: set version to {}", dependencyGAV.getProjectId(), gitVersion);
+            }
             dependency.setVersion(gitVersion);
         }
     }
@@ -649,7 +665,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
                     logger.info("gather git situation from GitHub Actions environment variable: GITHUB_REF");
                     String githubRef = System.getenv("GITHUB_REF");
-                    logger.debug("  GITHUB_REF: " + githubRef);
+                    logger.debug("  GITHUB_REF: {}", githubRef);
 
                     if (githubRef.startsWith("refs/tags/")) {
                         addTag(githubRef);
@@ -830,7 +846,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
                 final var placeholderKey = "version." + groupName;
                 // ensure no placeholder overwrites
-                if(placeholderMap.containsKey(placeholderKey)){
+                if (placeholderMap.containsKey(placeholderKey)) {
                     throw new IllegalArgumentException("project version pattern capture group can not be named '" + groupName + "', because this would overwrite extension placeholder ${" + placeholderKey + "}");
                 }
                 placeholderMap.put(placeholderKey, () -> value);
@@ -887,7 +903,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
                 final var placeholderKey = "ref." + groupName;
                 // ensure no placeholder overwrites
-                if(placeholderMap.containsKey(placeholderKey)){
+                if (placeholderMap.containsKey(placeholderKey)) {
                     throw new IllegalArgumentException("ref pattern capture group can not be named '" + groupName + "', because this would overwrite extension placeholder ${" + placeholderKey + "}");
                 }
                 placeholderMap.put(placeholderKey, () -> value);
@@ -939,12 +955,12 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
         for (String groupName : patternGroups(gitSituation.getDescribeTagPattern())) {
             final var placeholderKey = "describe.tag." + groupName;
             // ensure no placeholder overwrites
-            if(placeholderMap.containsKey(placeholderKey)){
+            if (placeholderMap.containsKey(placeholderKey)) {
                 throw new IllegalArgumentException("describe tag pattern capture group can not be named '" + groupName + "', because this would overwrite extension placeholder ${" + placeholderKey + "}");
             }
             Lazy<String> groupValue = Lazy.by(() -> describeTagPatternValues.get().get(groupName));
             placeholderMap.put(placeholderKey, groupValue);
-            placeholderMap.put(placeholderKey+ ".slug", Lazy.by(() -> slugify(groupValue.get())));
+            placeholderMap.put(placeholderKey + ".slug", Lazy.by(() -> slugify(groupValue.get())));
         }
 
         // command parameters e.g. mvn -Dfoo=123 will be available as ${property.foo}
@@ -1160,7 +1176,7 @@ public class GitVersioningModelProcessor extends DefaultModelProcessor {
 
     private File writePomFile(Model projectModel) throws IOException {
         File gitVersionedPomFile = new File(projectModel.getProjectDirectory(), GIT_VERSIONING_POM_NAME);
-        logger.debug("generate " + gitVersionedPomFile);
+        logger.debug("generate {}", gitVersionedPomFile);
 
         // read original pom file
         Document gitVersionedPomDocument = readXml(projectModel.getPomFile());
