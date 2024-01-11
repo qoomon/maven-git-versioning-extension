@@ -138,6 +138,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-plugin-plugin</artifactId>
+                <goalPrefix>${project.name}</goalPrefix>
                 <version>3.11.0</version>
             </plugin>
             <plugin>
