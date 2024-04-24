@@ -236,6 +236,7 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
 
 - `${describe}` Will resolve to `git describe` output
 - `${describe.distance}` The distance count to last matching tag
+- `${describe.distance.snapshot}` Empty string on matching tag, `-SNAPSHOT` if `describe.distance > 0` 
 - `${describe.tag}` The matching tag of `git describe`
   - `${describe.tag.version}` the tag version determined by regex `(?<version>(?<core>(?<major>\d+)(?:\.(?<minor>\d+)(?:\.(?<patch>\d+))?)?)(?:-(?<label>.*))?)`
     - `${describe.tag.version.core}` the core version component of `${describe.tag.version}` e.g. '1.2.3' 
