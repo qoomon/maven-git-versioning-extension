@@ -807,7 +807,61 @@ class GitVersioningExtensionIT {
             Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
             assertThat(gitVersionedPomModel.getVersion()).isEqualTo(expectedVersion);
         }
+    }
 
+    @Test
+    void apply_DescribeDistanceSnapshotRelease() throws Exception {
+        // given
+        try (Git git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call()) {
+            git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+            git.tag().setName("2.0.4").call();
+
+            writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
+            writeExtensionsFile(projectDir);
+            writeExtensionConfigFile(projectDir, new Configuration() {{
+                refs.list.add(createVersionDescription(BRANCH, "${describe.tag}${describe.distance.snapshot}"));
+            }});
+
+            // When
+            Verifier verifier = getVerifier(projectDir);
+            verifier.executeGoal("verify");
+
+            // Then
+            String expectedVersion = "2.0.4";
+            Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
+            assertThat(gitVersionedPomModel.getVersion()).isEqualTo(expectedVersion);
+
+            verifier.verifyErrorFreeLog();
+            verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
+        }
+    }
+
+    @Test
+    void apply_DescribeDistanceSnapshot() throws Exception {
+        // given
+        try (Git git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call()) {
+            git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+            git.tag().setName("2.0.4").call();
+            git.commit().setMessage("commit one").setAllowEmpty(true).call();
+
+            writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
+            writeExtensionsFile(projectDir);
+            writeExtensionConfigFile(projectDir, new Configuration() {{
+                refs.list.add(createVersionDescription(BRANCH, "${describe.tag}${describe.distance.snapshot}"));
+            }});
+
+            // When
+            Verifier verifier = getVerifier(projectDir);
+            verifier.executeGoal("verify");
+
+            // Then
+            String expectedVersion = "2.0.4-SNAPSHOT";
+            Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
+            assertThat(gitVersionedPomModel.getVersion()).isEqualTo(expectedVersion);
+
+            verifier.verifyErrorFreeLog();
+            verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
+        }
     }
 
     @Test

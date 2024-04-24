@@ -80,7 +80,7 @@ public class GitVersioningModelProcessor implements ModelProcessor {
 
     // gets injected by setter, see below
     private ModelProcessor delegatedModelProcessor;
-    
+
     @Inject
     void setDelegatedModelProcessor(List<ModelProcessor> modelProcessors) {
         this.delegatedModelProcessor = modelProcessors.stream()
@@ -967,6 +967,7 @@ public class GitVersioningModelProcessor implements ModelProcessor {
 
         final Lazy<Integer> descriptionDistance = Lazy.by(() -> description.get().getDistance());
         placeholderMap.put("describe.distance", Lazy.by(() -> String.valueOf(descriptionDistance.get())));
+        placeholderMap.put("describe.distance.snapshot", Lazy.by(() -> (descriptionDistance.get() == 0 ? "" : "-SNAPSHOT")));
 
         placeholderMap.put("describe.tag.version.patch.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.patch").get(), descriptionDistance.get())));
         placeholderMap.put("describe.tag.version.patch.next.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.patch.next").get(), descriptionDistance.get())));
