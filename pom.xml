@@ -141,7 +141,7 @@
                 <configuration>
                     <goalPrefix>${project.name}</goalPrefix>
                 </configuration>
-                <version>3.12.0</version>
+                <version>3.13.1</version>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.plexus</groupId>
