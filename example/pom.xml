@@ -38,6 +38,7 @@
                 <version>3.4.1</version>
                 <executions>
                     <execution>
+                        <!-- write the version to a file, for usage as project version in other tools like 'docker build' -->
                         <id>write-version-to-file</id>
                         <phase>validate</phase>
                         <goals>

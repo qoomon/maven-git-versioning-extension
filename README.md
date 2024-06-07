@@ -195,7 +195,6 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
       </configuration>
       ```
       <br>
-
 - `${ref}` `${ref.slug}` ref name (branch or tag name or commit hash)
 - Ref Pattern Groups
     - Content of regex groups in `<ref><pattern>` can be addressed like this:
@@ -208,8 +207,13 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
             <version>${ref.feature}-SNAPSHOT</version>
         </ref>
         ```
-        <br>
-
+    - Limiting the length (max. 63 chars):
+        ```xml
+        <ref type="branch">
+          <pattern><![CDATA[(?<branchName>.{53}).*]]></pattern>
+          <version>${ref.branchName}-SNAPSHOT</version>
+        </ref>
+        ```
 - `${commit}` commit hash '0fc20459a8eceb2c4abb9bf0af45a6e8af17b94b'
 - `${commit.short}` commit hash (7 characters) e.g. '0fc2045'
 - `${commit.timestamp}` commit timestamp (epoch seconds) e.g. '1560694278'

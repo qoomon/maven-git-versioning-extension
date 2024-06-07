@@ -4,11 +4,10 @@
 
     <refs>
         <ref type="branch">
-            <pattern>.+</pattern>
-            <version>${ref}-SNAPSHOT</version>
-            <properties>
-                <foo>${ref}</foo>
-            </properties>
+            <!-- limiting the generated version, for long branch names, to 63 characters, to be compatible with k8s label names -->
+            <!-- see: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set -->
+            <pattern><![CDATA[(?<branchName>.{53}).*]]></pattern>
+            <version>${ref.branchName}-SNAPSHOT</version>
         </ref>
 
         <ref type="tag">
@@ -21,5 +20,4 @@
     <rev>
         <version>${commit}</version>
     </rev>
-
 </configuration>
