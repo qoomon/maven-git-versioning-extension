@@ -26,5 +26,5 @@ Version Setup:
 
 * branch names could be very long, so the generated will be too
 * but for example [k8s label names](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set) are limited to 63 characters
-* we use the [pattern regex](.mvn/maven-git-versioning-extension.xml#L8) to cut down the version to this limit
+* we use the [pattern regex](.mvn/maven-git-versioning-extension.xml#L9) to cut down the version to this limit
 * the version will still end with -SNAPSHOT, but the branch name will be cut down to 53 characters
