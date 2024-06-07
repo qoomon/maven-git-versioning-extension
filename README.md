@@ -210,7 +210,7 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
     - Limiting the length (max. 63 chars):
         ```xml
         <ref type="branch">
-          <pattern><![CDATA[(?<branchName>.{53}).*]]></pattern>
+          <pattern><![CDATA[(?<branchName>.{1,53}).*]]></pattern>
           <version>${ref.branchName}-SNAPSHOT</version>
         </ref>
         ```
