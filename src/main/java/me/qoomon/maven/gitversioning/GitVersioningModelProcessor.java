@@ -53,7 +53,7 @@ import static me.qoomon.gitversioning.commons.StringUtil.*;
 import static me.qoomon.maven.gitversioning.BuildProperties.projectArtifactId;
 import static me.qoomon.maven.gitversioning.GitVersioningMojo.asPlugin;
 import static me.qoomon.maven.gitversioning.MavenUtil.*;
-import static org.apache.commons.lang3.StringUtils.leftPad;
+import static org.apache.maven.shared.utils.StringUtils.leftPad;
 import static org.apache.maven.shared.utils.StringUtils.repeat;
 import static org.apache.maven.shared.utils.StringUtils.rightPad;
 import static org.apache.maven.shared.utils.logging.MessageUtils.buffer;
