@@ -20,7 +20,7 @@ This extension can virtually set project version and properties, based on curren
     * git merge conflicts
 
 #### Requirements
-* ⚠️ minimal required java version is `11`
+[* ⚠️ minimal required java version is `11`]()
 * ⚠️ minimal required maven version is `3.6.4`
 
 ## Usage
