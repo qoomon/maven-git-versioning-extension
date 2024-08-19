@@ -57,7 +57,8 @@
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-core</artifactId>
-            <version>3.9.9</version>
+            <!-- BREAKING CHANGE in https://maven.apache.org/docs/3.9.8/release-notes.html -->
+            <version>3.9.7</version>
             <scope>provided</scope>
         </dependency>
 

@@ -55,10 +55,11 @@ class GitVersioningExtensionIT {
 
         // When
         Verifier verifier = getVerifier(projectDir);
-        verifier.displayStreamBuffers();
-        verifier.executeGoal("verify");
+        verifier.addCliArgument("verify");
+        verifier.execute();
 
         // Then
+        System.err.println(String.join("\n", verifier.loadFile(verifier.getBasedir(), verifier.getLogFileName(), false)));
         verifier.verifyErrorFreeLog();
         String expectedVersion = "0.0.0";
         verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
@@ -82,12 +83,13 @@ class GitVersioningExtensionIT {
             writeExtensionConfigFile(projectDir, new Configuration());
 
             // When
-            Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath()) {{
-                addCliOption("-Dversioning.disable");
-            }};
-            verifier.executeGoal("verify");
+            Verifier verifier = getVerifier(projectDir);
+            verifier.addCliArgument("-Dversioning.disable");
+            verifier.addCliArguments("verify");
+            verifier.execute();
 
             // Then
+            System.err.println(String.join("\n", verifier.loadFile(verifier.getBasedir(), verifier.getLogFileName(), false)));
             verifier.verifyErrorFreeLog();
             verifier.verifyTextInLog("skip - versioning is disabled by command option");
             String expectedVersion = pomModel.getVersion();
@@ -109,9 +111,11 @@ class GitVersioningExtensionIT {
 
             // When
             Verifier verifier = getVerifier(projectDir);
-            verifier.executeGoal("verify");
+            verifier.addCliArgument("verify");
+            verifier.execute();
 
             // Then
+            System.err.println(String.join("\n", verifier.loadFile(verifier.getBasedir(), verifier.getLogFileName(), false)));
             verifier.verifyErrorFreeLog();
             String expectedVersion = "0000000000000000000000000000000000000000";
             verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
@@ -136,9 +140,11 @@ class GitVersioningExtensionIT {
 
             // When
             Verifier verifier = getVerifier(projectDir);
-            verifier.executeGoal("verify");
+            verifier.addCliArgument("verify");
+            verifier.execute();
 
             // Then
+            System.err.println(String.join("\n", verifier.loadFile(verifier.getBasedir(), verifier.getLogFileName(), false)));
             verifier.verifyErrorFreeLog();
             String expectedVersion = givenCommit.getName();
             verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
@@ -163,9 +169,11 @@ class GitVersioningExtensionIT {
 
             // When
             Verifier verifier = getVerifier(projectDir);
-            verifier.executeGoal("verify");
+            verifier.addCliArgument("verify");
+            verifier.execute();
 
             // Then
+            System.err.println(String.join("\n", verifier.loadFile(verifier.getBasedir(), verifier.getLogFileName(), false)));
             verifier.verifyErrorFreeLog();
             String expectedVersion = "feature-test-gitVersioning";
             verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
@@ -193,9 +201,11 @@ class GitVersioningExtensionIT {
 
             // When
             Verifier verifier = getVerifier(projectDir);
-            verifier.executeGoal("verify");
+            verifier.addCliArgument("verify");
+            verifier.execute();
 
             // Then
+            System.err.println(String.join("\n", verifier.loadFile(verifier.getBasedir(), verifier.getLogFileName(), false)));
             verifier.verifyErrorFreeLog();
             String expectedVersion = "v1.0.0-gitVersioning";
             verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
@@ -224,9 +234,11 @@ class GitVersioningExtensionIT {
 
             // When
             Verifier verifier = getVerifier(projectDir);
-            verifier.executeGoal("verify");
+            verifier.addCliArgument("verify");
+            verifier.execute();
 
             // Then
+            System.err.println(String.join("\n", verifier.loadFile(verifier.getBasedir(), verifier.getLogFileName(), false)));
             verifier.verifyErrorFreeLog();
             String expectedVersion = "v1.0.0-gitVersioning";
             verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
@@ -255,9 +267,11 @@ class GitVersioningExtensionIT {
 
             // When
             Verifier verifier = getVerifier(projectDir);
-            verifier.executeGoal("verify");
+            verifier.addCliArgument("verify");
+            verifier.execute();
 
             // Then
+            System.err.println(String.join("\n", verifier.loadFile(verifier.getBasedir(), verifier.getLogFileName(), false)));
             verifier.verifyErrorFreeLog();
             String expectedVersion = "v1.0.0-gitVersioning";
             verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
@@ -285,9 +299,11 @@ class GitVersioningExtensionIT {
 
             // When
             Verifier verifier = getVerifier(projectDir);
-            verifier.executeGoal("verify");
+            verifier.addCliArgument("verify");
+            verifier.execute();
 
             // Then
+            System.err.println(String.join("\n", verifier.loadFile(verifier.getBasedir(), verifier.getLogFileName(), false)));
             verifier.verifyErrorFreeLog();
             String expectedVersion = "master-gitVersioning";
             verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
@@ -315,9 +331,11 @@ class GitVersioningExtensionIT {
             Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath()) {{
                 setEnvironmentVariable("VERSIONING_GIT_BRANCH", "v1.0.0");
             }};
-            verifier.executeGoal("verify");
+            verifier.addCliArgument("verify");
+            verifier.execute();
 
             // Then
+            System.err.println(String.join("\n", verifier.loadFile(verifier.getBasedir(), verifier.getLogFileName(), false)));
             verifier.verifyErrorFreeLog();
             String expectedVersion = "v1.0.0-gitVersioning";
             verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
@@ -380,9 +398,11 @@ class GitVersioningExtensionIT {
 
             // When
             Verifier verifier = getVerifier(projectDir);
-            verifier.executeGoal("verify");
+            verifier.addCliArgument("verify");
+            verifier.execute();
 
             // Then
+            System.err.println(String.join("\n", verifier.loadFile(verifier.getBasedir(), verifier.getLogFileName(), false)));
             verifier.verifyErrorFreeLog();
             String expectedVersion = "master-SNAPSHOT";
             verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
@@ -439,9 +459,11 @@ class GitVersioningExtensionIT {
 
             // When
             Verifier verifier = getVerifier(projectDir);
-            verifier.executeGoal("verify");
+            verifier.addCliArgument("verify");
+            verifier.execute();
 
             // Then
+            System.err.println(String.join("\n", verifier.loadFile(verifier.getBasedir(), verifier.getLogFileName(), false)));
             verifier.verifyErrorFreeLog();
             String expectedVersion = "master-SNAPSHOT";
             verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
@@ -483,9 +505,11 @@ class GitVersioningExtensionIT {
 
             // When
             Verifier verifier = getVerifier(logicProjectDir);
-            verifier.executeGoal("verify");
+            verifier.addCliArgument("verify");
+            verifier.execute();
 
             // Then
+            System.err.println(String.join("\n", verifier.loadFile(verifier.getBasedir(), verifier.getLogFileName(), false)));
             verifier.verifyErrorFreeLog();
             String expectedVersion = "feature-test-gitVersioning";
             verifier.verifyTextInLog("Building " + logicPomModel.getArtifactId() + " " + expectedVersion);
@@ -539,9 +563,11 @@ class GitVersioningExtensionIT {
 
             // When
             Verifier verifier = getVerifier(projectDir);
-            verifier.executeGoal("verify");
+            verifier.addCliArgument("verify");
+            verifier.execute();
 
             // Then
+            System.err.println(String.join("\n", verifier.loadFile(verifier.getBasedir(), verifier.getLogFileName(), false)));
             verifier.verifyErrorFreeLog();
             String expectedVersion = "feature-test-gitVersioning";
             verifier.verifyTextInLog("Building " + logicPomModel.getArtifactId() + " " + expectedVersion);
@@ -593,9 +619,11 @@ class GitVersioningExtensionIT {
 
             // When
             Verifier verifier = getVerifier(logicProjectDir);
-            verifier.executeGoal("verify");
+            verifier.addCliArgument("verify");
+            verifier.execute();
 
             // Then
+            System.err.println(String.join("\n", verifier.loadFile(verifier.getBasedir(), verifier.getLogFileName(), false)));
             verifier.verifyErrorFreeLog();
             String expectedVersion = "feature-test-gitVersioning";
             verifier.verifyTextInLog("Building " + logicPomModel.getArtifactId() + " " + expectedVersion);
@@ -651,9 +679,11 @@ class GitVersioningExtensionIT {
 
             // When
             Verifier verifier = getVerifier(projectDir);
-            verifier.executeGoal("verify");
+            verifier.addCliArgument("verify");
+            verifier.execute();
 
             // Then
+            System.err.println(String.join("\n", verifier.loadFile(verifier.getBasedir(), verifier.getLogFileName(), false)));
             verifier.verifyErrorFreeLog();
             String expectedVersion = "test-gitVersioning";
             verifier.verifyTextInLog("Building " + logicPomModel.getArtifactId() + " " + expectedVersion);
@@ -683,9 +713,11 @@ class GitVersioningExtensionIT {
 
             // When
             Verifier verifier = getVerifier(projectDir);
-            verifier.executeGoal("verify");
+            verifier.addCliArgument("verify");
+            verifier.execute();
 
             // Then
+            System.err.println(String.join("\n", verifier.loadFile(verifier.getBasedir(), verifier.getLogFileName(), false)));
             verifier.verifyErrorFreeLog();
             String expectedVersion = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + "-gitVersioning";
             verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
@@ -708,9 +740,11 @@ class GitVersioningExtensionIT {
 
             // When
             Verifier verifier = getVerifier(projectDir);
-            verifier.executeGoal("verify");
+            verifier.addCliArgument("verify");
+            verifier.execute();
 
             // Then
+            System.err.println(String.join("\n", verifier.loadFile(verifier.getBasedir(), verifier.getLogFileName(), false)));
             verifier.verifyErrorFreeLog();
             String expectedVersion = "0";
             verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
@@ -719,7 +753,7 @@ class GitVersioningExtensionIT {
             assertThat(gitVersionedPomModel.getVersion()).isEqualTo(expectedVersion);
         }
 
-     }
+    }
 
     @Test
     void apply_singleCommitUntaggedRepoGivesExpectedPlusDistanceResult() throws Exception {
@@ -735,9 +769,11 @@ class GitVersioningExtensionIT {
 
             // When
             Verifier verifier = getVerifier(projectDir);
-            verifier.executeGoal("verify");
+            verifier.addCliArgument("verify");
+            verifier.execute();
 
             // Then
+            System.err.println(String.join("\n", verifier.loadFile(verifier.getBasedir(), verifier.getLogFileName(), false)));
             verifier.verifyErrorFreeLog();
             String expectedVersion = "1";
             verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
@@ -746,7 +782,7 @@ class GitVersioningExtensionIT {
             assertThat(gitVersionedPomModel.getVersion()).isEqualTo(expectedVersion);
         }
 
-     }
+    }
 
     @Test
     void apply_NoCommitsSinceLastTagGivesExpectedPlusDistanceResult() throws Exception {
@@ -765,9 +801,11 @@ class GitVersioningExtensionIT {
 
             // When
             Verifier verifier = getVerifier(projectDir);
-            verifier.executeGoal("verify");
+            verifier.addCliArgument("verify");
+            verifier.execute();
 
             // Then
+            System.err.println(String.join("\n", verifier.loadFile(verifier.getBasedir(), verifier.getLogFileName(), false)));
             verifier.verifyErrorFreeLog();
             String expectedVersion = "677";
             verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
@@ -776,7 +814,7 @@ class GitVersioningExtensionIT {
             assertThat(gitVersionedPomModel.getVersion()).isEqualTo(expectedVersion);
         }
 
-     }
+    }
 
     @Test
     void apply_TwoCommitsSinceLastTagGivesExpectedPlusDistanceResult() throws Exception {
@@ -797,9 +835,11 @@ class GitVersioningExtensionIT {
 
             // When
             Verifier verifier = getVerifier(projectDir);
-            verifier.executeGoal("verify");
+            verifier.addCliArgument("verify");
+            verifier.execute();
 
             // Then
+            System.err.println(String.join("\n", verifier.loadFile(verifier.getBasedir(), verifier.getLogFileName(), false)));
             verifier.verifyErrorFreeLog();
             String expectedVersion = "679";
             verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
@@ -824,9 +864,11 @@ class GitVersioningExtensionIT {
 
             // When
             Verifier verifier = getVerifier(projectDir);
-            verifier.executeGoal("verify");
+            verifier.addCliArgument("verify");
+            verifier.execute();
 
             // Then
+            System.err.println(String.join("\n", verifier.loadFile(verifier.getBasedir(), verifier.getLogFileName(), false)));
             String expectedVersion = "2.0.4";
             Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
             assertThat(gitVersionedPomModel.getVersion()).isEqualTo(expectedVersion);
@@ -852,9 +894,11 @@ class GitVersioningExtensionIT {
 
             // When
             Verifier verifier = getVerifier(projectDir);
-            verifier.executeGoal("verify");
+            verifier.addCliArgument("verify");
+            verifier.execute();
 
             // Then
+            System.err.println(String.join("\n", verifier.loadFile(verifier.getBasedir(), verifier.getLogFileName(), false)));
             String expectedVersion = "2.0.4-SNAPSHOT";
             Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
             assertThat(gitVersionedPomModel.getVersion()).isEqualTo(expectedVersion);
@@ -900,9 +944,11 @@ class GitVersioningExtensionIT {
 
             // When
             Verifier verifier = getVerifier(projectDir);
-            verifier.executeGoal("verify");
+            verifier.addCliArgument("verify");
+            verifier.execute();
 
             // Then
+            System.err.println(String.join("\n", verifier.loadFile(verifier.getBasedir(), verifier.getLogFileName(), false)));
             verifier.verifyErrorFreeLog();
             String expectedVersion = firstParent ? tagOnMaster : tagOnBranch;
             verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
@@ -929,9 +975,11 @@ class GitVersioningExtensionIT {
 
             // When
             Verifier verifier = getVerifier(projectDir);
-            verifier.executeGoal("verify");
+            verifier.addCliArgument("verify");
+            verifier.execute();
 
             // Then
+            System.err.println(String.join("\n", verifier.loadFile(verifier.getBasedir(), verifier.getLogFileName(), false)));
             verifier.verifyErrorFreeLog();
             String expectedVersion = "label";
             verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
