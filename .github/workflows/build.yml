@@ -3,9 +3,10 @@ on: [push]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
+    env:
+      MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
+      MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version"
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-java@v4
@@ -23,6 +24,4 @@ jobs:
         mvn ${MAVEN_CLI_OPTS} install -DskipTests
         mvn ${MAVEN_CLI_OPTS} failsafe:integration-test failsafe:verify
     
-    env:
-      MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
-      MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version"
+    
