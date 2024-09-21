@@ -966,14 +966,9 @@ public class GitVersioningModelProcessor implements ModelProcessor {
         placeholderMap.put("describe.tag.version.label.next", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.label").get(), 1)));
 
         final Lazy<Integer> descriptionDistance = Lazy.by(() -> description.get().getDistance());
-        placeholderMap.put("describe.distance", Lazy.by(() -> String.valueOf(descriptionDistance.get())));
-        placeholderMap.put("describe.distance.snapshot", Lazy.by(() -> (descriptionDistance.get() == 0 ? "" : "-SNAPSHOT")));
-
-        placeholderMap.put("describe.tag.version.patch.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.patch").get(), descriptionDistance.get())));
-        placeholderMap.put("describe.tag.version.patch.next.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.patch.next").get(), descriptionDistance.get())));
-
-        placeholderMap.put("describe.tag.version.label.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.label").get(), descriptionDistance.get())));
-        placeholderMap.put("describe.tag.version.label.next.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.label.next").get(), descriptionDistance.get())));
+        setDescribeDistancePlaceholders(placeholderMap, descriptionDistance, "distance");
+        final Lazy<Integer> descriptionDistanceOrZero = Lazy.by(() -> description.get().getDistanceOrZero());
+        setDescribeDistancePlaceholders(placeholderMap, descriptionDistanceOrZero, "distanceOrZero");
 
         // describe tag pattern groups
         final Lazy<Map<String, String>> describeTagPatternValues = Lazy.by(
@@ -1000,6 +995,17 @@ public class GitVersioningModelProcessor implements ModelProcessor {
         System.getenv().forEach((key, value) -> placeholderMap.put("env." + key, () -> value));
 
         return placeholderMap;
+    }
+
+    private static void setDescribeDistancePlaceholders(Map<String, Supplier<String>> placeholderMap, Lazy<Integer> descriptionDistance, String distanceName) {
+        placeholderMap.put("describe." + distanceName, Lazy.by(() -> String.valueOf(descriptionDistance.get())));
+        placeholderMap.put("describe." + distanceName + ".snapshot", Lazy.by(() -> (descriptionDistance.get() == 0 ? "" : "-SNAPSHOT")));
+
+        placeholderMap.put("describe.tag.version.patch.plus.describe." + distanceName, Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.patch").get(), descriptionDistance.get())));
+        placeholderMap.put("describe.tag.version.patch.next.plus.describe." + distanceName, Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.patch.next").get(), descriptionDistance.get())));
+
+        placeholderMap.put("describe.tag.version.label.plus.describe." + distanceName, Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.label").get(), descriptionDistance.get())));
+        placeholderMap.put("describe.tag.version.label.next.plus.describe." + distanceName, Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.label.next").get(), descriptionDistance.get())));
     }
 
     private Matcher matchVersion(String input) {

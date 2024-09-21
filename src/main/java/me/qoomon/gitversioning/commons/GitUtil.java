@@ -53,7 +53,7 @@ public final class GitUtil {
     public static GitDescription describe(ObjectId revObjectId, Pattern tagPattern, Repository repository, boolean firstParent) throws IOException {
         Repository commonRepository = worktreesFix_getCommonRepository(repository);
         if (revObjectId == null) {
-            return new GitDescription(NO_COMMIT, "root", 0);
+            return new GitDescription(NO_COMMIT, "root", 0, false);
         }
 
         Map<ObjectId, List<String>> objectIdListMap = reverseTagRefMap(repository);
@@ -72,7 +72,7 @@ public final class GitUtil {
                         .findFirst();
 
                 if (matchingTag.isPresent()) {
-                    return new GitDescription(revObjectId.getName(), matchingTag.get(), depth);
+                    return new GitDescription(revObjectId.getName(), matchingTag.get(), depth, true);
                 }
                 depth++;
             }
@@ -81,7 +81,7 @@ public final class GitUtil {
                 throw new IllegalStateException("couldn't find matching tag in shallow git repository");
             }
 
-            return new GitDescription(revObjectId.getName(), "root", depth);
+            return new GitDescription(revObjectId.getName(), "root", depth, false);
         }
     }
 

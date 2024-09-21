@@ -1,6 +1,7 @@
 package me.qoomon.gitversioning.commons;
 
 
+import org.assertj.core.api.SoftAssertions;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -16,6 +17,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.SoftAssertions.assertSoftly;
 import static org.eclipse.jgit.lib.Constants.HEAD;
 import static org.eclipse.jgit.lib.Constants.MASTER;
 
@@ -192,9 +194,24 @@ class GitUtilTest {
         // then
         assertThat(description).satisfies(it -> {
             assertThat(it.getCommit()).isEqualTo(givenCommit.getName());
-            assertThat(it.getDistance()).isEqualTo(0);
+            assertThat(it.getDistance()).isZero();
+            assertThat(it.getDistanceOrZero()).isZero();
             assertThat(it.getTag()).isEqualTo(givenTagName);
         });
     }
 
+    @Test
+    void distanceOrZeroIsZeroWhenNoTagMatches() throws Exception {
+        // given
+        Git git = Git.init().setInitialBranch(MASTER).setDirectory(tempDir.toFile()).call();
+
+        final var softly = new SoftAssertions();
+        for (int i = 0; i < 3; ++i) {
+            GitDescription description = GitUtil.describe(head(git), Pattern.compile("v.+"), git.getRepository(), true);
+            softly.assertThat(description.getDistanceOrZero()).isZero();
+            softly.assertThat(description.getDistance()).isEqualTo(i);
+            git.commit().setMessage("commit " + (i + 1)).setAllowEmpty(true).call();
+        }
+        softly.assertAll();
+    }
 }
