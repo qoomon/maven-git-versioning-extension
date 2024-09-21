@@ -3,19 +3,13 @@ package me.qoomon.gitversioning.commons;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Repository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.function.Supplier;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static java.time.Instant.EPOCH;
@@ -26,9 +20,6 @@ import static java.util.stream.Collectors.toList;
 import static me.qoomon.gitversioning.commons.GitUtil.*;
 
 public class GitSituation {
-
-    private static final Pattern PATTERN_PLACEHOLDERS_EXPRESSION = Pattern.compile("\\{\\{((?!describe\\.?)[^}]+)\\}\\}");
-    private final Logger logger = LoggerFactory.getLogger(GitSituation.class);
 
     private final Repository repository;
     private final File rootDirectory;
@@ -43,7 +34,7 @@ public class GitSituation {
 
     private Supplier<Pattern> describeTagPattern = Lazy.by(() -> Pattern.compile(".*"));
 
-    private Set<String> decribeTagPatternGroups = Collections.emptySet();
+    private String rawDescribeTagPattern = ".*";
 
     private boolean firstParent = true;
 
@@ -132,37 +123,24 @@ public class GitSituation {
         return clean.get();
     }
 
-    public void setDescribeTagPattern(String describeTagPattern, Supplier<Map<String, Supplier<String>>> placeholderMapSupplier) {
-        final String rawPattern = requireNonNull(describeTagPattern);
-        this.describeTagPattern = preProcessDescribeTagPattern(rawPattern, placeholderMapSupplier);
+    /**
+     * Returns the describeTagPattern as set in config. It may contain placeholders delimited by <code>{{}}</code>,
+     * e.g. <code>{{ref.myCaptureGroupFromRef}}</code>. In order to get placeholder resolved,
+     * {@link GitSituation#getDescribeTagPattern()} should be used.
+     *
+     * @return the raw expressing for describe tag pattern
+     */
+    public String getRawDescribeTagPattern() {
+        return rawDescribeTagPattern;
+    }
+
+    public void setRawDescribeTagPattern(String rawDescribeTagPattern) {
+        this.rawDescribeTagPattern = requireNonNull(rawDescribeTagPattern);
+    }
+
+    public void setDescribeTagPattern(Supplier<Pattern> describeTagPattern) {
+        this.describeTagPattern = requireNonNull(describeTagPattern);
         this.description = Lazy.by(this::describe);
-    }
-
-    private Supplier<Pattern> preProcessDescribeTagPattern(String describeTagPattern, Supplier<Map<String, Supplier<String>>> placeholderMapSupplier) {
-        final Matcher placeHolderMatcher = PATTERN_PLACEHOLDERS_EXPRESSION.matcher(describeTagPattern);
-        final String placeHolderStrippedPattern = placeHolderMatcher.replaceAll("");
-        decribeTagPatternGroups = StringUtil.patternGroups(Pattern.compile(placeHolderStrippedPattern));
-        return Lazy.by(() -> {
-            placeHolderMatcher.reset();
-            final StringBuffer sb = new StringBuffer();
-            while (placeHolderMatcher.find()) {
-                final String capture = placeHolderMatcher.group(1);
-                if (placeholderMapSupplier.get().containsKey(capture)) {
-                    final String value = placeholderMapSupplier.get().get(capture).get();
-                    placeHolderMatcher.appendReplacement(sb, value);
-                }
-            }
-            placeHolderMatcher.appendTail(sb);
-            final String pattern = sb.toString();
-            if (!describeTagPattern.equals(pattern)) {
-                logger.info("Computed pattern '{}' from describeTagPattern '{}'", pattern, describeTagPattern);
-            }
-            return Pattern.compile(pattern);
-        });
-    }
-
-    public Set<String> getDescribeTagPatternGroups() {
-        return decribeTagPatternGroups;
     }
 
     public Pattern getDescribeTagPattern() {
