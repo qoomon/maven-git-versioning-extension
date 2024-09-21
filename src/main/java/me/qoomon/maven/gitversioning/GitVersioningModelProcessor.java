@@ -225,12 +225,15 @@ public class GitVersioningModelProcessor implements ModelProcessor {
             return;
         }
 
+        final Supplier<Map<String, Supplier<String>>> placeholderMapSupplier =
+                Lazy.by(() -> generateGlobalFormatPlaceholderMap(gitSituation, gitVersionDetails, mavenSession));
+
         logger.info("matching ref: {} - {}", gitVersionDetails.getRefType().name(), gitVersionDetails.getRefName());
         final RefPatchDescription patchDescription = gitVersionDetails.getPatchDescription();
         logger.info("ref configuration: {} - pattern: {}", gitVersionDetails.getRefType().name(), patchDescription.pattern);
         if (patchDescription.describeTagPattern != null && !patchDescription.describeTagPattern.equals(".*")) {
             logger.info("  describeTagPattern: {}", patchDescription.describeTagPattern);
-            gitSituation.setDescribeTagPattern(patchDescription.describeTagPattern());
+            gitSituation.setDescribeTagPattern(patchDescription.describeTagPattern, placeholderMapSupplier);
         }
         if (patchDescription.describeTagFirstParent != null) {
             logger.info("  describeTagFirstParent: {}", patchDescription.describeTagFirstParent);
@@ -244,7 +247,7 @@ public class GitVersioningModelProcessor implements ModelProcessor {
             patchDescription.properties.forEach((key, value) -> logger.info("    {} - {}", key, value));
         }
 
-        globalFormatPlaceholderMap = generateGlobalFormatPlaceholderMap(gitSituation, gitVersionDetails, mavenSession);
+        globalFormatPlaceholderMap = placeholderMapSupplier.get();
 
         if (!patchDescription.userProperties.isEmpty()) {
             logger.info("  userProperties: ");
@@ -978,7 +981,7 @@ public class GitVersioningModelProcessor implements ModelProcessor {
         // describe tag pattern groups
         final Lazy<Map<String, String>> describeTagPatternValues = Lazy.by(
                 () -> patternGroupValues(gitSituation.getDescribeTagPattern(), descriptionTag.get()));
-        for (String groupName : patternGroups(gitSituation.getDescribeTagPattern())) {
+        for (String groupName : gitSituation.getDescribeTagPatternGroups()) {
             final var placeholderKey = "describe.tag." + groupName;
             // ensure no placeholder overwrites
             if (placeholderMap.containsKey(placeholderKey)) {

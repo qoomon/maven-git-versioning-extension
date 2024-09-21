@@ -216,6 +216,61 @@ class GitVersioningExtensionIT {
     }
 
     @Test
+    void tagVersioning_atBranch_extendedTagDescriptionFromSituation() throws Exception {
+
+        try (Git git = Git.init().setInitialBranch("master").setDirectory(projectDir.toFile()).call()) {
+            // Given
+            git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+            git.tag().setAnnotated(true).setName("v1.0.0").call();
+
+            git.checkout().setName("release/2.3").setCreateBranch(true).call();
+            git.commit().setMessage("release commit").setAllowEmpty(true).call();
+
+            writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
+            writeExtensionsFile(projectDir);
+
+            final RefPatchDescription tagRef = createVersionDescription(TAG, "${ref.version}");
+            tagRef.pattern = "v(?<version>\\d+\\.\\d+\\.\\d+(?<preRelease>-(?:alpha|beta|rc)\\.\\d+)?)";
+
+            final RefPatchDescription releaseBranchRef = createVersionDescription(BRANCH, "${ref.major}.${ref.minor}.0-rc.${describe.distance}-SNAPSHOT");
+            releaseBranchRef.pattern = "release/(?<major>\\d+)\\.(?<minor>\\d+)(?:\\.x)?";
+            releaseBranchRef.describeTagPattern = "\\Qrelease-marker-{{ref.major}}.{{ref.minor}}\\E";
+
+            writeExtensionConfigFile(projectDir, new Configuration() {{
+                refs.considerTagsOnBranches = true;
+                refs.list.add(tagRef);
+                refs.list.add(releaseBranchRef);
+            }});
+
+            verifyOutputVersion("2.3.0-rc.2-SNAPSHOT");
+
+            // When
+            git.tag().setAnnotated(true).setName("release-marker-2.3").call();
+            git.commit().setMessage("new commit on release branch commit").setAllowEmpty(true).call();
+
+            //Then
+            verifyOutputVersion("2.3.0-rc.1-SNAPSHOT");
+
+            // When
+            git.commit().setMessage("another commit on release branch commit").setAllowEmpty(true).call();
+
+            //Then
+            verifyOutputVersion("2.3.0-rc.2-SNAPSHOT");
+        }
+    }
+
+    private void verifyOutputVersion(final String outputVersion) throws VerificationException, IOException {
+        Verifier verifier = getVerifier(projectDir);
+        verifier.addCliArgument("verify");
+        verifier.execute();
+        System.err.println(String.join("\n", verifier.loadFile(verifier.getBasedir(), verifier.getLogFileName(), false)));
+        verifier.verifyErrorFreeLog();
+        verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + outputVersion);
+        Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
+        assertThat(gitVersionedPomModel.getVersion()).isEqualTo(outputVersion);
+    }
+
+    @Test
     void tagVersioning_detachedHead() throws Exception {
 
         try (Git git = Git.init().setInitialBranch("master").setDirectory(projectDir.toFile()).call()) {
