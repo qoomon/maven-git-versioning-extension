@@ -86,7 +86,7 @@ class StringUtilTest {
     }
 
     @Test
-    void substituteText_function_slug() {
+    void substituteText_function_combination_slug_uppercase() {
 
         // Given
         String givenText = "${foo:+a/b:slug:uppercase}";
@@ -116,18 +116,18 @@ class StringUtilTest {
     }
 
     @Test
-    void substituteText_function_slugword() {
+    void substituteText_function_slug() {
 
         // Given
         String givenText = "${foo:slug}";
         Map<String, Supplier<String>> givenSubstitutionMap = new HashMap<>();
-        givenSubstitutionMap.put("foo", () -> "PR-56+/ii");
+        givenSubstitutionMap.put("foo", () -> "PR-56+/ii_7");
 
         // When
         String outputText = StringUtil.substituteText(givenText, givenSubstitutionMap);
 
         // Then
-        assertThat(outputText).isEqualTo("PR-56-ii");
+        assertThat(outputText).isEqualTo("PR-56-ii_7");
     }
 
     @Test
@@ -136,13 +136,43 @@ class StringUtilTest {
         // Given
         String givenText = "${foo:slug+dot}";
         Map<String, Supplier<String>> givenSubstitutionMap = new HashMap<>();
-        givenSubstitutionMap.put("foo", () -> "release/2.5");
+        givenSubstitutionMap.put("foo", () -> "my-release/2.5");
 
         // When
         String outputText = StringUtil.substituteText(givenText, givenSubstitutionMap);
 
         // Then
-        assertThat(outputText).isEqualTo("release-2.5");
+        assertThat(outputText).isEqualTo("my-release-2.5");
+    }
+
+    @Test
+    void substituteText_function_slug_hyphen() {
+
+        // Given
+        String givenText = "${foo:slug+hyphen}";
+        Map<String, Supplier<String>> givenSubstitutionMap = new HashMap<>();
+        givenSubstitutionMap.put("foo", () -> "my_release/2.5");
+
+        // When
+        String outputText = StringUtil.substituteText(givenText, givenSubstitutionMap);
+
+        // Then
+        assertThat(outputText).isEqualTo("my-release-2-5");
+    }
+
+    @Test
+    void substituteText_function_slug_hyphen_dot() {
+
+        // Given
+        String givenText = "${foo:slug+hyphen+dot}";
+        Map<String, Supplier<String>> givenSubstitutionMap = new HashMap<>();
+        givenSubstitutionMap.put("foo", () -> "my_release/2.5");
+
+        // When
+        String outputText = StringUtil.substituteText(givenText, givenSubstitutionMap);
+
+        // Then
+        assertThat(outputText).isEqualTo("my-release-2.5");
     }
 
     @Test

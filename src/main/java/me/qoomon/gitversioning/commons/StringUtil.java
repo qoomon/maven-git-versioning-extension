@@ -22,6 +22,8 @@ public final class StringUtil {
         final Map<String, UnaryOperator<String>> functions = new HashMap<>();
         functions.put("slug", str -> str.replaceAll("[^\\w-]+", "-").replaceAll("-{2,}", "-"));
         functions.put("slug+dot", str -> str.replaceAll("[^\\w.-]+", "-").replaceAll("-{2,}", "-"));
+        functions.put("slug+hyphen", str -> str.replaceAll("[^a-zA-Z0-9-]+", "-").replaceAll("-{2,}", "-"));
+        functions.put("slug+hyphen+dot", str -> str.replaceAll("[^a-zA-Z0-9.-]+", "-").replaceAll("-{2,}", "-"));
         functions.put("next", StringUtil::next);
         functions.put("incrementlast", StringUtil::incrementLast);
         functions.put("uppercase", str -> str.toUpperCase(Locale.ROOT));

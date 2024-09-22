@@ -177,6 +177,8 @@ Defined functions:
 - `slug`: replaces all sequences of characters that are not alphanumeric or underscore or hyphen with and hyphen and
   eliminate duplicated hyphens from the value.
 - `slug+dot`: does the same thing as `slug` but does not replace `.` characters.
+- `slug+hyphen`: does the same thing as `slug` but replaces also `_` with `-`.
+- `slug+hyphen+dot`: does the same thing as `slug+hyphen` but does not replace `.` characters.
 - `word`: does the same thing as `slug` but replaces `-` and all non-alphanumeric characters with `_`.
 - `word+dot`: does the same thing as `word` but does not replace `.` characters.
 - `uppercase`: transform the value to uppercase.
