@@ -3,6 +3,7 @@ package me.qoomon.gitversioning.commons;
 
 import org.assertj.core.api.SoftAssertions;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.MergeCommand;
 import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.ObjectId;
@@ -203,13 +204,14 @@ class GitUtilTest {
     void distanceOrZeroIsZeroWhenNoTagMatches() throws Exception {
         // given
         Git git = Git.init().setInitialBranch(MASTER).setDirectory(tempDir.toFile()).call();
+        git.commit().setMessage("initial commit").setAllowEmpty(true).call();
 
         final var softly = new SoftAssertions();
         for (int i = 0; i < 3; ++i) {
             GitDescription description = GitUtil.describe(head(git), Pattern.compile("v.+"), git.getRepository(), true, -1);
-            softly.assertThat(description.isTagFound()).isFalse();
-            softly.assertThat(description.getDistanceOrZero()).isZero();
-            softly.assertThat(description.getDistance()).isEqualTo(i);
+            softly.assertThat(description.isTagFound()).as("isTagFound " + i).isFalse();
+            softly.assertThat(description.getDistanceOrZero()).as("distanceOrZero " + i).isZero();
+            softly.assertThat(description.getDistance()).as("distance " + i).isEqualTo(i);
             git.commit().setMessage("commit " + (i + 1)).setAllowEmpty(true).call();
         }
         softly.assertAll();
@@ -226,11 +228,51 @@ class GitUtilTest {
         final SoftAssertions softly = new SoftAssertions();
         for (int i = 0; i < 6; ++i) {
             GitDescription description = GitUtil.describe(head(git), Pattern.compile("v.+"), git.getRepository(), true, maxDepth);
-            softly.assertThat(description.isTagFound()).as("distanceOrZero " + i).isEqualTo(i < maxDepth);
-            softly.assertThat(description.getDistanceOrZero()).as("distanceOrZero " + i).isEqualTo(i >= maxDepth ? 0 : i);
+            softly.assertThat(description.isTagFound()).as("distanceOrZero " + i).isEqualTo(i <= maxDepth);
+            softly.assertThat(description.getDistanceOrZero()).as("distanceOrZero " + i).isEqualTo(i > maxDepth ? 0 : i);
             softly.assertThat(description.getDistance()).as("distance " + i).isEqualTo(Math.min(i, maxDepth));
             git.commit().setMessage("commit " + (i + 1)).setAllowEmpty(true).call();
         }
+        softly.assertAll();
+    }
+
+    @Test
+    void distanceWithManyParents() throws Exception {
+        // give
+        Git git = Git.init().setInitialBranch("A").setDirectory(tempDir.toFile()).call();
+        final RevCommit firstCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+        git.tag().setName("v1.0.0").setAnnotated(true).setObjectId(firstCommit).setMessage(".").call();
+        final RevCommit commitBranchAWithTag = git.commit().setMessage("commit branch 1 with tag").setAllowEmpty(true).call();
+        git.tag().setName("v1.1.0").setAnnotated(true).setObjectId(commitBranchAWithTag).setMessage(".").call();
+        for (int i = 0; i < 10; ++i) {
+            git.commit().setMessage("commit branch A " + (i + 1)).setAllowEmpty(true).call();
+        }
+
+        git.checkout().setCreateBranch(true).setName("B").setStartPoint(firstCommit).call();
+        final RevCommit commitBranchBWithTag = git.commit().setMessage("commit branch B with tag").setAllowEmpty(true).call();
+        git.tag().setName("v1.2.0").setAnnotated(true).setObjectId(commitBranchBWithTag).setMessage(".").call();
+        for (int i = 0; i < 5; ++i) {
+            git.commit().setMessage("commit branch B " + (i + 1)).setAllowEmpty(true).call();
+        }
+        git.merge().include(git.getRepository().resolve("A")).setFastForward(MergeCommand.FastForwardMode.NO_FF).call();
+
+        // When
+        GitDescription description10 = GitUtil.describe(head(git), Pattern.compile(Pattern.quote("v1.0.0")), git.getRepository(), false, null);
+        GitDescription description11 = GitUtil.describe(head(git), Pattern.compile(Pattern.quote("v1.1.0")), git.getRepository(), false, -1);
+        GitDescription description12 = GitUtil.describe(head(git), Pattern.compile(Pattern.quote("v1.2.0")), git.getRepository(), false, -1);
+        final int maxDepth = 8;
+        GitDescription description10Depth = GitUtil.describe(head(git), Pattern.compile(Pattern.quote("v1.0.0")), git.getRepository(), false, maxDepth);
+        GitDescription description11Depth = GitUtil.describe(head(git), Pattern.compile(Pattern.quote("v1.1.0")), git.getRepository(), false, maxDepth);
+        GitDescription description12Depth = GitUtil.describe(head(git), Pattern.compile(Pattern.quote("v1.2.0")), git.getRepository(), false, maxDepth);
+
+        // Then
+        final SoftAssertions softly = new SoftAssertions();
+        softly.assertThat(description10.getDistance()).as("v1.0.0 distance").isEqualTo(7);
+        softly.assertThat(description11.getDistance()).as("v1.1.0 distance").isEqualTo(11);
+        softly.assertThat(description12.getDistance()).as("v1.2.0 distance").isEqualTo(6);
+        softly.assertThat(description10Depth.getDistance()).as("v1.0.0 distance with depth").isEqualTo(7);
+        softly.assertThat(description11Depth.getDistance()).as("v1.1.0 distance with depth").isEqualTo(8);
+        softly.assertThat(description12Depth.getDistance()).as("v1.2.0 distance with depth").isEqualTo(6);
         softly.assertAll();
     }
 }
