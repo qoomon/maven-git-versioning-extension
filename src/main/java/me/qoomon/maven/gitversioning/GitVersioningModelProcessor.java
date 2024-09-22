@@ -1095,9 +1095,8 @@ public class GitVersioningModelProcessor implements ModelProcessor {
     }
 
     private Supplier<Pattern> preProcessDescribeTagPattern(String describeTagPattern, Supplier<Map<String, Supplier<String>>> placeholderMapSupplier) {
-        final Matcher placeHolderMatcher = PATTERN_PLACEHOLDERS_EXPRESSION.matcher(describeTagPattern);
         return Lazy.by(() -> {
-            placeHolderMatcher.reset();
+            final Matcher placeHolderMatcher = PATTERN_PLACEHOLDERS_EXPRESSION.matcher(describeTagPattern);
             final StringBuilder sb = new StringBuilder();
             while (placeHolderMatcher.find()) {
                 final String capture = placeHolderMatcher.group(1);
