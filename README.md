@@ -160,7 +160,30 @@ You can configure the version and properties adjustments for specific branches a
 e.g `${env.BUILD_NUMBER:-0}` or `${env.BUILD_NUMBER:-local}`
 
 ℹ define placeholder overwrite value (placeholder is defined) like this `${name:+OVERWRITE_VALUE}`<br>
-e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
+e.g `${dirty:+-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
+
+ℹ placeholder default values and overwrite values containing the `:` character can escape it by doubling it
+in case the value matches with a function name. For example, `${env.VAR:-hello::slug}` resolves to `hello:slug`
+if `env.VAR` is not defined.
+
+###### Placeholders functions
+Placeholders can contain functions with the form: `${key:functionname}` where the function `functionname` is applied to
+the value referenced by `key`.
+
+They can be combined with format placeholders and combined, e.g. `${key:-abc/def/42:slug:uppercase:next}` will give
+`ABD-DEF-43` if key is absent.
+
+Defined functions:
+- `slug`: replaces all sequences of characters that are not alphanumeric or underscore or hyphen with and hyphen and
+  eliminate duplicated hyphens from the value.
+- `slug+dot`: does the same thing as `slug` but does not replace `.` characters.
+- `word`: does the same thing as `slug` but replaces `-` and all non-alphanumeric characters with `_`.
+- `word+dot`: does the same thing as `word` but does not replace `.` characters.
+- `uppercase`: transform the value to uppercase.
+- `lowercase`: transform the value to lowercase.
+- `next`: if the value ends with a number, it is incremented, else it appends `.1` at the end of the value.
+- `incrementlast`: if the value contains a number, increments it, else does nothing, e.g. if `x` has value `rc.1-something`
+  `${x:incrementlast}` returns `rc.2-something`.
 
 ###### Placeholders
 

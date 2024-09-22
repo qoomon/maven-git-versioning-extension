@@ -85,6 +85,186 @@ class StringUtilTest {
         assertThat(outputText).isEqualTo("xxx");
     }
 
+    @Test
+    void substituteText_function_slug() {
+
+        // Given
+        String givenText = "${foo:+a/b:slug:uppercase}";
+        Map<String, Supplier<String>> givenSubstitutionMap = new HashMap<>();
+        givenSubstitutionMap.put("foo", () -> "aaa");
+
+        // When
+        String outputText = StringUtil.substituteText(givenText, givenSubstitutionMap);
+
+        // Then
+        assertThat(outputText).isEqualTo("A-B");
+    }
+
+    @Test
+    void substituteText_function_word_lowercase() {
+
+        // Given
+        String givenText = "${foo:word:lowercase}";
+        Map<String, Supplier<String>> givenSubstitutionMap = new HashMap<>();
+        givenSubstitutionMap.put("foo", () -> "PR-56+/ii");
+
+        // When
+        String outputText = StringUtil.substituteText(givenText, givenSubstitutionMap);
+
+        // Then
+        assertThat(outputText).isEqualTo("pr_56_ii");
+    }
+
+    @Test
+    void substituteText_function_slugword() {
+
+        // Given
+        String givenText = "${foo:slug}";
+        Map<String, Supplier<String>> givenSubstitutionMap = new HashMap<>();
+        givenSubstitutionMap.put("foo", () -> "PR-56+/ii");
+
+        // When
+        String outputText = StringUtil.substituteText(givenText, givenSubstitutionMap);
+
+        // Then
+        assertThat(outputText).isEqualTo("PR-56-ii");
+    }
+
+    @Test
+    void substituteText_function_slug_dot() {
+
+        // Given
+        String givenText = "${foo:slug+dot}";
+        Map<String, Supplier<String>> givenSubstitutionMap = new HashMap<>();
+        givenSubstitutionMap.put("foo", () -> "release/2.5");
+
+        // When
+        String outputText = StringUtil.substituteText(givenText, givenSubstitutionMap);
+
+        // Then
+        assertThat(outputText).isEqualTo("release-2.5");
+    }
+
+    @Test
+    void substituteText_function_word_dot() {
+
+        // Given
+        String givenText = "${foo:word+dot}";
+        Map<String, Supplier<String>> givenSubstitutionMap = new HashMap<>();
+        givenSubstitutionMap.put("foo", () -> "release/2.5");
+
+        // When
+        String outputText = StringUtil.substituteText(givenText, givenSubstitutionMap);
+
+        // Then
+        assertThat(outputText).isEqualTo("release_2.5");
+    }
+
+    @Test
+    void substituteText_function_next() {
+
+        // Given
+        String givenText = "${foo:next}";
+        Map<String, Supplier<String>> givenSubstitutionMap = new HashMap<>();
+        givenSubstitutionMap.put("foo", () -> "alpha.56-rc.12");
+
+        // When
+        String outputText = StringUtil.substituteText(givenText, givenSubstitutionMap);
+
+        // Then
+        assertThat(outputText).isEqualTo("alpha.56-rc.13");
+    }
+
+    @Test
+    void substituteText_function_next_without_number_adds_dot_1() {
+
+        // Given
+        String givenText = "${foo:next}";
+        Map<String, Supplier<String>> givenSubstitutionMap = new HashMap<>();
+        givenSubstitutionMap.put("foo", () -> "alpha.56-rc.12-abc");
+
+        // When
+        String outputText = StringUtil.substituteText(givenText, givenSubstitutionMap);
+
+        // Then
+        assertThat(outputText).isEqualTo("alpha.56-rc.12-abc.1");
+    }
+
+    @Test
+    void substituteText_function_incrementlast() {
+
+        // Given
+        String givenText = "${foo:incrementlast}";
+        Map<String, Supplier<String>> givenSubstitutionMap = new HashMap<>();
+        givenSubstitutionMap.put("foo", () -> "alpha.56-rc.12");
+
+        // When
+        String outputText = StringUtil.substituteText(givenText, givenSubstitutionMap);
+
+        // Then
+        assertThat(outputText).isEqualTo("alpha.56-rc.13");
+    }
+
+    @Test
+    void substituteText_function_incrementlast_without_number_does_nothing() {
+
+        // Given
+        String givenText = "${foo:incrementlast}";
+        Map<String, Supplier<String>> givenSubstitutionMap = new HashMap<>();
+        givenSubstitutionMap.put("foo", () -> "alpha");
+
+        // When
+        String outputText = StringUtil.substituteText(givenText, givenSubstitutionMap);
+
+        // Then
+        assertThat(outputText).isEqualTo("alpha");
+    }
+
+    @Test
+    void substituteText_function_incrementlast_without_number_at_end() {
+
+        // Given
+        String givenText = "${foo:incrementlast}";
+        Map<String, Supplier<String>> givenSubstitutionMap = new HashMap<>();
+        givenSubstitutionMap.put("foo", () -> "alpha.9-special");
+
+        // When
+        String outputText = StringUtil.substituteText(givenText, givenSubstitutionMap);
+
+        // Then
+        assertThat(outputText).isEqualTo("alpha.10-special");
+    }
+
+    @Test
+    void substituteText_function_value_escaping() {
+
+        // Given
+        String givenText = "${foo:+word::lowercase}";
+        Map<String, Supplier<String>> givenSubstitutionMap = new HashMap<>();
+        givenSubstitutionMap.put("foo", () -> "PR-56+/ii");
+
+        // When
+        String outputText = StringUtil.substituteText(givenText, givenSubstitutionMap);
+
+        // Then
+        assertThat(outputText).isEqualTo("word:lowercase");
+    }
+
+    @Test
+    void substituteText_function_value_escaping_with_function() {
+
+        // Given
+        String givenText = "${foo:+WORD:::lowercase}";
+        Map<String, Supplier<String>> givenSubstitutionMap = new HashMap<>();
+        givenSubstitutionMap.put("foo", () -> "word");
+
+        // When
+        String outputText = StringUtil.substituteText(givenText, givenSubstitutionMap);
+
+        // Then
+        assertThat(outputText).isEqualTo("word:");
+    }
+
 
     @Test
     void valueGroupMap() {
