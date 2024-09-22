@@ -50,7 +50,7 @@ public final class GitUtil {
         return reverseTagRefMap(repository).getOrDefault(revObjectId, emptyList());
     }
 
-    public static GitDescription describe(ObjectId revObjectId, Pattern tagPattern, Repository repository, boolean firstParent) throws IOException {
+    public static GitDescription describe(ObjectId revObjectId, Pattern tagPattern, Repository repository, boolean firstParent, Integer maxDepth) throws IOException {
         Repository commonRepository = worktreesFix_getCommonRepository(repository);
         if (revObjectId == null) {
             return new GitDescription(NO_COMMIT, "root", 0, false);
@@ -64,8 +64,9 @@ public final class GitUtil {
             walk.setFirstParent(firstParent);
             walk.markStart(walk.parseCommit(revObjectId));
             Iterator<RevCommit> walkIterator = walk.iterator();
+            final int positiveMaxDepth = maxDepth == null || maxDepth < 0 ? Integer.MAX_VALUE : maxDepth;
             int depth = 0;
-            while (walkIterator.hasNext()) {
+            while (walkIterator.hasNext() && depth < positiveMaxDepth) {
                 RevCommit rev = walkIterator.next();
                 Optional<String> matchingTag = objectIdListMap.getOrDefault(rev, emptyList()).stream()
                         .filter(tag -> tagPattern.matcher(tag).matches())

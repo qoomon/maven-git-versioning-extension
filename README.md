@@ -58,7 +58,7 @@ You can configure the version and properties adjustments for specific branches a
 ```xml
 <configuration xmlns="https://github.com/qoomon/maven-git-versioning-extension"
                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-               xsi:schemaLocation="https://github.com/qoomon/maven-git-versioning-extension https://qoomon.github.io/maven-git-versioning-extension/configuration-9.4.0.xsd">
+               xsi:schemaLocation="https://github.com/qoomon/maven-git-versioning-extension https://qoomon.github.io/maven-git-versioning-extension/configuration-9.8.2.xsd">
 
     <refs>
         <ref type="branch">
@@ -93,6 +93,10 @@ You can configure the version and properties adjustments for specific branches a
   - has to be a **full match pattern** e.g. `v(.+)`, default is `.*`
 - `<describeTagFirstParent>` Enable(`true`) or disable(`false`) following only the first parent in a merge commit
   - default is `true`
+- `<describeTagMaxDepth>` An integer that describes the maximum number of commits to scan in search of a tag matching
+  `<describeTagPattern>`.
+  - By default, it is set to `Integer.MAX_VALUE`.
+  - For convenience, any strictly negative value will also remove the limitation.
 
 - `<updatePom>` Enable(`true`)/disable(`false`) version and properties update in original pom file, default is `false`
   - Can be overridden by command option, see [Parameters & Environment Variables](#parameters--environment-variables).
@@ -114,6 +118,10 @@ You can configure the version and properties adjustments for specific branches a
         - will override global `<describeTagPattern>` value
       - `<describeTagFirstParent>` Enable(`true`) or disable(`false`) following only the first parent in a merge commit
         - default is `true`
+      - `<describeTagMaxDepth>` An integer that describes the maximum number of commits to scan in search of a tag matching
+        `<describeTagPattern>`.
+        - By default, it is set to `Integer.MAX_VALUE`.
+        - For convenience, any strictly negative value will also remove the limitation.
           <br><br>
         
       - `<version>` The new version format, see [Format Placeholders](#format-placeholders)

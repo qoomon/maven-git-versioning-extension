@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.SoftAssertions.assertSoftly;
 import static org.eclipse.jgit.lib.Constants.HEAD;
 import static org.eclipse.jgit.lib.Constants.MASTER;
 
@@ -189,7 +188,7 @@ class GitUtilTest {
         git.tag().setName(givenTagName).setAnnotated(true).setObjectId(givenCommit).setMessage(".").call();
 
         // when
-        GitDescription description = GitUtil.describe(head(git), Pattern.compile("v.+"), git.getRepository(), true);
+        GitDescription description = GitUtil.describe(head(git), Pattern.compile("v.+"), git.getRepository(), true, -1);
 
         // then
         assertThat(description).satisfies(it -> {
@@ -207,9 +206,29 @@ class GitUtilTest {
 
         final var softly = new SoftAssertions();
         for (int i = 0; i < 3; ++i) {
-            GitDescription description = GitUtil.describe(head(git), Pattern.compile("v.+"), git.getRepository(), true);
+            GitDescription description = GitUtil.describe(head(git), Pattern.compile("v.+"), git.getRepository(), true, -1);
+            softly.assertThat(description.isTagFound()).isFalse();
             softly.assertThat(description.getDistanceOrZero()).isZero();
             softly.assertThat(description.getDistance()).isEqualTo(i);
+            git.commit().setMessage("commit " + (i + 1)).setAllowEmpty(true).call();
+        }
+        softly.assertAll();
+    }
+
+    @Test
+    void distanceWithMaxDepth() throws Exception {
+        // given
+        final int maxDepth = 4;
+        Git git = Git.init().setInitialBranch(MASTER).setDirectory(tempDir.toFile()).call();
+        final RevCommit firstCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+        git.tag().setName("v1.0.0").setAnnotated(true).setObjectId(firstCommit).setMessage(".").call();
+
+        final SoftAssertions softly = new SoftAssertions();
+        for (int i = 0; i < 6; ++i) {
+            GitDescription description = GitUtil.describe(head(git), Pattern.compile("v.+"), git.getRepository(), true, maxDepth);
+            softly.assertThat(description.isTagFound()).as("distanceOrZero " + i).isEqualTo(i < maxDepth);
+            softly.assertThat(description.getDistanceOrZero()).as("distanceOrZero " + i).isEqualTo(i >= maxDepth ? 0 : i);
+            softly.assertThat(description.getDistance()).as("distance " + i).isEqualTo(Math.min(i, maxDepth));
             git.commit().setMessage("commit " + (i + 1)).setAllowEmpty(true).call();
         }
         softly.assertAll();
