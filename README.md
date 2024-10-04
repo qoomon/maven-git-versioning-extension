@@ -93,7 +93,9 @@ You can configure the version and properties adjustments for specific branches a
   - has to be a **full match pattern** e.g. `v(.+)`, default is `.*`
 - `<describeTagFirstParent>` Enable(`true`) or disable(`false`) following only the first parent in a merge commit
   - default is `true`
-- `<describeTagMaxDepth>` An integer that describes the maximum number of commits to scan in search of a tag matching
+- `<describeTagMaxDepth>` An integer that describes the maximum distance in number of commits when searching a tag
+  matching `<describeTagPattern>` from the ref commit. This value is applied on all `<ref>` elements unless specified
+  otherwise in the `<ref>` config.
   `<describeTagPattern>`.
   - By default, it is set to `Integer.MAX_VALUE`.
   - For convenience, any strictly negative value will also remove the limitation.
@@ -118,8 +120,9 @@ You can configure the version and properties adjustments for specific branches a
         - will override global `<describeTagPattern>` value
       - `<describeTagFirstParent>` Enable(`true`) or disable(`false`) following only the first parent in a merge commit
         - default is `true`
-      - `<describeTagMaxDepth>` An integer that describes the maximum number of commits to scan in search of a tag matching
-        `<describeTagPattern>`.
+      - `<describeTagMaxDepth>` An integer that describes the maximum distance in number of commits when searching a tag
+        matching `<describeTagPattern>` from the ref commit. If no tag is found, `${describe.distance}`'s value is
+        `min(<distance from ref to root commit>, <describeTagMaxDepth>)`.
         - By default, it is set to `Integer.MAX_VALUE`.
         - For convenience, any strictly negative value will also remove the limitation.
           <br><br>
