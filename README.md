@@ -156,11 +156,11 @@ You can configure the version and properties adjustments for specific branches a
 
 ℹ Final `version` will be slugified automatically, so no need to use `${….slug}` placeholders in `<version>` format.
 
-ℹ define placeholder default value (placeholder is not defined) like this `${name:-DEFAULT_VALUE}`<br>
-e.g `${env.BUILD_NUMBER:-0}` or `${env.BUILD_NUMBER:-local}`
+ℹ define placeholder default value (placeholder is not defined '-' or empty ':-') like this `${name:-DEFAULT_VALUE}`<br>
+e.g `${env.BUILD_NUMBER-0}` or `${env.BUILD_NUMBER:-local}`
 
-ℹ define placeholder overwrite value (placeholder is defined) like this `${name:+OVERWRITE_VALUE}`<br>
-e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
+ℹ define placeholder overwrite value (placeholder is defined '+' and non-empty ':+' ) like this `${name:+OVERWRITE_VALUE}`<br>
+e.g `${dirty:+SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
 
 ###### Placeholders
 
