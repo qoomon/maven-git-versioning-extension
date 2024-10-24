@@ -900,7 +900,9 @@ public class GitVersioningModelProcessor implements ModelProcessor {
         placeholderMap.put("commit.timestamp.minute", Lazy.by(() -> leftPad(String.valueOf(headCommitDateTime.get().getMinute()), 2, "0")));
         placeholderMap.put("commit.timestamp.second", Lazy.by(() -> leftPad(String.valueOf(headCommitDateTime.get().getSecond()), 2, "0")));
         placeholderMap.put("commit.timestamp.datetime", Lazy.by(() -> headCommitDateTime.get().toEpochSecond() > 0
-                ? headCommitDateTime.get().format(DateTimeFormatter.ofPattern("yyyyMMdd.HHmmss")) : "00000000.000000"));
+                ? headCommitDateTime.get().format(DateTimeFormatter.ofPattern("yyyyMMdd.HHmmss")) : "00000101.000000"));
+        placeholderMap.put("commit.timestamp.iso", Lazy.by(() -> headCommitDateTime.get().toEpochSecond() > 0
+                ? headCommitDateTime.get().format(DateTimeFormatter.ISO_INSTANT) : "0000-01-01T00:00:00Z"));
 
         final Lazy<ZonedDateTime> buildCommitDateTime = Lazy.by(() -> mavenSession.getStartTime().toInstant().atZone(ZoneId.systemDefault()));
         placeholderMap.put("build.timestamp", Lazy.by(() -> String.valueOf(buildCommitDateTime.get().toEpochSecond())));
@@ -913,6 +915,8 @@ public class GitVersioningModelProcessor implements ModelProcessor {
         placeholderMap.put("build.timestamp.second", Lazy.by(() -> leftPad(String.valueOf(buildCommitDateTime.get().getSecond()), 2, "0")));
         placeholderMap.put("build.timestamp.datetime", Lazy.by(() -> buildCommitDateTime.get().toEpochSecond() > 0
                 ? buildCommitDateTime.get().format(DateTimeFormatter.ofPattern("yyyyMMdd.HHmmss")) : "00000000.000000"));
+        placeholderMap.put("build.timestamp.iso", Lazy.by(() -> buildCommitDateTime.get().toEpochSecond() > 0
+                ? headCommitDateTime.get().format(DateTimeFormatter.ISO_INSTANT) : "0000-01-01T00:00:00Z"));
 
         final String refName = gitVersionDetails.getRefName();
         final Lazy<String> refNameSlug = Lazy.by(() -> slugify(refName));

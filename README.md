@@ -221,6 +221,7 @@ e.g `${dirty:+SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
 - `${commit.timestamp.minute}` commit minute of hour e.g. '59'
 - `${commit.timestamp.second}` commit second of minute e.g. '30'
 - `${commit.timestamp.datetime}` commit timestamp formatted as `yyyyMMdd.HHmmss`e.g. '20190616.161442'
+- `${commit.timestamp.iso}` commit timestamp formatted as `yyyy-MM-ddTHH:mm:ssZ`e.g. '2019-06-16T16:14:42Z'
       <br><br>
 
 - `${build.timestamp}` maven-build-timestamp (epoch seconds) e.g. '1560694278'
@@ -232,6 +233,7 @@ e.g `${dirty:+SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
 - `${build.timestamp.minute}` maven-build-timestamp minute of hour e.g. '59'
 - `${build.timestamp.second}` maven-build-timestamp second of minute e.g. '30'
 - `${build.timestamp.datetime}` maven-build-timestamp formatted as `yyyyMMdd.HHmmss`e.g. '20190616.161442'
+- `${build.timestamp.iso}` commit timestamp formatted as `yyyy-MM-ddTHH:mm:ssZ`e.g. '2019-06-16T16:14:42Z'
      <br><br>
 
 - `${describe}` Will resolve to `git describe` output
