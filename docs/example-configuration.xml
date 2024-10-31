@@ -1,32 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <configuration xmlns="https://github.com/qoomon/maven-git-versioning-extension" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-               xsi:schemaLocation="https://github.com/qoomon/maven-git-versioning-extension https://qoomon.github.io/maven-git-versioning-extension/configuration-6.4.0.xsd">
+               xsi:schemaLocation="https://github.com/qoomon/maven-git-versioning-extension https://qoomon.github.io/maven-git-versioning-extension/configuration-9.8.2.xsd">
 
     <disable>false</disable>
     <updatePom>false</updatePom>
-    <preferTags>false</preferTags>
+    <describeTagMaxDepth>100</describeTagMaxDepth>
 
-    <branch>
-        <pattern>.*</pattern>
-        <versionFormat>${branch}-SNAPSHOT</versionFormat>
-        <property>
-            <name>name</name>
-            <valueFormat>value</valueFormat>
-        </property>
-        <property>
-            <name>name</name>
-            <valueFormat>value</valueFormat>
-        </property>
-    </branch>
+    <refs considerTagsOnBranches="true">
+        <ref type="tag">
+            <pattern>v(.*)</pattern>
+            <version>${ref.1}</version>
+        </ref>
 
-    <tag>
-        <pattern>v(.*)</pattern>
-        <versionFormat>${1}</versionFormat>
-    </tag>
+        <ref type="branch">
+            <pattern>.*</pattern>
+            <version>${ref}</version>
+            <properties>
+                <name>value</name>
+            </properties>
+        </ref>
+    </refs>
 
-    <commit>
-        <versionFormat>${commit}</versionFormat>
-    </commit>
+    <rev>
+        <version>${commit}</version>
+    </rev>
 
 </configuration>

@@ -4,9 +4,12 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.errors.NoWorkTreeException;
-import org.eclipse.jgit.lib.*;
+import org.eclipse.jgit.lib.Constants;
+import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.Ref;
+import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.revwalk.DepthWalk;
 import org.eclipse.jgit.revwalk.RevCommit;
-import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
 import java.io.File;
@@ -50,38 +53,44 @@ public final class GitUtil {
         return reverseTagRefMap(repository).getOrDefault(revObjectId, emptyList());
     }
 
-    public static GitDescription describe(ObjectId revObjectId, Pattern tagPattern, Repository repository, boolean firstParent) throws IOException {
+    public static GitDescription describe(ObjectId revObjectId, Pattern tagPattern, Repository repository, boolean firstParent, Integer maxDepth) throws IOException {
         Repository commonRepository = worktreesFix_getCommonRepository(repository);
         if (revObjectId == null) {
-            return new GitDescription(NO_COMMIT, "root", 0);
+            return new GitDescription(NO_COMMIT, "root", 0, false);
         }
 
         Map<ObjectId, List<String>> objectIdListMap = reverseTagRefMap(repository);
 
+        final int positiveMaxDepth = maxDepth == null || maxDepth < 0 ? Integer.MAX_VALUE : maxDepth;
         // Walk back commit ancestors looking for tagged one
-        try (RevWalk walk = new RevWalk(commonRepository)) {
+        try (DepthWalk.RevWalk walk = new DepthWalk.RevWalk(commonRepository, positiveMaxDepth)) {
             walk.setRetainBody(false);
             walk.setFirstParent(firstParent);
-            walk.markStart(walk.parseCommit(revObjectId));
+            final RevCommit startCommit = walk.parseCommit(revObjectId);
+            walk.markRoot(startCommit);
             Iterator<RevCommit> walkIterator = walk.iterator();
-            int depth = 0;
+            int maxVisitedDepth = 0;
             while (walkIterator.hasNext()) {
                 RevCommit rev = walkIterator.next();
+                int depth = 0;
+                if (rev instanceof DepthWalk.Commit) {
+                    depth = ((DepthWalk.Commit) rev).getDepth();
+                }
+                maxVisitedDepth = Math.max(maxVisitedDepth, depth);
                 Optional<String> matchingTag = objectIdListMap.getOrDefault(rev, emptyList()).stream()
                         .filter(tag -> tagPattern.matcher(tag).matches())
                         .findFirst();
 
                 if (matchingTag.isPresent()) {
-                    return new GitDescription(revObjectId.getName(), matchingTag.get(), depth);
+                    return new GitDescription(revObjectId.getName(), matchingTag.get(), depth, true);
                 }
-                depth++;
             }
 
             if (isShallowRepository(repository)) {
                 throw new IllegalStateException("couldn't find matching tag in shallow git repository");
             }
 
-            return new GitDescription(revObjectId.getName(), "root", depth);
+            return new GitDescription(revObjectId.getName(), "root", maxVisitedDepth, false);
         }
     }
 

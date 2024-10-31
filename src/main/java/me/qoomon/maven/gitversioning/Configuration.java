@@ -55,6 +55,8 @@ public class Configuration {
         return Pattern.compile(describeTagPattern);
     }
 
+    public Integer describeTagMaxDepth = Integer.MAX_VALUE;
+
     public Boolean updatePom = false;
 
     public RefPatchDescriptionList refs = new RefPatchDescriptionList();
@@ -78,6 +80,8 @@ public class Configuration {
             }
             return Pattern.compile(describeTagPattern);
         }
+
+        public Integer describeTagMaxDepth;
 
         @JsonDeserialize(using = IgnoreWhitespaceDeserializer.class)
         public String version;
@@ -120,6 +124,7 @@ public class Configuration {
             this.type = type;
             this.pattern = pattern != null ? pattern.pattern() : null;
             this.describeTagPattern = description.describeTagPattern;
+            this.describeTagMaxDepth = description.describeTagMaxDepth;
             this.updatePom = description.updatePom;
             this.describeTagFirstParent = description.describeTagFirstParent;
             this.version = description.version;
