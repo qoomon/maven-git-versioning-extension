@@ -1,0 +1,56 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>me.qoomon</groupId>
+    <artifactId>maven-git-versioning-extension-example</artifactId>
+    <version>automatic-versioned-by-maven-git-versioning-extension</version>
+
+    <name>Maven Git Versioning Extension Example</name>
+    <description>Maven Git Versioning Extension Example Project</description>
+    <url>https://github.com/qoomon/maven-git-versioning-extension/example</url>
+
+    <scm>
+        <url>https://github.com/qoomon/maven-git-versioning-extension.git</url>
+        <connection>scm:git:https://github.com/qoomon/maven-git-versioning-extension.git</connection>
+    </scm>
+
+    <licenses>
+        <license>
+            <name>The MIT License (MIT)</name>
+            <url>https://opensource.org/licenses/MIT</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-help-plugin</artifactId>
+                <version>3.4.1</version>
+                <executions>
+                    <execution>
+                        <!-- write the version to a file, for usage as project version in other tools like 'docker build' -->
+                        <id>write-version-to-file</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>evaluate</goal>
+                        </goals>
+                        <configuration>
+                            <expression>project.version</expression>
+                            <output>${project.basedir}/target/project.version</output>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
