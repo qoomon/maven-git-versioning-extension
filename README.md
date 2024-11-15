@@ -1,4 +1,4 @@
-# Maven Git Versioning Extension [![Sparkline](https://stars.medv.io/qoomon/maven-git-versioning-extension.svg?)](https://stars.medv.io/qoomon/maven-git-versioning-extension)
+# Maven Git Versioning Extension [![starline](https://github-starline.vercel.app/qoomon/maven-git-versioning-extension)](https://github.com/qoomon/starline)
 
 [![Maven Central](https://img.shields.io/maven-central/v/me.qoomon/maven-git-versioning-extension.svg)](https://search.maven.org/artifact/me.qoomon/maven-git-versioning-extension)
 [![Changelog](https://badgen.net/badge/changelog/%E2%98%85/blue)](CHANGELOG.md)
