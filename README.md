@@ -112,6 +112,17 @@ You can configure the version and properties adjustments for specific branches a
       - `<describeTagPattern>` An arbitrary regex to match tag names for git describe command
         - has to be a **full match pattern** e.g. `v.+`)
         - will override global `<describeTagPattern>` value
+        - can contain placeholders with `{{}}` delimiters that can be from env, properties, project version, or ref, but
+          not from `describe`. For example:
+          ```xml
+          <ref type="branch">
+            <pattern><![CDATA[release/(?<major>\d+)\.(?<minor>\d+)(?:\.x)?]]></pattern>
+            <describeTagPattern>\Qrelease-marker-{{ref.major}}.{{ref.minor}}\E</describeTagPattern>
+            <version>${ref.major}.${ref.minor}.0-rc.${describe.distance}-SNAPSHOT</version>
+          </ref>
+          ```
+          will first read the major and minor part of the version from the branch name, then will try to find a tag that
+          matches this specific version pieces to set the final version using describe.
       - `<describeTagFirstParent>` Enable(`true`) or disable(`false`) following only the first parent in a merge commit
         - default is `true`
           <br><br>
