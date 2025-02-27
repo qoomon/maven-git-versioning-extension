@@ -31,10 +31,6 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.NoSuchElementException;
-import java.util.Objects;
-import java.util.Properties;
-import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
@@ -430,7 +426,8 @@ public class GitVersioningModelProcessor implements ModelProcessor {
         }
         // plugins section
         {
-            List<Plugin> relatedPlugins = filterRelatedPlugins(build.getPlugins());
+            List<Plugin> plugins = build.getPlugins();
+			List<Plugin> relatedPlugins = filterRelatedPlugins(plugins);
             if (!relatedPlugins.isEmpty()) {
                 if (logger.isDebugEnabled()) {
                     logger.debug(sectionLogHeader("plugins", model));
@@ -439,6 +436,8 @@ public class GitVersioningModelProcessor implements ModelProcessor {
                     updateVersion(plugin, versionFormat);
                 }
             }
+            
+            updatePluginDependencyVersions(model, versionFormat, plugins);
         }
 
         // plugin management section
@@ -453,6 +452,8 @@ public class GitVersioningModelProcessor implements ModelProcessor {
                     updateVersion(plugin, versionFormat);
                 }
             }
+            
+            updatePluginDependencyVersions(model, versionFormat, pluginManagement.getPlugins());
         }
 
         // reporting section
@@ -469,6 +470,21 @@ public class GitVersioningModelProcessor implements ModelProcessor {
             }
         }
     }
+
+
+	private void updatePluginDependencyVersions(ModelBase model, String versionFormat, List<Plugin> plugins) {
+		List<Dependency> pluginDepsList = filterRelatedDependencies(plugins.stream().map(plugin -> plugin.getDependencies().stream()).flatMap(s -> s).toList());
+		
+
+		if (!pluginDepsList.isEmpty()) {
+		    if (true) {
+		        logger.info(sectionLogHeader("plugins deps", model));
+		    }
+		    for (Dependency dep : pluginDepsList) {
+		        updateVersion(dep, versionFormat);
+		    }
+		}
+	}
 
     private void updateVersion(Plugin plugin, String versionFormat) {
         if (plugin.getVersion() != null) {
@@ -1343,6 +1359,12 @@ public class GitVersioningModelProcessor implements ModelProcessor {
             Element pluginVersionElement = pluginElement.getChild("version");
             if (pluginVersionElement != null) {
                 pluginVersionElement.setText(plugin.getVersion());
+            }
+            
+            Element dependenciesElement = pluginElement.getChild("dependencies");
+			List<Dependency> dependencies = plugin.getDependencies();
+			if (!dependencies.isEmpty() && dependenciesElement != null) {
+				updateDependencyVersions(dependenciesElement, dependencies);
             }
         });
     }
