@@ -426,8 +426,7 @@ public class GitVersioningModelProcessor implements ModelProcessor {
         }
         // plugins section
         {
-            List<Plugin> plugins = build.getPlugins();
-            List<Plugin> relatedPlugins = filterRelatedPlugins(plugins);
+            List<Plugin> relatedPlugins = filterRelatedPlugins(build.getPlugins());
             if (!relatedPlugins.isEmpty()) {
                 if (logger.isDebugEnabled()) {
                     logger.debug(sectionLogHeader("plugins", model));
@@ -437,7 +436,7 @@ public class GitVersioningModelProcessor implements ModelProcessor {
                 }
             }
             
-            updatePluginDependencyVersions(model, versionFormat, plugins);
+            updatePluginDependencyVersions(model, versionFormat, build.getPlugins());
         }
 
         // plugin management section
