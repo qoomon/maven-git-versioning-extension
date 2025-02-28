@@ -427,7 +427,7 @@ public class GitVersioningModelProcessor implements ModelProcessor {
         // plugins section
         {
             List<Plugin> plugins = build.getPlugins();
-			List<Plugin> relatedPlugins = filterRelatedPlugins(plugins);
+            List<Plugin> relatedPlugins = filterRelatedPlugins(plugins);
             if (!relatedPlugins.isEmpty()) {
                 if (logger.isDebugEnabled()) {
                     logger.debug(sectionLogHeader("plugins", model));
@@ -472,19 +472,19 @@ public class GitVersioningModelProcessor implements ModelProcessor {
     }
 
 
-	private void updatePluginDependencyVersions(ModelBase model, String versionFormat, List<Plugin> plugins) {
-		List<Dependency> pluginDepsList = filterRelatedDependencies(plugins.stream().map(plugin -> plugin.getDependencies().stream()).flatMap(s -> s).toList());
-		
+    private void updatePluginDependencyVersions(ModelBase model, String versionFormat, List<Plugin> plugins) {
+        List<Dependency> pluginDepsList = filterRelatedDependencies(plugins.stream().map(plugin -> plugin.getDependencies().stream()).flatMap(s -> s).toList());
+        
 
-		if (!pluginDepsList.isEmpty()) {
-		    if (true) {
-		        logger.info(sectionLogHeader("plugins deps", model));
-		    }
-		    for (Dependency dep : pluginDepsList) {
-		        updateVersion(dep, versionFormat);
-		    }
-		}
-	}
+        if (!pluginDepsList.isEmpty()) {
+            if (true) {
+                logger.info(sectionLogHeader("plugins deps", model));
+            }
+            for (Dependency dep : pluginDepsList) {
+                updateVersion(dep, versionFormat);
+            }
+        }
+    }
 
     private void updateVersion(Plugin plugin, String versionFormat) {
         if (plugin.getVersion() != null) {
@@ -1362,9 +1362,9 @@ public class GitVersioningModelProcessor implements ModelProcessor {
             }
             
             Element dependenciesElement = pluginElement.getChild("dependencies");
-			List<Dependency> dependencies = plugin.getDependencies();
-			if (!dependencies.isEmpty() && dependenciesElement != null) {
-				updateDependencyVersions(dependenciesElement, dependencies);
+            List<Dependency> dependencies = plugin.getDependencies();
+            if (!dependencies.isEmpty() && dependenciesElement != null) {
+                updateDependencyVersions(dependenciesElement, dependencies);
             }
         });
     }

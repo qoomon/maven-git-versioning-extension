@@ -201,10 +201,10 @@ class GitVersioningExtensionIT {
             dependency.setVersion(pomModel.getVersion());
             plugin.setArtifactId("maven-enforcer-plugin");
             plugin.addDependency(dependency);            
-			Build build = new Build();
-			build.addPlugin(plugin);
-			pomModel.setBuild(build);
-			
+            Build build = new Build();
+            build.addPlugin(plugin);
+            pomModel.setBuild(build);
+            
             writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
             writeExtensionsFile(projectDir);
             writeExtensionConfigFile(projectDir, new Configuration() {{
