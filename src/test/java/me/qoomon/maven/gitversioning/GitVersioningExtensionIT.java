@@ -5,10 +5,13 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import me.qoomon.gitversioning.commons.GitRefType;
 import me.qoomon.maven.gitversioning.Configuration.PatchDescription;
 import me.qoomon.maven.gitversioning.Configuration.RefPatchDescription;
+
+import org.apache.maven.model.Build;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.DependencyManagement;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;
+import org.apache.maven.model.Plugin;
 import org.apache.maven.shared.verifier.VerificationException;
 import org.apache.maven.shared.verifier.Verifier;
 import org.eclipse.jgit.api.Git;
@@ -180,6 +183,49 @@ class GitVersioningExtensionIT {
 
             Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
             assertThat(gitVersionedPomModel.getVersion()).isEqualTo(expectedVersion);
+        }
+    }
+    @Test
+    void branchVersioningPluginWithDeps() throws Exception {
+
+        try (Git git = Git.init().setInitialBranch("feature/test").setDirectory(projectDir.toFile()).call()) {
+            // Given
+            git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+            
+            
+            // Put there just some dummy plugin with some dummy dependency
+            Plugin plugin = new Plugin();            
+            Dependency dependency = new Dependency();
+            dependency.setGroupId(pomModel.getGroupId());
+            dependency.setArtifactId(pomModel.getArtifactId());
+            dependency.setVersion(pomModel.getVersion());
+            plugin.setArtifactId("maven-enforcer-plugin");
+            plugin.addDependency(dependency);            
+            Build build = new Build();
+            build.addPlugin(plugin);
+            pomModel.setBuild(build);
+            
+            writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
+            writeExtensionsFile(projectDir);
+            writeExtensionConfigFile(projectDir, new Configuration() {{
+                refs.list.add(createBranchVersionDescription());
+            }});
+            
+            // When
+            Verifier verifier = getVerifier(projectDir);
+            verifier.addCliArgument("verify");
+            verifier.execute();
+
+            // Then
+            System.err.println(String.join("\n", verifier.loadFile(verifier.getBasedir(), verifier.getLogFileName(), false)));
+            verifier.verifyErrorFreeLog();
+            String expectedVersion = "feature-test-gitVersioning";
+            verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
+
+            System.out.println(new String(Files.readAllBytes(projectDir.resolve(GIT_VERSIONING_POM_NAME))));
+            Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
+            assertThat(gitVersionedPomModel.getVersion()).isEqualTo(expectedVersion);
+            assertThat(gitVersionedPomModel.getBuild().getPlugins().get(0).getDependencies().get(0).getVersion()).isEqualTo(expectedVersion);
         }
     }
 
