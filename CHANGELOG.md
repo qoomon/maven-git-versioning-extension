@@ -4,6 +4,9 @@
 
 # Changelog
 
+## 9.10.1
+- add support for plugin dependencies
+
 ## 9.6.6
 
 ##### Fixes
