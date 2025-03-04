@@ -142,7 +142,7 @@
                 <configuration>
                     <goalPrefix>${project.name}</goalPrefix>
                 </configuration>
-                <version>3.13.1</version>
+                <version>3.15.1</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
