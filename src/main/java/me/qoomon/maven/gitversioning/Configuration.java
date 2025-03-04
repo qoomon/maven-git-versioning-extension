@@ -48,13 +48,6 @@ public class Configuration {
 
     public Boolean describeTagFirstParent = true;
 
-    public Pattern describeTagPattern() {
-        if(describeTagPattern == null) {
-            return null;
-        }
-        return Pattern.compile(describeTagPattern);
-    }
-
     public Boolean updatePom = false;
 
     public RefPatchDescriptionList refs = new RefPatchDescriptionList();
@@ -71,13 +64,6 @@ public class Configuration {
 
         @JsonDeserialize(using = IgnoreWhitespaceDeserializer.class)
         public String describeTagPattern;
-
-        public Pattern describeTagPattern() {
-            if(describeTagPattern == null) {
-                return null;
-            }
-            return Pattern.compile(describeTagPattern);
-        }
 
         @JsonDeserialize(using = IgnoreWhitespaceDeserializer.class)
         public String version;
