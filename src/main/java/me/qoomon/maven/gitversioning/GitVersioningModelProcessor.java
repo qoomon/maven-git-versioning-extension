@@ -472,12 +472,11 @@ public class GitVersioningModelProcessor implements ModelProcessor {
 
 
     private void updatePluginDependencyVersions(ModelBase model, String versionFormat, List<Plugin> plugins) {
-        List<Dependency> pluginDepsList = filterRelatedDependencies(plugins.stream().map(plugin -> plugin.getDependencies().stream()).flatMap(s -> s).toList());
-        
+        List<Dependency> pluginDepsList = filterRelatedDependencies(plugins.stream().map(Plugin::getDependencies).flatMap(List::stream).collect(toList()));
 
         if (!pluginDepsList.isEmpty()) {
-            if (true) {
-                logger.info(sectionLogHeader("plugins deps", model));
+            if (logger.isDebugEnabled()) {
+                logger.debug(sectionLogHeader("plugins dependencies", model));
             }
             for (Dependency dep : pluginDepsList) {
                 updateVersion(dep, versionFormat);
