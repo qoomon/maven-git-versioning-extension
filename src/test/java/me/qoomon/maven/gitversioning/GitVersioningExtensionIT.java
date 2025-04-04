@@ -821,7 +821,7 @@ class GitVersioningExtensionIT {
             // Then
             System.err.println(String.join("\n", verifier.loadFile(verifier.getBasedir(), verifier.getLogFileName(), false)));
             verifier.verifyErrorFreeLog();
-            String expectedVersion = "1";
+            String expectedVersion = "0";
             verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
 
             Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
@@ -970,8 +970,9 @@ class GitVersioningExtensionIT {
         try (Git git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call()) {
             RevCommit initialCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
             git.tag().setName("2.0.4-tag-on-initial").call();
-            git.commit().setMessage("commit on master").setAllowEmpty(true).call();
+            git.commit().setMessage("commit on master 1").setAllowEmpty(true).call();
             git.tag().setName(tagOnMaster).call();
+            git.commit().setMessage("commit on master 2").setAllowEmpty(true).call();
             git.checkout().setStartPoint(initialCommit).setCreateBranch(true).setName("branch").call();
             // make sure the commit on the branch is newer
             Thread.sleep(2000);

@@ -57,7 +57,7 @@ You can configure the version and properties adjustments for specific branches a
 ```xml
 <configuration xmlns="https://github.com/qoomon/maven-git-versioning-extension"
                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-               xsi:schemaLocation="https://github.com/qoomon/maven-git-versioning-extension https://qoomon.github.io/maven-git-versioning-extension/configuration-9.4.0.xsd">
+               xsi:schemaLocation="https://github.com/qoomon/maven-git-versioning-extension https://qoomon.github.io/maven-git-versioning-extension/configuration-9.8.2.xsd">
 
     <refs>
         <ref type="branch">
@@ -92,6 +92,12 @@ You can configure the version and properties adjustments for specific branches a
   - has to be a **full match pattern** e.g. `v(.+)`, default is `.*`
 - `<describeTagFirstParent>` Enable(`true`) or disable(`false`) following only the first parent in a merge commit
   - default is `true`
+- `<describeTagMaxDepth>` An integer that describes the maximum distance in number of commits when searching a tag
+  matching `<describeTagPattern>` from the ref commit. This value is applied on all `<ref>` elements unless specified
+  otherwise in the `<ref>` config.
+  `<describeTagPattern>`.
+  - By default, it is set to `Integer.MAX_VALUE`.
+  - For convenience, any strictly negative value will also remove the limitation.
 
 - `<updatePom>` Enable(`true`)/disable(`false`) version and properties update in original pom file, default is `false`
   - Can be overridden by command option, see [Parameters & Environment Variables](#parameters--environment-variables).
@@ -113,6 +119,11 @@ You can configure the version and properties adjustments for specific branches a
         - will override global `<describeTagPattern>` value
       - `<describeTagFirstParent>` Enable(`true`) or disable(`false`) following only the first parent in a merge commit
         - default is `true`
+      - `<describeTagMaxDepth>` An integer that describes the maximum distance in number of commits when searching a tag
+        matching `<describeTagPattern>` from the ref commit. If no tag is found, `${describe.distance}`'s value is
+        `min(<distance from ref to root commit>, <describeTagMaxDepth>)`.
+        - By default, it is set to `Integer.MAX_VALUE`.
+        - For convenience, any strictly negative value will also remove the limitation.
           <br><br>
         
       - `<version>` The new version format, see [Format Placeholders](#format-placeholders)
@@ -237,7 +248,9 @@ e.g `${dirty:+SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
 
 - `${describe}` Will resolve to `git describe` output
 - `${describe.distance}` The distance count to last matching tag
+- `${describe.distanceOrZero}` The distance count to last matching tag or 0 if no tag is found
 - `${describe.distance.snapshot}` Empty string on matching tag, `-SNAPSHOT` if `describe.distance > 0` 
+- `${describe.distanceOrZero.snapshot}` Empty string on matching tag, `-SNAPSHOT` if `describe.distanceOrZero > 0` 
 - `${describe.tag}` The matching tag of `git describe`
   - `${describe.tag.version}` the tag version determined by regex `(?<version>(?<core>(?<major>\d+)(?:\.(?<minor>\d+)(?:\.(?<patch>\d+))?)?)(?:-(?<label>.*))?)`
     - `${describe.tag.version.core}` the core version component of `${describe.tag.version}` e.g. '1.2.3' 
@@ -248,11 +261,15 @@ e.g `${dirty:+SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
     - `${describe.tag.version.patch}` the patch version component of `${describe.tag.version}` e.g. '3'
       - `${describe.tag.version.patch.next}` the `${describe.tag.version.patch}` increased by 1 e.g. '4'
       - `${describe.tag.version.patch.plus.describe.distance}` the `${describe.tag.version.patch}` increased by `${describe.distance}` e.g. '2'
+      - `${describe.tag.version.patch.plus.describe.distanceOrZero}` the `${describe.tag.version.patch}` increased by `${describe.distanceOrZero}` e.g. '2'
       - `${describe.tag.version.patch.next.plus.describe.distance}` the `${describe.tag.version.patch.next}` increased by `${describe.distance}` e.g. '3'
+      - `${describe.tag.version.patch.next.plus.describe.distanceOrZero}` the `${describe.tag.version.patch.next}` increased by `${describe.distanceOrZero}` e.g. '3'
     - `${describe.tag.version.label}` the label version component of `${describe.tag.version}` e.g. 'SNAPSHOT'
       - `${describe.tag.version.label.next}` the `${describe.tag.version.label}` converted to an integer and increased by 1 e.g. '6'
       - `${describe.tag.version.label.plus.describe.distance}` the `${describe.tag.version.label}` increased by `${describe.distance}` e.g. '2'
+      - `${describe.tag.version.label.plus.describe.distanceOrZero}` the `${describe.tag.version.label}` increased by `${describe.distanceOrZero}` e.g. '2'
       - `${describe.tag.version.label.next.plus.describe.distance}` the `${describe.tag.version.label.next}` increased by `${describe.distance}` e.g. '3'
+      - `${describe.tag.version.label.next.plus.describe.distanceOrZero}` the `${describe.tag.version.label.next}` increased by `${describe.distanceOrZero}` e.g. '3'
 - Describe Tag Pattern Groups
     - Content of regex groups in `<describeTagPattern>` can be addressed like this:
     - `${describe.tag.GROUP_NAME}` `${describe.tag.GROUP_NAME.slug}`
