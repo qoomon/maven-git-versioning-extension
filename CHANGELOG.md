@@ -4,6 +4,9 @@
 
 # Changelog
 
+## 9.11.0
+- add option to configure config file location
+
 ## 9.10.1
 - add support for plugin dependencies
 
