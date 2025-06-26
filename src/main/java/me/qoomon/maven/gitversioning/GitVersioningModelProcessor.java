@@ -69,6 +69,7 @@ public class GitVersioningModelProcessor implements ModelProcessor {
     private static final String OPTION_NAME_GIT_BRANCH = "git.branch";
     private static final String OPTION_NAME_DISABLE = "versioning.disable";
     private static final String OPTION_UPDATE_POM = "versioning.updatePom";
+    private static final String OPTION_CONFIG_FILE_NAME = "versioning.configFile";
 
     static final String GIT_VERSIONING_POM_NAME = ".git-versioned-pom.xml";
 
@@ -169,7 +170,13 @@ public class GitVersioningModelProcessor implements ModelProcessor {
         logger.debug("pom file: {}", pomFile);
         mvnDirectory = findMvnDirectory(pomFile);
         logger.debug(".mvn directory: {}", mvnDirectory);
-        final File configFile = new File(mvnDirectory, projectArtifactId() + ".xml");
+
+        String configFileName = getCommandOption(OPTION_CONFIG_FILE_NAME);
+        if(configFileName == null){
+            configFileName = projectArtifactId() + ".xml";
+        }
+
+        final File configFile = new File(mvnDirectory, configFileName);
         logger.debug("read config from {}", configFile);
         config = readConfig(configFile);
 
