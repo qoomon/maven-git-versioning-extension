@@ -277,6 +277,12 @@ e.g `${dirty:+SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
 
 ### Parameters & Environment Variables
 
+- Set configuration Filename
+  - **Environment Variables**
+  - `export VERSIONING_CONFIG_FILE=myConfig.xml`
+  - **Command Line Parameters**
+  - `mvn … -Dversioning.configFile=myConfig.xml`
+
 - Disable Extension
     - **Environment Variables**
      - `export VERSIONING_DISABLE=true`
