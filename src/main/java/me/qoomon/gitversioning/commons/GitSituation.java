@@ -159,7 +159,7 @@ public class GitSituation {
     }
 
     private boolean clean() throws GitAPIException {
-        return GitUtil.status(repository).isClean();
+        return !GitUtil.status(repository).hasUncommittedChanges();
     }
 
     private GitDescription describe() throws IOException {

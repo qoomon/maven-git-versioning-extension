@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
@@ -34,11 +35,11 @@ class GitUtilTest {
         Status status = GitUtil.status(git.getRepository());
 
         // then
-        assertThat(status.isClean()).isTrue();
+        assertThat(status.hasUncommittedChanges()).isFalse();
     }
 
     @Test
-    void status_dirty() throws GitAPIException, IOException {
+    void status_clean_untrackedFile() throws GitAPIException, IOException {
 
         // given
         Git git = Git.init().setInitialBranch(MASTER).setDirectory(tempDir.toFile()).call();
@@ -50,7 +51,34 @@ class GitUtilTest {
         Status status = GitUtil.status(git.getRepository());
 
         // then
-        assertThat(status.isClean()).isFalse();
+        assertThat(status.getUntracked()).contains("README.md");
+        assertThat(status.hasUncommittedChanges()).isFalse();
+    }
+
+    @Test
+    void status_dirty_modifiedFile() throws GitAPIException, IOException {
+
+        // given
+        Git git = Git.init().setInitialBranch(MASTER).setDirectory(tempDir.toFile()).call();
+
+        File dummyFile = new File(tempDir.toFile(), "README.md");
+        boolean dummyFileCreated = dummyFile.createNewFile();
+        assertThat(dummyFileCreated).isTrue();
+
+        git.add().addFilepattern("README.md").call();
+        git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+
+        try (FileWriter writer = new FileWriter(dummyFile)) {
+            writer.write("Hello World!");
+            writer.flush();
+        }
+
+        // when
+        Status status = GitUtil.status(git.getRepository());
+
+        // then
+        assertThat(status.getModified()).contains("README.md");
+        assertThat(status.hasUncommittedChanges()).isTrue();
     }
 
     @Test
