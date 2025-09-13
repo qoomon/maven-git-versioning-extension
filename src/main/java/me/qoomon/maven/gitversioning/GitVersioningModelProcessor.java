@@ -8,6 +8,7 @@ import de.pdark.decentxml.Element;
 import me.qoomon.gitversioning.commons.GitDescription;
 import me.qoomon.gitversioning.commons.GitSituation;
 import me.qoomon.gitversioning.commons.Lazy;
+import me.qoomon.gitversioning.commons.StringUtil;
 import me.qoomon.maven.gitversioning.Configuration.PatchDescription;
 import me.qoomon.maven.gitversioning.Configuration.RefPatchDescription;
 import org.apache.maven.building.Source;
@@ -45,7 +46,8 @@ import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.stream.Collectors.*;
 import static me.qoomon.gitversioning.commons.GitRefType.*;
-import static me.qoomon.gitversioning.commons.StringUtil.*;
+import static me.qoomon.gitversioning.commons.StringUtil.patternGroupValues;
+import static me.qoomon.gitversioning.commons.StringUtil.substituteText;
 import static me.qoomon.maven.gitversioning.BuildProperties.projectArtifactId;
 import static me.qoomon.maven.gitversioning.GitVersioningMojo.asPlugin;
 import static me.qoomon.maven.gitversioning.MavenUtil.*;
@@ -63,6 +65,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class GitVersioningModelProcessor implements ModelProcessor {
 
     private static final Pattern VERSION_PATTERN = Pattern.compile(".*?(?<version>(?<core>(?<major>\\d+)(?:\\.(?<minor>\\d+)(?:\\.(?<patch>\\d+))?)?)(?:-(?<label>.*))?)|");
+    private static final Pattern PATTERN_PLACEHOLDERS_EXPRESSION = Pattern.compile("\\{\\{((?!describe\\.?)[^}]+)}}");
 
     private static final String OPTION_NAME_GIT_REF = "git.ref";
     private static final String OPTION_NAME_GIT_TAG = "git.tag";
@@ -231,9 +234,14 @@ public class GitVersioningModelProcessor implements ModelProcessor {
         logger.info("matching ref: {} - {}", gitVersionDetails.getRefType().name(), gitVersionDetails.getRefName());
         final RefPatchDescription patchDescription = gitVersionDetails.getPatchDescription();
         logger.info("ref configuration: {} - pattern: {}", gitVersionDetails.getRefType().name(), patchDescription.pattern);
+
+        final Supplier<Map<String, Supplier<String>>> placeholderMapSupplier =
+                Lazy.by(() -> generateGlobalFormatPlaceholderMap(gitSituation, gitVersionDetails, mavenSession));
+
         if (patchDescription.describeTagPattern != null && !patchDescription.describeTagPattern.equals(".*")) {
             logger.info("  describeTagPattern: {}", patchDescription.describeTagPattern);
-            gitSituation.setDescribeTagPattern(patchDescription.describeTagPattern());
+            gitSituation.setRawDescribeTagPattern(patchDescription.describeTagPattern);
+            gitSituation.setDescribeTagPattern(preProcessDescribeTagPattern(patchDescription.describeTagPattern, placeholderMapSupplier));
         }
         if (patchDescription.describeTagFirstParent != null) {
             logger.info("  describeTagFirstParent: {}", patchDescription.describeTagFirstParent);
@@ -247,7 +255,7 @@ public class GitVersioningModelProcessor implements ModelProcessor {
             patchDescription.properties.forEach((key, value) -> logger.info("    {} - {}", key, value));
         }
 
-        globalFormatPlaceholderMap = generateGlobalFormatPlaceholderMap(gitSituation, gitVersionDetails, mavenSession);
+        globalFormatPlaceholderMap = placeholderMapSupplier.get();
 
         if (!patchDescription.userProperties.isEmpty()) {
             logger.info("  userProperties: ");
@@ -856,6 +864,12 @@ public class GitVersioningModelProcessor implements ModelProcessor {
         return substituteText(propertyFormat, placeholderMap);
     }
 
+    private static Set<String> extractTagPatternGroups(String describeTagPattern) {
+        final Matcher placeHolderMatcher = PATTERN_PLACEHOLDERS_EXPRESSION.matcher(describeTagPattern);
+        final String placeHolderStrippedPattern = placeHolderMatcher.replaceAll("");
+        return StringUtil.patternGroups(Pattern.compile(placeHolderStrippedPattern));
+    }
+
     private Map<String, Supplier<String>> generateFormatPlaceholderMap(String projectVersion) {
         final Map<String, Supplier<String>> placeholderMap = new HashMap<>(globalFormatPlaceholderMap);
 
@@ -1003,7 +1017,7 @@ public class GitVersioningModelProcessor implements ModelProcessor {
         // describe tag pattern groups
         final Lazy<Map<String, String>> describeTagPatternValues = Lazy.by(
                 () -> patternGroupValues(gitSituation.getDescribeTagPattern(), descriptionTag.get()));
-        for (String groupName : patternGroups(gitSituation.getDescribeTagPattern())) {
+        for (String groupName : extractTagPatternGroups(gitSituation.getRawDescribeTagPattern())) {
             final var placeholderKey = "describe.tag." + groupName;
             // ensure no placeholder overwrites
             if (placeholderMap.containsKey(placeholderKey)) {
@@ -1103,6 +1117,26 @@ public class GitVersioningModelProcessor implements ModelProcessor {
         }
 
         return false;
+    }
+
+    private Supplier<Pattern> preProcessDescribeTagPattern(String describeTagPattern, Supplier<Map<String, Supplier<String>>> placeholderMapSupplier) {
+        return Lazy.by(() -> {
+            final Matcher placeHolderMatcher = PATTERN_PLACEHOLDERS_EXPRESSION.matcher(describeTagPattern);
+            final StringBuilder sb = new StringBuilder();
+            while (placeHolderMatcher.find()) {
+                final String capture = placeHolderMatcher.group(1);
+                if (placeholderMapSupplier.get().containsKey(capture)) {
+                    final String value = placeholderMapSupplier.get().get(capture).get();
+                    placeHolderMatcher.appendReplacement(sb, value);
+                }
+            }
+            placeHolderMatcher.appendTail(sb);
+            final String pattern = sb.toString();
+            if (!describeTagPattern.equals(pattern)) {
+                logger.info("Computed pattern '{}' from describeTagPattern '{}'", pattern, describeTagPattern);
+            }
+            return Pattern.compile(pattern);
+        });
     }
 
     // ---- determine related projects ---------------------------------------------------------------------------------
