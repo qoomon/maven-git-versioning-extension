@@ -208,7 +208,14 @@ e.g `${dirty:+SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
         </ref>
         ```
         <br>
-
+    - Limiting the length (max. 63 chars):
+        ```xml
+        <ref type="branch">
+          <pattern><![CDATA[(?<branchName>.{1,53}).*]]></pattern>
+          <version>${ref.branchName}-SNAPSHOT</version>
+        </ref>
+        ```
+        <br>
 - `${commit}` commit hash '0fc20459a8eceb2c4abb9bf0af45a6e8af17b94b'
 - `${commit.short}` commit hash (7 characters) e.g. '0fc2045'
 - `${commit.timestamp}` commit timestamp (epoch seconds) e.g. '1560694278'
