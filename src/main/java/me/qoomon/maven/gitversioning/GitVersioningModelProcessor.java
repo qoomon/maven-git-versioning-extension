@@ -5,6 +5,7 @@ import com.google.inject.Key;
 import com.google.inject.OutOfScopeException;
 import de.pdark.decentxml.Document;
 import de.pdark.decentxml.Element;
+import me.qoomon.gitversioning.commons.DeferredLogger;
 import me.qoomon.gitversioning.commons.GitDescription;
 import me.qoomon.gitversioning.commons.GitSituation;
 import me.qoomon.gitversioning.commons.Lazy;
@@ -73,7 +74,7 @@ public class GitVersioningModelProcessor implements ModelProcessor {
 
     static final String GIT_VERSIONING_POM_NAME = ".git-versioned-pom.xml";
 
-    final private Logger logger = getLogger(GitVersioningModelProcessor.class);
+    private Logger logger = getLogger(GitVersioningModelProcessor.class);
 
     // gets injected by setter, see below
     private ModelProcessor delegatedModelProcessor;
@@ -317,10 +318,9 @@ public class GitVersioningModelProcessor implements ModelProcessor {
         // add current project model to session project models
         sessionModelCache.put(canonicalProjectPomFile, projectModel);
 
-        if (logger.isInfoEnabled()) {
-            // log project header
-            logger.info(projectLogHeader(projectGAV));
-        }
+        final Logger initialLogger = logger;
+        final DeferredLogger deferredLogger = new DeferredLogger(logger);
+        logger = deferredLogger;
 
         updateModel(projectModel, gitVersionDetails.getPatchDescription());
 
@@ -341,7 +341,13 @@ public class GitVersioningModelProcessor implements ModelProcessor {
         // That's why we need to add a build plugin that sets project pom file to git versioned pom file
         addBuildPlugin(projectModel);
 
-        logger.info("");
+        logger = initialLogger;
+        deferredLogger.finish(() -> {
+            if (logger.isInfoEnabled()) {
+                // log project header
+                logger.info(projectLogHeader(projectGAV));
+            }
+        }, () -> logger.info(""));
         return projectModel;
     }
 
