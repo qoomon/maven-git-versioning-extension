@@ -5,12 +5,15 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -166,6 +169,40 @@ class GitUtilTest {
 
         // then
         assertThat(tags).containsExactlyInAnyOrder(givenTagName);
+    }
+
+    @Test
+    void worktreesFix_resolveHead_handlesPackedRefs() throws Exception {
+
+        // given
+        Git git = Git.init().setInitialBranch(MASTER).setDirectory(tempDir.toFile()).call();
+        RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+        String givenBranch = "fixing/franco-2.1.5";
+        git.branchCreate().setName(givenBranch).setStartPoint(givenCommit).call();
+
+        Path gitDir = tempDir.resolve(".git");
+        Path branchRef = gitDir.resolve("refs").resolve("heads").resolve(givenBranch);
+        assertThat(branchRef).exists();
+
+        Path packedRefs = gitDir.resolve("packed-refs");
+        Files.writeString(packedRefs, givenCommit.getName() + " refs/heads/" + givenBranch + System.lineSeparator());
+        Files.delete(branchRef);
+
+        Path worktreeGitDir = gitDir.resolve("worktrees").resolve("feature");
+        Files.createDirectories(worktreeGitDir);
+        Files.writeString(worktreeGitDir.resolve("HEAD"), "ref: refs/heads/" + givenBranch + System.lineSeparator());
+        Files.writeString(worktreeGitDir.resolve("commondir"), "../.." + System.lineSeparator());
+
+        try (Repository worktreeRepository = new FileRepositoryBuilder()
+                .setGitDir(worktreeGitDir.toFile())
+                .build()) {
+
+            // when
+            ObjectId head = GitUtil.worktreesFix_resolveHead(worktreeRepository);
+
+            // then
+            assertThat(head).isEqualTo(givenCommit.toObjectId());
+        }
     }
 
     private static ObjectId head(Git git) throws IOException {
