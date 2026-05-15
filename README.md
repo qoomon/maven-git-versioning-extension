@@ -38,7 +38,7 @@ create or update `${rootProjectDir}/.mvn/extensions.xml` file
     <extension>
         <groupId>me.qoomon</groupId>
         <artifactId>maven-git-versioning-extension</artifactId>
-        <version>9.11.0</version>
+        <version>9.12.0</version>
     </extension>
 
 </extensions>
@@ -175,8 +175,16 @@ e.g `${dirty:+SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
     - `${version.minor.next}` the `${version.minor}` increased by 1 e.g. '3'
   - `${version.patch}` the patch version component of `${version}` e.g. '3'
     - `${version.patch.next}` the `${version.patch}` increased by 1 e.g. '4'
+  - `${version.build}` the build version component (optional 4th dot-segment) of `${version}` e.g. '4'
+    - `${version.build.next}` the `${version.build}` increased by 1 e.g. '5'
   - `${version.label}` the version label of `${version}` e.g. 'SNAPSHOT'
     - `${version.label.prefixed}` like `${version.label}` with label separator e.g. '-SNAPSHOT'
+  - `${version.next}` `${version}` with one numeric segment bumped by 1.
+    Bumps the trailing numeric suffix of the label if a label is present (`RC1` → `RC2`); a label with no
+    trailing numeric is treated as having `0` at the end (`alpha` → `alpha1`); otherwise bumps the
+    rightmost numeric core component (build → patch → minor → major).
+    Only *trailing* digits of the label are considered — `RC1-final` bumps to `RC1-final1`, not `RC2-final`.
+    e.g. '1.2.3' → '1.2.4', '1.2.3.4' → '1.2.3.5', '1.2.3-RC1' → '1.2.3-RC2', '1.2.3-alpha' → '1.2.3-alpha1'
 - Project Version Pattern Groups
   - Content of regex groups in `<projectVersionPattern>` can be addressed like this:
   - `${version.GROUP_NAME}`
@@ -239,7 +247,7 @@ e.g `${dirty:+SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
 - `${describe.distance}` The distance count to last matching tag
 - `${describe.distance.snapshot}` Empty string on matching tag, `-SNAPSHOT` if `describe.distance > 0` 
 - `${describe.tag}` The matching tag of `git describe`
-  - `${describe.tag.version}` the tag version determined by regex `(?<version>(?<core>(?<major>\d+)(?:\.(?<minor>\d+)(?:\.(?<patch>\d+))?)?)(?:-(?<label>.*))?)`
+  - `${describe.tag.version}` the tag version determined by regex `(?<version>(?<core>(?<major>\d+)(?:\.(?<minor>\d+)(?:\.(?<patch>\d+))?)?)(?:\.(?<build>\d+))?(?:-(?<label>.*))?)`
     - `${describe.tag.version.core}` the core version component of `${describe.tag.version}` e.g. '1.2.3' 
     - `${describe.tag.version.major}` the major version component of `${describe.tag.version}` e.g. '1'
       - `${describe.tag.version.major.next}` the `${describe.tag.version.major}` increased by 1 e.g. '2'
@@ -249,10 +257,20 @@ e.g `${dirty:+SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
       - `${describe.tag.version.patch.next}` the `${describe.tag.version.patch}` increased by 1 e.g. '4'
       - `${describe.tag.version.patch.plus.describe.distance}` the `${describe.tag.version.patch}` increased by `${describe.distance}` e.g. '2'
       - `${describe.tag.version.patch.next.plus.describe.distance}` the `${describe.tag.version.patch.next}` increased by `${describe.distance}` e.g. '3'
+    - `${describe.tag.version.build}` the build version component (optional 4th dot-segment) of `${describe.tag.version}` e.g. '4'
+      - `${describe.tag.version.build.next}` the `${describe.tag.version.build}` converted to an integer and increased by 1 e.g. '5'
+      - `${describe.tag.version.build.plus.describe.distance}` the `${describe.tag.version.build}` increased by `${describe.distance}` e.g. '6'
+      - `${describe.tag.version.build.next.plus.describe.distance}` the `${describe.tag.version.build.next}` increased by `${describe.distance}` e.g. '7'
     - `${describe.tag.version.label}` the label version component of `${describe.tag.version}` e.g. 'SNAPSHOT'
       - `${describe.tag.version.label.next}` the `${describe.tag.version.label}` converted to an integer and increased by 1 e.g. '6'
       - `${describe.tag.version.label.plus.describe.distance}` the `${describe.tag.version.label}` increased by `${describe.distance}` e.g. '2'
       - `${describe.tag.version.label.next.plus.describe.distance}` the `${describe.tag.version.label.next}` increased by `${describe.distance}` e.g. '3'
+  - `${describe.tag.version.next}` `${describe.tag.version}` with one numeric segment bumped by 1.
+    Bumps the trailing numeric suffix of the label if a label is present (`RC1` → `RC2`); a label with no
+    trailing numeric is treated as having `0` at the end (`alpha` → `alpha1`); otherwise bumps the
+    rightmost numeric core component (build → patch → minor → major).
+    Only *trailing* digits of the label are considered — `RC1-final` bumps to `RC1-final1`, not `RC2-final`.
+    e.g. '1.2.3' → '1.2.4', '1.2.3.4' → '1.2.3.5', '1.2.3-RC1' → '1.2.3-RC2', '1.2.3-alpha' → '1.2.3-alpha1'
 - Describe Tag Pattern Groups
     - Content of regex groups in `<describeTagPattern>` can be addressed like this:
     - `${describe.tag.GROUP_NAME}` `${describe.tag.GROUP_NAME.slug}`
