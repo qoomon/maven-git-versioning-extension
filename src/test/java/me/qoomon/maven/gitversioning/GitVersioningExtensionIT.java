@@ -1006,6 +1006,39 @@ class GitVersioningExtensionIT {
     // TODO add tests for property updates
 
     @Test
+    void apply_DescribeTagPatternVersionGroupFeedsVersionPlaceholders() throws Exception {
+
+        try (Git git = Git.init().setInitialBranch("master").setDirectory(projectDir.toFile()).call()) {
+            // Given
+            git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+            git.tag().setAnnotated(true).setName("v1.2.3").call();
+
+            writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
+            writeExtensionsFile(projectDir);
+            writeExtensionConfigFile(projectDir, new Configuration() {{
+                RefPatchDescription ref = createVersionDescription(BRANCH,
+                        "${describe.tag.version.major}.${describe.tag.version.minor}.${describe.tag.version.patch.next}-SNAPSHOT");
+                ref.describeTagPattern = "v(?<version>.*)";
+                refs.list.add(ref);
+            }});
+
+            // When
+            Verifier verifier = getVerifier(projectDir);
+            verifier.addCliArgument("verify");
+            verifier.execute();
+
+            // Then
+            System.err.println(String.join("\n", verifier.loadFile(verifier.getBasedir(), verifier.getLogFileName(), false)));
+            verifier.verifyErrorFreeLog();
+            String expectedVersion = "1.2.4-SNAPSHOT";
+            verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
+
+            Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
+            assertThat(gitVersionedPomModel.getVersion()).isEqualTo(expectedVersion);
+        }
+    }
+
+    @Test
     void apply_UseDescribeTagVersionLabel() throws Exception {
 
         try (Git git = Git.init().setInitialBranch("master").setDirectory(projectDir.toFile()).call()) {

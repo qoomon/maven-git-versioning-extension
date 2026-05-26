@@ -972,7 +972,20 @@ public class GitVersioningModelProcessor implements ModelProcessor {
         final Lazy<String> descriptionTag = Lazy.by(() -> description.get().getTag());
         placeholderMap.put("describe.tag", descriptionTag);
 
-        final Lazy<Matcher> descriptionTagVersionMatcher = Lazy.by(() -> matchVersion(descriptionTag.get()));
+        // describe tag pattern groups - compute before version matcher so 'version' group can feed into it
+        final Lazy<Map<String, String>> describeTagPatternValues = Lazy.by(
+                () -> patternGroupValues(gitSituation.getDescribeTagPattern(), descriptionTag.get()));
+
+        // If describeTagPattern defines a 'version' capture group, use it as the source for version matching;
+        // otherwise fall back to matching a version from the full describe tag string.
+        final boolean describeTagPatternHasVersionGroup = patternGroupNames(gitSituation.getDescribeTagPattern()).contains("version");
+        final Lazy<Matcher> descriptionTagVersionMatcher;
+        if (describeTagPatternHasVersionGroup) {
+            descriptionTagVersionMatcher = Lazy.by(() -> matchVersion(
+                    requireNonNullElse(describeTagPatternValues.get().get("version"), "")));
+        } else {
+            descriptionTagVersionMatcher = Lazy.by(() -> matchVersion(descriptionTag.get()));
+        }
 
         placeholderMap.put("describe.tag.version", Lazy.by(() -> requireNonNullElse(descriptionTagVersionMatcher.get().group("version"), "0.0.0")));
 
@@ -1001,12 +1014,14 @@ public class GitVersioningModelProcessor implements ModelProcessor {
         placeholderMap.put("describe.tag.version.label.next.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.label.next").get(), descriptionDistance.get())));
 
         // describe tag pattern groups
-        final Lazy<Map<String, String>> describeTagPatternValues = Lazy.by(
-                () -> patternGroupValues(gitSituation.getDescribeTagPattern(), descriptionTag.get()));
         for (String groupName : patternGroups(gitSituation.getDescribeTagPattern())) {
             final var placeholderKey = "describe.tag." + groupName;
             // ensure no placeholder overwrites
             if (placeholderMap.containsKey(placeholderKey)) {
+                if ("version".equals(groupName)) {
+                    // 'version' group feeds into describe.tag.version.* placeholders — already handled above
+                    continue;
+                }
                 throw new IllegalArgumentException("describe tag pattern capture group can not be named '" + groupName + "', because this would overwrite extension placeholder ${" + placeholderKey + "}");
             }
             Lazy<String> groupValue = Lazy.by(() -> describeTagPatternValues.get().get(groupName));

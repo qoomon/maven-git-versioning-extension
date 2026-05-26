@@ -239,7 +239,7 @@ e.g `${dirty:+SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
 - `${describe.distance}` The distance count to last matching tag
 - `${describe.distance.snapshot}` Empty string on matching tag, `-SNAPSHOT` if `describe.distance > 0` 
 - `${describe.tag}` The matching tag of `git describe`
-  - `${describe.tag.version}` the tag version determined by regex `(?<version>(?<core>(?<major>\d+)(?:\.(?<minor>\d+)(?:\.(?<patch>\d+))?)?)(?:-(?<label>.*))?)`
+  - `${describe.tag.version}` the tag version, determined from the `version` capture group of `<describeTagPattern>` if defined, otherwise by regex `(?<version>(?<core>(?<major>\d+)(?:\.(?<minor>\d+)(?:\.(?<patch>\d+))?)?)(?:-(?<label>.*))?)`
     - `${describe.tag.version.core}` the core version component of `${describe.tag.version}` e.g. '1.2.3' 
     - `${describe.tag.version.major}` the major version component of `${describe.tag.version}` e.g. '1'
       - `${describe.tag.version.major.next}` the `${describe.tag.version.major}` increased by 1 e.g. '2'
@@ -257,12 +257,13 @@ e.g `${dirty:+SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
     - Content of regex groups in `<describeTagPattern>` can be addressed like this:
     - `${describe.tag.GROUP_NAME}` `${describe.tag.GROUP_NAME.slug}`
     - `${describe.tag.GROUP_INDEX}` `${describe.tag.GROUP_INDEX.slug}`
+    - A capture group named `version` is special: its value is used as the source for `${describe.tag.version}` and all `${describe.tag.version.*}` sub-placeholders.
     - Named Group Example
         ```xml
         <ref type="branch">
             <pattern>main</pattern>
-            <describeTagPattern><![CDATA[v(?<name>.*)]]></describeTagPattern>
-            <version>${describe.tag.name}-SNAPSHOT</version>
+            <describeTagPattern><![CDATA[v(?<version>.*)]]></describeTagPattern>
+            <version>${describe.tag.version.major}.${describe.tag.version.minor}.${describe.tag.version.patch.next}-SNAPSHOT</version>
         </ref>
         ```
         <br> 
