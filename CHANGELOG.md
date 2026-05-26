@@ -4,6 +4,43 @@
 
 # Changelog
 
+## 9.12.0
+
+##### Features
+- Support 4-segment tag versions (e.g. `3.0.28.1`). New placeholders:
+  - `${describe.tag.version.build}`, `${describe.tag.version.build.next}`
+  - `${describe.tag.version.build.plus.describe.distance}`, `${describe.tag.version.build.next.plus.describe.distance}`
+  - `${version.build}`, `${version.build.next}`
+- Shape-aware version-increment placeholders that pick the right segment based on the parsed version's shape:
+  - `${describe.tag.version.next}` — one numeric segment of the tag bumped by 1. Bumps the *trailing*
+    digits of the label if a label is present (`RC1` → `RC2`, `RC10` → `RC11`); a label with no trailing
+    digits is treated as having `0` at the end (`alpha` → `alpha1`); otherwise bumps the rightmost
+    numeric core component (build → patch → minor → major).
+    - `1.2.3 → 1.2.4`, `1.2.3.4 → 1.2.3.5`
+    - `1.2.3-RC1 → 1.2.3-RC2` (standard SemVer pre-release progression)
+    - `1.2.3-alpha → 1.2.3-alpha1`
+    - `RC1-final → RC1-final1` (only *trailing* digits — not `RC2-final`).
+  - `${version.next}` — same semantics applied to the project's `<version>`.
+
+  Note: this is strictly more capable than `${...label.next}` for RC-style labels — the latter calls
+  `Long.parseLong` on the entire label and crashes on `RC1`.
+
+##### Behavior changes
+- `${describe.tag.version}` now includes the optional 4th `.build` segment when the matched tag has one.
+  Previously, for a tag like `3.0.28.1`, `${describe.tag.version}` returned `3.0.28` (silently dropping the 4th segment).
+  After this change it returns `3.0.28.1`. 3-segment tags are unaffected.
+  `${version}` itself is unchanged — it returns the raw project `<version>` and never went through the regex.
+
+##### Migration
+- The new `version.build` and `version.next` placeholders reserve the group names `build` and `next` inside
+  `<projectVersionPattern>`. If you previously defined a capture group with either name there, the extension
+  will now throw an `IllegalArgumentException` at startup ("project version pattern capture group can not be
+  named '…', because this would overwrite extension placeholder ${version.…}"). Rename the group to resolve.
+  (Named groups in `<describeTagPattern>` and `<ref>` patterns are unaffected — they use separate prefixes
+  `describe.tag.` and `ref.` respectively, so a `(?<build>…)` or `(?<next>…)` there is still valid.)
+
+Fixes [#412](https://github.com/qoomon/maven-git-versioning-extension/issues/412).
+
 ## 9.11.0
 - add option to configure config file location
 
