@@ -175,6 +175,8 @@ e.g `${dirty:+SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
     - `${version.minor.next}` the `${version.minor}` increased by 1 e.g. '3'
   - `${version.patch}` the patch version component of `${version}` e.g. '3'
     - `${version.patch.next}` the `${version.patch}` increased by 1 e.g. '4'
+  - `${version.build}` the build version component of `${version}` e.g. '4'
+    - `${version.build.next}` the `${version.build}` increased by 1 e.g. '5'
   - `${version.label}` the version label of `${version}` e.g. 'SNAPSHOT'
     - `${version.label.prefixed}` like `${version.label}` with label separator e.g. '-SNAPSHOT'
 - Project Version Pattern Groups
@@ -239,7 +241,7 @@ e.g `${dirty:+SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
 - `${describe.distance}` The distance count to last matching tag
 - `${describe.distance.snapshot}` Empty string on matching tag, `-SNAPSHOT` if `describe.distance > 0` 
 - `${describe.tag}` The matching tag of `git describe`
-  - `${describe.tag.version}` the tag version determined by regex `(?<version>(?<core>(?<major>\d+)(?:\.(?<minor>\d+)(?:\.(?<patch>\d+))?)?)(?:-(?<label>.*))?)`
+  - `${describe.tag.version}` the tag version determined by regex `(?<version>(?<core>(?<major>\d+)(?:\.(?<minor>\d+)(?:\.(?<patch>\d+)(?:\.(?<build>\d+))?)?)?)(?:-(?<label>.*))?)`
     - `${describe.tag.version.core}` the core version component of `${describe.tag.version}` e.g. '1.2.3' 
     - `${describe.tag.version.major}` the major version component of `${describe.tag.version}` e.g. '1'
       - `${describe.tag.version.major.next}` the `${describe.tag.version.major}` increased by 1 e.g. '2'
@@ -249,6 +251,10 @@ e.g `${dirty:+SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
       - `${describe.tag.version.patch.next}` the `${describe.tag.version.patch}` increased by 1 e.g. '4'
       - `${describe.tag.version.patch.plus.describe.distance}` the `${describe.tag.version.patch}` increased by `${describe.distance}` e.g. '2'
       - `${describe.tag.version.patch.next.plus.describe.distance}` the `${describe.tag.version.patch.next}` increased by `${describe.distance}` e.g. '3'
+    - `${describe.tag.version.build}` the build version component of `${describe.tag.version}` e.g. '4'
+      - `${describe.tag.version.build.next}` the `${describe.tag.version.build}` increased by 1 e.g. '5'
+      - `${describe.tag.version.build.plus.describe.distance}` the `${describe.tag.version.build}` increased by `${describe.distance}` e.g. '5'
+      - `${describe.tag.version.build.next.plus.describe.distance}` the `${describe.tag.version.build.next}` increased by `${describe.distance}` e.g. '6'
     - `${describe.tag.version.label}` the label version component of `${describe.tag.version}` e.g. 'SNAPSHOT'
       - `${describe.tag.version.label.next}` the `${describe.tag.version.label}` converted to an integer and increased by 1 e.g. '6'
       - `${describe.tag.version.label.plus.describe.distance}` the `${describe.tag.version.label}` increased by `${describe.distance}` e.g. '2'

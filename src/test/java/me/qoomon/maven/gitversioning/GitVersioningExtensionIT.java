@@ -1035,6 +1035,37 @@ class GitVersioningExtensionIT {
         }
     }
 
+    @Test
+    void apply_UseDescribeTagVersionBuildNext() throws Exception {
+
+        try (Git git = Git.init().setInitialBranch("master").setDirectory(projectDir.toFile()).call()) {
+            // Given
+            git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+            git.tag().setAnnotated(true).setName("v1.2.3.4").call();
+
+            writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
+            writeExtensionsFile(projectDir);
+            writeExtensionConfigFile(projectDir, new Configuration() {{
+                refs.list.add(createVersionDescription(BRANCH,
+                        "${describe.tag.version.major}.${describe.tag.version.minor}.${describe.tag.version.patch}.${describe.tag.version.build.next}-SNAPSHOT"));
+            }});
+
+            // When
+            Verifier verifier = getVerifier(projectDir);
+            verifier.addCliArgument("verify");
+            verifier.execute();
+
+            // Then
+            System.err.println(String.join("\n", verifier.loadFile(verifier.getBasedir(), verifier.getLogFileName(), false)));
+            verifier.verifyErrorFreeLog();
+            String expectedVersion = "1.2.3.5-SNAPSHOT";
+            verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
+
+            Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
+            assertThat(gitVersionedPomModel.getVersion()).isEqualTo(expectedVersion);
+        }
+    }
+
     // -----------------------------------------------------------------------------------------------------------------
 
     private File writeExtensionsFile(Path projectDir) throws IOException {

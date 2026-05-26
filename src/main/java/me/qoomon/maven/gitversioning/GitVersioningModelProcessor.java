@@ -62,7 +62,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 @Singleton
 public class GitVersioningModelProcessor implements ModelProcessor {
 
-    private static final Pattern VERSION_PATTERN = Pattern.compile(".*?(?<version>(?<core>(?<major>\\d+)(?:\\.(?<minor>\\d+)(?:\\.(?<patch>\\d+))?)?)(?:-(?<label>.*))?)|");
+    private static final Pattern VERSION_PATTERN = Pattern.compile(".*?(?<version>(?<core>(?<major>\\d+)(?:\\.(?<minor>\\d+)(?:\\.(?<patch>\\d+)(?:\\.(?<build>\\d+))?)?)?)(?:-(?<label>.*))?)|");
 
     private static final String OPTION_NAME_GIT_REF = "git.ref";
     private static final String OPTION_NAME_GIT_TAG = "git.tag";
@@ -874,6 +874,9 @@ public class GitVersioningModelProcessor implements ModelProcessor {
         placeholderMap.put("version.patch", Lazy.by(() -> requireNonNullElse(versionComponents.get().group("patch"), "0")));
         placeholderMap.put("version.patch.next", Lazy.by(() -> increase(placeholderMap.get("version.patch").get(), 1)));
 
+        placeholderMap.put("version.build", Lazy.by(() -> requireNonNullElse(versionComponents.get().group("build"), "0")));
+        placeholderMap.put("version.build.next", Lazy.by(() -> increase(placeholderMap.get("version.build").get(), 1)));
+
         placeholderMap.put("version.label", Lazy.by(() -> requireNonNullElse(versionComponents.get().group("label"), "")));
         placeholderMap.put("version.label.prefixed", Lazy.by(() -> {
             String label = placeholderMap.get("version.label").get();
@@ -987,6 +990,9 @@ public class GitVersioningModelProcessor implements ModelProcessor {
         placeholderMap.put("describe.tag.version.patch", Lazy.by(() -> requireNonNullElse(descriptionTagVersionMatcher.get().group("patch"), "0")));
         placeholderMap.put("describe.tag.version.patch.next", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.patch").get(), 1)));
 
+        placeholderMap.put("describe.tag.version.build", Lazy.by(() -> requireNonNullElse(descriptionTagVersionMatcher.get().group("build"), "0")));
+        placeholderMap.put("describe.tag.version.build.next", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.build").get(), 1)));
+
         placeholderMap.put("describe.tag.version.label", Lazy.by(() -> requireNonNullElse(descriptionTagVersionMatcher.get().group("label"), "")));
         placeholderMap.put("describe.tag.version.label.next", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.label").get(), 1)));
 
@@ -996,6 +1002,9 @@ public class GitVersioningModelProcessor implements ModelProcessor {
 
         placeholderMap.put("describe.tag.version.patch.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.patch").get(), descriptionDistance.get())));
         placeholderMap.put("describe.tag.version.patch.next.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.patch.next").get(), descriptionDistance.get())));
+
+        placeholderMap.put("describe.tag.version.build.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.build").get(), descriptionDistance.get())));
+        placeholderMap.put("describe.tag.version.build.next.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.build.next").get(), descriptionDistance.get())));
 
         placeholderMap.put("describe.tag.version.label.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.label").get(), descriptionDistance.get())));
         placeholderMap.put("describe.tag.version.label.next.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.label.next").get(), descriptionDistance.get())));
