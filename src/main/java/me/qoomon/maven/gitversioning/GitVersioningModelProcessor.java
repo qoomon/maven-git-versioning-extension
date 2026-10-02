@@ -49,10 +49,6 @@ import static me.qoomon.gitversioning.commons.StringUtil.*;
 import static me.qoomon.maven.gitversioning.BuildProperties.projectArtifactId;
 import static me.qoomon.maven.gitversioning.GitVersioningMojo.asPlugin;
 import static me.qoomon.maven.gitversioning.MavenUtil.*;
-import static org.apache.maven.shared.utils.StringUtils.leftPad;
-import static org.apache.maven.shared.utils.StringUtils.repeat;
-import static org.apache.maven.shared.utils.StringUtils.rightPad;
-import static org.apache.maven.shared.utils.logging.MessageUtils.buffer;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -225,7 +221,7 @@ public class GitVersioningModelProcessor implements ModelProcessor {
             logger.warn("  branch: {}", gitSituation.getBranch());
             logger.warn("  tags: {}", gitSituation.getTags());
             logger.warn("defined ref configurations:");
-            config.refs.list.forEach(ref -> logger.warn("  {} - pattern: {}", rightPad(ref.type.name(), 6), ref.pattern));
+            config.refs.list.forEach(ref -> logger.warn("  {} - pattern: {}", String.format("%-6s", ref.type.name()), ref.pattern));
             disabled = true;
             return;
         }
@@ -267,7 +263,7 @@ public class GitVersioningModelProcessor implements ModelProcessor {
         // determine related projects
         relatedProjects = determineRelatedProjects(projectModel);
         if (logger.isDebugEnabled()) {
-            logger.debug(buffer().strong("related projects:").toString());
+            logger.debug(LogStyle.strong("related projects:"));
             relatedProjects.forEach(gav -> logger.debug("  {}", gav));
         }
 
@@ -922,11 +918,11 @@ public class GitVersioningModelProcessor implements ModelProcessor {
         placeholderMap.put("commit.timestamp", Lazy.by(() -> String.valueOf(headCommitDateTime.get().toEpochSecond())));
         placeholderMap.put("commit.timestamp.year", Lazy.by(() -> String.valueOf(headCommitDateTime.get().getYear())));
         placeholderMap.put("commit.timestamp.year.2digit", Lazy.by(() -> String.valueOf(headCommitDateTime.get().getYear() % 100)));
-        placeholderMap.put("commit.timestamp.month", Lazy.by(() -> leftPad(String.valueOf(headCommitDateTime.get().getMonthValue()), 2, "0")));
-        placeholderMap.put("commit.timestamp.day", Lazy.by(() -> leftPad(String.valueOf(headCommitDateTime.get().getDayOfMonth()), 2, "0")));
-        placeholderMap.put("commit.timestamp.hour", Lazy.by(() -> leftPad(String.valueOf(headCommitDateTime.get().getHour()), 2, "0")));
-        placeholderMap.put("commit.timestamp.minute", Lazy.by(() -> leftPad(String.valueOf(headCommitDateTime.get().getMinute()), 2, "0")));
-        placeholderMap.put("commit.timestamp.second", Lazy.by(() -> leftPad(String.valueOf(headCommitDateTime.get().getSecond()), 2, "0")));
+        placeholderMap.put("commit.timestamp.month", Lazy.by(() -> String.format("%02d", headCommitDateTime.get().getMonthValue())));
+        placeholderMap.put("commit.timestamp.day", Lazy.by(() -> String.format("%02d", headCommitDateTime.get().getDayOfMonth())));
+        placeholderMap.put("commit.timestamp.hour", Lazy.by(() -> String.format("%02d", headCommitDateTime.get().getHour())));
+        placeholderMap.put("commit.timestamp.minute", Lazy.by(() -> String.format("%02d", headCommitDateTime.get().getMinute())));
+        placeholderMap.put("commit.timestamp.second", Lazy.by(() -> String.format("%02d", headCommitDateTime.get().getSecond())));
         placeholderMap.put("commit.timestamp.datetime", Lazy.by(() -> headCommitDateTime.get().toEpochSecond() > 0
                 ? headCommitDateTime.get().format(DateTimeFormatter.ofPattern("yyyyMMdd.HHmmss")) : "00000101.000000"));
         placeholderMap.put("commit.timestamp.iso", Lazy.by(() -> headCommitDateTime.get().toEpochSecond() > 0
@@ -936,11 +932,11 @@ public class GitVersioningModelProcessor implements ModelProcessor {
         placeholderMap.put("build.timestamp", Lazy.by(() -> String.valueOf(buildCommitDateTime.get().toEpochSecond())));
         placeholderMap.put("build.timestamp.year", Lazy.by(() -> String.valueOf(buildCommitDateTime.get().getYear())));
         placeholderMap.put("build.timestamp.year.2digit", Lazy.by(() -> String.valueOf(buildCommitDateTime.get().getYear() % 100)));
-        placeholderMap.put("build.timestamp.month", Lazy.by(() -> leftPad(String.valueOf(buildCommitDateTime.get().getMonthValue()), 2, "0")));
-        placeholderMap.put("build.timestamp.day", Lazy.by(() -> leftPad(String.valueOf(buildCommitDateTime.get().getDayOfMonth()), 2, "0")));
-        placeholderMap.put("build.timestamp.hour", Lazy.by(() -> leftPad(String.valueOf(buildCommitDateTime.get().getHour()), 2, "0")));
-        placeholderMap.put("build.timestamp.minute", Lazy.by(() -> leftPad(String.valueOf(buildCommitDateTime.get().getMinute()), 2, "0")));
-        placeholderMap.put("build.timestamp.second", Lazy.by(() -> leftPad(String.valueOf(buildCommitDateTime.get().getSecond()), 2, "0")));
+        placeholderMap.put("build.timestamp.month", Lazy.by(() -> String.format("%02d", buildCommitDateTime.get().getMonthValue())));
+        placeholderMap.put("build.timestamp.day", Lazy.by(() -> String.format("%02d", buildCommitDateTime.get().getDayOfMonth())));
+        placeholderMap.put("build.timestamp.hour", Lazy.by(() -> String.format("%02d", buildCommitDateTime.get().getHour())));
+        placeholderMap.put("build.timestamp.minute", Lazy.by(() -> String.format("%02d", buildCommitDateTime.get().getMinute())));
+        placeholderMap.put("build.timestamp.second", Lazy.by(() -> String.format("%02d", buildCommitDateTime.get().getSecond())));
         placeholderMap.put("build.timestamp.datetime", Lazy.by(() -> buildCommitDateTime.get().toEpochSecond() > 0
                 ? buildCommitDateTime.get().format(DateTimeFormatter.ofPattern("yyyyMMdd.HHmmss")) : "00000000.000000"));
         placeholderMap.put("build.timestamp.iso", Lazy.by(() -> buildCommitDateTime.get().toEpochSecond() > 0
@@ -1433,9 +1429,7 @@ public class GitVersioningModelProcessor implements ModelProcessor {
         String metaInfo = "[core extension]";
 
         String plainLog = extension + " " + metaInfo;
-        String formattedLog = buffer()
-                .a(" ").mojo(extension).a(" ").strong(metaInfo).a(" ")
-                .toString();
+        String formattedLog = " " + LogStyle.mojo(extension) + " " + LogStyle.strong(metaInfo) + " ";
 
         return padLogHeaderPadding(plainLog, formattedLog);
     }
@@ -1445,22 +1439,20 @@ public class GitVersioningModelProcessor implements ModelProcessor {
         int padding = max(6, 72 - 2 - plainLog.length());
         int paddingLeft = (int) floor(padding / 2.0);
         int paddingRight = (int) ceil(padding / 2.0);
-        return buffer()
-                .strong(repeat(pad, paddingLeft))
-                .a(formattedLog)
-                .strong(repeat(pad, paddingRight))
-                .toString();
+        return LogStyle.strong(pad.repeat(paddingLeft))
+                + formattedLog
+                + LogStyle.strong(pad.repeat(paddingRight));
     }
 
     private static String projectLogHeader(GAV projectGAV) {
         String project = projectGAV.getProjectId();
-        return buffer().project(project).toString();
+        return LogStyle.project(project);
     }
 
     private static String sectionLogHeader(String title, ModelBase model) {
         String header = title + ":";
         if (model instanceof Profile) {
-            header = buffer().strong("profile " + ((Profile) model).getId() + " ") + header;
+            header = LogStyle.strong("profile " + ((Profile) model).getId() + " ") + header;
         }
         return header;
     }
