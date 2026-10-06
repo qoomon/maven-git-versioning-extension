@@ -144,6 +144,7 @@ class GitVersioningExtensionIT {
             Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
             assertThat(gitVersionedPomModel.getVersion()).isEqualTo(expectedVersion);
         }
+
     }
 
     @Test
@@ -209,26 +210,26 @@ class GitVersioningExtensionIT {
         try (Git git = Git.init().setInitialBranch("feature/test").setDirectory(projectDir.toFile()).call()) {
             // Given
             git.commit().setMessage("initial commit").setAllowEmpty(true).call();
-            
-            
+
+
             // Put there just some dummy plugin with some dummy dependency
-            Plugin plugin = new Plugin();            
+            Plugin plugin = new Plugin();
             Dependency dependency = new Dependency();
             dependency.setGroupId(pomModel.getGroupId());
             dependency.setArtifactId(pomModel.getArtifactId());
             dependency.setVersion(pomModel.getVersion());
             plugin.setArtifactId("maven-enforcer-plugin");
-            plugin.addDependency(dependency);            
+            plugin.addDependency(dependency);
             Build build = new Build();
             build.addPlugin(plugin);
             pomModel.setBuild(build);
-            
+
             writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
             writeExtensionsFile(projectDir);
             writeExtensionConfigFile(projectDir, new Configuration() {{
                 refs.list.add(createBranchVersionDescription());
             }});
-            
+
             // When
             Verifier verifier = getVerifier(projectDir);
             verifier.addCliArgument("verify");
