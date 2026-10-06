@@ -28,6 +28,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Stream;
 
 import static me.qoomon.gitversioning.commons.GitRefType.BRANCH;
 import static me.qoomon.gitversioning.commons.GitRefType.TAG;
@@ -694,6 +697,83 @@ class GitVersioningExtensionIT {
     }
 
     @Test
+    void branchVersioning_multiModuleProject_siblingModuleFromLocalRepository() throws Exception {
+        // unique groupId, because installed artifacts end up in the shared local repository
+        pomModel.setGroupId("test.siblingModuleFromLocalRepository");
+        Path localRepoGroupDir = Paths.get(System.getProperty("user.home"), ".m2", "repository")
+                .resolve(pomModel.getGroupId().replace('.', File.separatorChar));
+        try (Git git = Git.init().setInitialBranch("master").setDirectory(projectDir.toFile()).call()) {
+            // Given
+            git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+
+            pomModel.setPackaging("pom");
+            pomModel.addModule("api");
+            pomModel.addModule("logic");
+
+            writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
+            writeExtensionsFile(projectDir);
+
+            writeExtensionConfigFile(projectDir, new Configuration() {{
+                // keep original version, so installed sibling module poms still match related project GAVs
+                refs.list.add(createVersionDescription(BRANCH, "${version}"));
+            }});
+
+            Path apiProjectDir = Files.createDirectories(projectDir.resolve("api"));
+            Model apiPomModel = writeModel(apiProjectDir.resolve("pom.xml").toFile(), new Model() {{
+                setModelVersion(pomModel.getModelVersion());
+                setParent(new Parent() {{
+                    setGroupId(pomModel.getGroupId());
+                    setArtifactId(pomModel.getArtifactId());
+                    setVersion(pomModel.getVersion());
+                }});
+                setArtifactId("api");
+            }});
+
+            Path logicProjectDir = Files.createDirectories(projectDir.resolve("logic"));
+            Model logicPomModel = writeModel(logicProjectDir.resolve("pom.xml").toFile(), new Model() {{
+                setModelVersion(pomModel.getModelVersion());
+                setParent(new Parent() {{
+                    setGroupId(pomModel.getGroupId());
+                    setArtifactId(pomModel.getArtifactId());
+                    setVersion(pomModel.getVersion());
+                }});
+                setArtifactId("logic");
+                addDependency(new Dependency() {{
+                    setGroupId(pomModel.getGroupId());
+                    setArtifactId(apiPomModel.getArtifactId());
+                    setVersion("${project.version}");
+                }});
+            }});
+
+            Verifier installVerifier = getVerifier(projectDir);
+            installVerifier.addCliArgument("install");
+            installVerifier.execute();
+            installVerifier.verifyErrorFreeLog();
+
+            // When
+            // build module only, sibling module api gets resolved from local repository
+            Verifier verifier = getVerifier(logicProjectDir);
+            verifier.addCliArgument("verify");
+            verifier.execute();
+
+            // Then
+            List<String> log = verifier.loadFile(verifier.getBasedir(), verifier.getLogFileName(), false);
+            System.err.println(String.join("\n", log));
+            verifier.verifyErrorFreeLog();
+            String expectedVersion = pomModel.getVersion();
+            verifier.verifyTextInLog("Building " + logicPomModel.getArtifactId() + " " + expectedVersion);
+            assertThat(log).noneMatch(line -> line.contains("Non-readable POM") || line.contains("is invalid"));
+
+            Path apiLocalRepoDir = localRepoGroupDir.resolve(apiPomModel.getArtifactId()).resolve(expectedVersion);
+            assertThat(apiLocalRepoDir.resolve(apiPomModel.getArtifactId() + "-" + expectedVersion + ".pom"))
+                    .exists();
+            assertThat(apiLocalRepoDir.resolve(GIT_VERSIONING_POM_NAME)).doesNotExist();
+        } finally {
+            deleteRecursively(localRepoGroupDir);
+        }
+    }
+
+    @Test
     void dependencyUpdates_multiModuleProject() throws Exception {
         try (Git git = Git.init().setInitialBranch("test").setDirectory(projectDir.toFile()).call()) {
             // Given
@@ -1291,5 +1371,16 @@ class GitVersioningExtensionIT {
     private Model writeModel(File pomFile, Model pomModel) throws IOException {
         MavenUtil.writeModel(pomFile, pomModel);
         return pomModel;
+    }
+
+    private static void deleteRecursively(Path dir) throws IOException {
+        if (!Files.exists(dir)) {
+            return;
+        }
+        try (Stream<Path> paths = Files.walk(dir)) {
+            for (Path path : (Iterable<Path>) paths.sorted(Comparator.reverseOrder())::iterator) {
+                Files.delete(path);
+            }
+        }
     }
 }

@@ -322,6 +322,15 @@ public class GitVersioningModelProcessor implements ModelProcessor {
 
         updateModel(projectModel, gitVersionDetails.getPatchDescription());
 
+        // related project pom resolved from a repository (e.g. module excluded from reactor),
+        // there is no local project pom to generate a git versioned pom file from
+        if (!isRelatedPom(projectModel.getPomFile())) {
+            logger.debug("skip git versioned pom file generation - not a local project pom file - {}",
+                    projectModel.getPomFile());
+            logger.info("");
+            return projectModel;
+        }
+
         File gitVersionedPomFile = writePomFile(projectModel);
         if (updatePom) {
             logger.debug("updating original POM file");
