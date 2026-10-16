@@ -1,0 +1,11 @@
+.settings/
+target/
+.classpath
+.project
+.checkstyle
+.idea/
+*.iml
+.m2/
+.*-pom.xml
+
+pom.xml.versionsBackup

@@ -1,0 +1,23 @@
+<configuration xmlns="https://github.com/qoomon/maven-git-versioning-extension"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="https://github.com/qoomon/maven-git-versioning-extension https://qoomon.github.io/maven-git-versioning-extension/configuration-9.4.0.xsd">
+
+    <refs>
+        <ref type="branch">
+            <!-- limiting the generated version, for long branch names, to 63 characters, to be compatible with k8s label names -->
+            <!-- see: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set -->
+            <pattern><![CDATA[(?<branchName>.{1,53}).*]]></pattern>
+            <version>${ref.branchName}-SNAPSHOT</version>
+        </ref>
+
+        <ref type="tag">
+            <pattern><![CDATA[v(?<version>.*)]]></pattern>
+            <version>${ref.version}</version>
+        </ref>
+    </refs>
+
+    <!-- optional fallback configuration in case of no matching ref configuration-->
+    <rev>
+        <version>${commit}</version>
+    </rev>
+</configuration>
