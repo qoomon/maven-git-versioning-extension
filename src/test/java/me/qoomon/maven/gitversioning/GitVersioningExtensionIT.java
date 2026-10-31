@@ -410,6 +410,115 @@ class GitVersioningExtensionIT {
     }
 
     @Test
+    void revVersioning_alternativePomFile() throws Exception {
+        try (Git git = Git.init().setInitialBranch("master").setDirectory(projectDir.toFile()).call()) {
+            // Given
+            RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+
+            // the plugin counts differ, because the extension matches the plugins of the model
+            // and of the pom file by position
+            Model defaultPomModel = pomModel.clone();
+            defaultPomModel.setBuild(new Build() {{
+                addPlugin(new Plugin() {{
+                    setArtifactId("maven-clean-plugin");
+                }});
+            }});
+            writeModel(projectDir.resolve("pom.xml").toFile(), defaultPomModel);
+
+            Model alternativePomModel = defaultPomModel.clone();
+            alternativePomModel.setArtifactId("alternative-artifact");
+            alternativePomModel.getBuild().addPlugin(new Plugin() {{
+                setArtifactId("maven-install-plugin");
+            }});
+            writeModel(projectDir.resolve("pom-alternative.xml").toFile(), alternativePomModel);
+            writeExtensionsFile(projectDir);
+            writeExtensionConfigFile(projectDir, new Configuration() {{
+                rev = createRevVersionDescription();
+            }});
+
+            // When
+            Verifier verifier = getVerifier(projectDir);
+            verifier.addCliArguments("-f", "pom-alternative.xml", "verify");
+            verifier.execute();
+
+            // Then
+            System.err.println(String.join("\n", verifier.loadFile(verifier.getBasedir(), verifier.getLogFileName(), false)));
+            verifier.verifyErrorFreeLog();
+            String expectedVersion = givenCommit.getName();
+            verifier.verifyTextInLog("Building " + alternativePomModel.getArtifactId() + " " + expectedVersion);
+
+            Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
+            assertThat(gitVersionedPomModel.getArtifactId()).isEqualTo(alternativePomModel.getArtifactId());
+            assertThat(gitVersionedPomModel.getVersion()).isEqualTo(expectedVersion);
+        }
+    }
+
+    @Test
+    void revVersioning_alternativePomFile_noDefaultPomFile() throws Exception {
+        try (Git git = Git.init().setInitialBranch("master").setDirectory(projectDir.toFile()).call()) {
+            // Given
+            RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+
+            writeModel(projectDir.resolve("pom-alternative.xml").toFile(), pomModel);
+            writeExtensionsFile(projectDir);
+            writeExtensionConfigFile(projectDir, new Configuration() {{
+                rev = createRevVersionDescription();
+            }});
+
+            // When
+            Verifier verifier = getVerifier(projectDir);
+            verifier.addCliArguments("-f", "pom-alternative.xml", "verify");
+            verifier.execute();
+
+            // Then
+            System.err.println(String.join("\n", verifier.loadFile(verifier.getBasedir(), verifier.getLogFileName(), false)));
+            verifier.verifyErrorFreeLog();
+            String expectedVersion = givenCommit.getName();
+            verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
+
+            Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
+            assertThat(gitVersionedPomModel.getVersion()).isEqualTo(expectedVersion);
+        }
+    }
+
+    @Test
+    void revVersioning_alternativePomFile_updatePom() throws Exception {
+        try (Git git = Git.init().setInitialBranch("master").setDirectory(projectDir.toFile()).call()) {
+            // Given
+            RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+
+            Model defaultPomModel = writeModel(projectDir.resolve("pom.xml").toFile(), pomModel.clone());
+            Model alternativePomModel = pomModel.clone();
+            alternativePomModel.setArtifactId("alternative-artifact");
+            writeModel(projectDir.resolve("pom-alternative.xml").toFile(), alternativePomModel);
+            writeExtensionsFile(projectDir);
+            writeExtensionConfigFile(projectDir, new Configuration() {{
+                rev = createRevVersionDescription();
+                updatePom = true;
+            }});
+
+            // When
+            Verifier verifier = getVerifier(projectDir);
+            verifier.addCliArguments("-f", "pom-alternative.xml", "verify");
+            verifier.execute();
+
+            // Then
+            System.err.println(String.join("\n", verifier.loadFile(verifier.getBasedir(), verifier.getLogFileName(), false)));
+            verifier.verifyErrorFreeLog();
+            String expectedVersion = givenCommit.getName();
+            verifier.verifyTextInLog("Building " + alternativePomModel.getArtifactId() + " " + expectedVersion);
+
+            Model updatedAlternativePomModel = readModel(projectDir.resolve("pom-alternative.xml").toFile());
+            assertThat(updatedAlternativePomModel.getArtifactId()).isEqualTo(alternativePomModel.getArtifactId());
+            assertThat(updatedAlternativePomModel.getVersion()).isEqualTo(expectedVersion);
+
+            Model unchangedDefaultPomModel = readModel(projectDir.resolve("pom.xml").toFile());
+            assertThat(unchangedDefaultPomModel.getArtifactId()).isEqualTo(defaultPomModel.getArtifactId());
+            assertThat(unchangedDefaultPomModel.getVersion()).isEqualTo(defaultPomModel.getVersion());
+        }
+    }
+
+    @Test
     void revVersioning_multiModuleProject() throws Exception {
 
         try (Git git = Git.init().setInitialBranch("master").setDirectory(projectDir.toFile()).call()) {
