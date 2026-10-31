@@ -116,6 +116,25 @@ public class GitVersioningModelProcessor implements ModelProcessor {
         return delegatedModelProcessor.locatePom(projectDirectory);
     }
 
+    /**
+     * Returns the XML pom file of a project model.
+     * <p>
+     * That is the model pom file itself, which can be a file other than pom.xml, e.g. one selected with
+     * <code>mvn -f</code>. In case another ModelProcessor is used (like for example polyglot extension),
+     * the model pom file is not XML, so the POM possibly translated into XML is located instead.
+     * The located file might not exist.
+     *
+     * @param projectModel the project model
+     * @return the XML pom file, or null if none is located
+     */
+    private File projectPomFile(Model projectModel) {
+        File pomFile = projectModel.getPomFile();
+        if (pomFile != null && pomFile.getName().endsWith(".xml")) {
+            return pomFile;
+        }
+        return locatePom(projectModel.getProjectDirectory());
+    }
+
     @Override
     public Model read(File input, Map<String, ?> options) throws IOException {
         // clone model before return to prevent concurrency issues
@@ -141,9 +160,7 @@ public class GitVersioningModelProcessor implements ModelProcessor {
             logger.info(extensionLogHeader(BuildProperties.projectGAV()));
         }
 
-        // In case another ModelProcessor is used (like for example polyglot extension),
-        // we need to work on the POM possibly translated into XML
-        File pomFile = locatePom(projectModel.getProjectDirectory());
+        File pomFile = projectPomFile(projectModel);
         if (pomFile == null) {
             logger.debug("skip - project model does not belong to a local project");
             disabled = true;
@@ -336,9 +353,7 @@ public class GitVersioningModelProcessor implements ModelProcessor {
             logger.debug("updating original POM file");
             Files.copy(
                     gitVersionedPomFile.toPath(),
-                    // In case another ModelProcessor is used (like for example polyglot extension),
-                    // we need to work on the POM possibly translated into XML
-                    locatePom(projectModel.getProjectDirectory()).toPath(),
+                    projectPomFile(projectModel).toPath(),
                     StandardCopyOption.REPLACE_EXISTING);
         }
 
@@ -1249,9 +1264,7 @@ public class GitVersioningModelProcessor implements ModelProcessor {
         File gitVersionedPomFile = new File(projectModel.getProjectDirectory(), GIT_VERSIONING_POM_NAME);
         logger.debug("generate {}", gitVersionedPomFile);
 
-        // In case another ModelProcessor is used (like for example polyglot extension),
-        // we need to work on the POM possibly translated into XML
-        Document gitVersionedPomDocument = readXml(this.locatePom(projectModel.getProjectDirectory()));
+        Document gitVersionedPomDocument = readXml(projectPomFile(projectModel));
         Element projectElement = gitVersionedPomDocument.getChild("project");
 
         // update project
