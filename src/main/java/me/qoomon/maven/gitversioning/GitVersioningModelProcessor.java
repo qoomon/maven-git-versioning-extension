@@ -1048,6 +1048,9 @@ public class GitVersioningModelProcessor implements ModelProcessor {
 
         placeholderMap.put("describe.tag.version.label.plus.describe." + distanceName, Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.label").get(), descriptionDistance.get())));
         placeholderMap.put("describe.tag.version.label.next.plus.describe." + distanceName, Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.label.next").get(), descriptionDistance.get())));
+
+        placeholderMap.put("describe.tag.version.build.plus.describe." + distanceName, Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.build").get(), descriptionDistance.get())));
+        placeholderMap.put("describe.tag.version.build.next.plus.describe." + distanceName, Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.build.next").get(), descriptionDistance.get())));
     }
 
     private Matcher matchVersion(String input) {
