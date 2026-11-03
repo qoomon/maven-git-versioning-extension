@@ -86,6 +86,36 @@ class StringUtilTest {
     }
 
     @Test
+    void substituteText_modifiers_and_functions() {
+        Map<String, Supplier<String>> replacements = new HashMap<>();
+        replacements.put("empty", () -> "");
+        replacements.put("present", () -> "value");
+
+        assertThat(StringUtil.substituteText("${missing-fallback:uppercase}", replacements)).isEqualTo("FALLBACK");
+        assertThat(StringUtil.substituteText("${missing:-fallback:uppercase}", replacements)).isEqualTo("FALLBACK");
+        assertThat(StringUtil.substituteText("${empty-fallback:uppercase}", replacements)).isEmpty();
+        assertThat(StringUtil.substituteText("${empty:-fallback:uppercase}", replacements)).isEqualTo("FALLBACK");
+        assertThat(StringUtil.substituteText("${empty+alternate:uppercase}", replacements)).isEqualTo("ALTERNATE");
+        assertThat(StringUtil.substituteText("${empty:+alternate:uppercase}", replacements)).isEmpty();
+        assertThat(StringUtil.substituteText("${present-fallback:uppercase}", replacements)).isEqualTo("VALUE");
+        assertThat(StringUtil.substituteText("${present:-fallback:uppercase}", replacements)).isEqualTo("VALUE");
+        assertThat(StringUtil.substituteText("${present+alternate:uppercase}", replacements)).isEqualTo("ALTERNATE");
+        assertThat(StringUtil.substituteText("${present:+alternate:uppercase}", replacements)).isEqualTo("ALTERNATE");
+        assertThat(StringUtil.substituteText("${missing+alternate:uppercase}", replacements)).isEqualTo("${missing+alternate:uppercase}");
+        assertThat(StringUtil.substituteText("${missing:+alternate:uppercase}", replacements)).isEqualTo("${missing:+alternate:uppercase}");
+    }
+
+    @Test
+    void substituteText_prefers_existing_placeholder_with_hyphen_or_plus() {
+        Map<String, Supplier<String>> replacements = new HashMap<>();
+        replacements.put("custom-name", () -> "hyphen");
+        replacements.put("custom+name", () -> "plus");
+
+        assertThat(StringUtil.substituteText("${custom-name:uppercase}", replacements)).isEqualTo("HYPHEN");
+        assertThat(StringUtil.substituteText("${custom+name:uppercase}", replacements)).isEqualTo("PLUS");
+    }
+
+    @Test
     void substituteText_function_combination_slug_uppercase() {
 
         // Given

@@ -35,7 +35,25 @@ public final class GitUtil {
     public static String NO_COMMIT = "0000000000000000000000000000000000000000";
 
     public static Status status(Repository repository) throws GitAPIException {
-        return Git.wrap(repository).status().call();
+        try {
+            return Git.wrap(repository).status().call();
+        } catch (NoWorkTreeException ex) {
+            return worktreesFix_status(repository);
+        }
+    }
+
+    private static Status worktreesFix_status(Repository repository) throws GitAPIException {
+        try {
+            try (Repository worktreeRepository = new FileRepositoryBuilder()
+                    .setGitDir(repository.getDirectory())
+                    .setWorkTree(worktreesFix_getWorkTree(repository))
+                    .build();
+                 Git worktreeGit = new Git(worktreeRepository)) {
+                return worktreeGit.status().call();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static String branch(Repository repository) throws IOException {
@@ -167,23 +185,22 @@ public final class GitUtil {
             repository.getWorkTree();
             return repository.resolve(HEAD);
         } catch (NoWorkTreeException e) {
-            File headFile = new File(repository.getDirectory(), "HEAD");
+            File headFile = new File(repository.getDirectory(), HEAD);
             if (!headFile.exists()) {
                 throw e;
             }
 
+            Repository commonRepository = worktreesFix_getCommonRepository(repository);
             String head = Files.readAllLines(headFile.toPath()).get(0);
             if (head.startsWith("ref:")) {
                 String refPath = head.replaceFirst("^ref: *", "");
-
-                File commonDirFile = new File(repository.getDirectory(), "commondir");
-                String commonDirPath = Files.readAllLines(commonDirFile.toPath()).get(0);
-                File commonGitDir = new File(repository.getDirectory(), commonDirPath);
-
-                File refFile = new File(commonGitDir, refPath);
-                head = Files.readAllLines(refFile.toPath()).get(0);
+                ObjectId resolvedRef = commonRepository.resolve(refPath);
+                if (resolvedRef == null) {
+                    throw new IOException("Cannot resolve head ref '" + refPath + "'");
+                }
+                return resolvedRef;
             }
-            return repository.resolve(head);
+            return commonRepository.resolve(head);
         }
     }
 }

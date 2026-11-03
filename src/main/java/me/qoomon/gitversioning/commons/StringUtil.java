@@ -35,7 +35,7 @@ public final class StringUtil {
                 e -> str -> str == null ? null : e.getValue().apply(str))
         );
         final String functionsAlternatives = FUNCTIONS.keySet().stream().map(Pattern::quote).collect(Collectors.joining("|:", "(?<functions>(?::", ")+)?"));
-        PLACEHOLDER_PATTERN = Pattern.compile("\\$\\{(?<key>[^}:]+)(?::(?<modifier>[-+])(?<value>(?:::|[^:}])*))?" + functionsAlternatives + "}");
+        PLACEHOLDER_PATTERN = Pattern.compile("\\$\\{(?<key>[^}:]+?)(?:(?<modifier>:?[-+])(?<value>(?:::|[^:}])*))?" + functionsAlternatives + "}");
     }
 
     public static String substituteText(String text, Map<String, Supplier<String>> replacements) {
@@ -43,14 +43,21 @@ public final class StringUtil {
         Matcher placeholderMatcher = PLACEHOLDER_PATTERN.matcher(text);
         while (placeholderMatcher.find()) {
             String placeholderKey = placeholderMatcher.group("key");
+            String placeholderModifier = placeholderMatcher.group("modifier");
+            if (placeholderModifier != null && !placeholderModifier.startsWith(":")) {
+                String fullKey = placeholderKey + placeholderModifier + placeholderMatcher.group("value");
+                if (replacements.containsKey(fullKey)) {
+                    placeholderKey = fullKey;
+                    placeholderModifier = null;
+                }
+            }
             Supplier<String> replacementSupplier = replacements.get(placeholderKey);
             String replacement = replacementSupplier != null ? replacementSupplier.get() : null;
-            String placeholderModifier = placeholderMatcher.group("modifier");
             if (placeholderModifier != null) {
-                if (placeholderModifier.equals("-") && replacement == null) {
-                    replacement = placeholderMatcher.group("value").replace("::", ":");
-                }
-                if (placeholderModifier.equals("+") && replacement != null) {
+                if ((placeholderModifier.equals("-") && replacement == null)
+                        || (placeholderModifier.equals(":-") && (replacement == null || replacement.isEmpty()))
+                        || (placeholderModifier.equals("+") && replacement != null)
+                        || (placeholderModifier.equals(":+") && replacement != null && !replacement.isEmpty())) {
                     replacement = placeholderMatcher.group("value").replace("::", ":");
                 }
             }
@@ -72,7 +79,7 @@ public final class StringUtil {
 
     /**
      * @param pattern pattern
-     * @param text    to parse
+     * @param text  to parse
      * @return a map of group-index and group-name to matching value
      */
     public static Map<String, String> patternGroupValues(Pattern pattern, String text) {

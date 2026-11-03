@@ -1,9 +1,8 @@
-# Maven Git Versioning Extension [![Sparkline](https://stars.medv.io/qoomon/maven-git-versioning-extension.svg?)](https://stars.medv.io/qoomon/maven-git-versioning-extension)
+# Maven Git Versioning Extension [![starline](https://raw.githubusercontent.com/qoomon/qoomon/refs/heads/main/starlines/qoomon/maven-git-versioning-extension/starline.svg)](https://github.com/qoomon/starlines)
 
 [![Maven Central](https://img.shields.io/maven-central/v/me.qoomon/maven-git-versioning-extension.svg)](https://search.maven.org/artifact/me.qoomon/maven-git-versioning-extension)
 [![Changelog](https://badgen.net/badge/changelog/%E2%98%85/blue)](CHANGELOG.md)
 [![Build Workflow](https://github.com/qoomon/maven-git-versioning-extension/workflows/Build/badge.svg)](https://github.com/qoomon/maven-git-versioning-extension/actions?query=workflow%3ABuild)
-[![LGTM Grade](https://img.shields.io/lgtm/grade/java/github/qoomon/maven-git-versioning-extension)](https://lgtm.com/projects/g/qoomon/maven-git-versioning-extension)
 
 **ℹ Also available as [Gradle Plugin](https://github.com/qoomon/gradle-git-versioning-plugin)**
 
@@ -20,7 +19,7 @@ This extension can virtually set project version and properties, based on curren
     * git merge conflicts
 
 #### Requirements
-[* ⚠️ minimal required java version is `11`]()
+* ⚠️ minimal required java version is `11`
 * ⚠️ minimal required maven version is `3.6.4`
 
 ## Usage
@@ -39,7 +38,7 @@ create or update `${rootProjectDir}/.mvn/extensions.xml` file
     <extension>
         <groupId>me.qoomon</groupId>
         <artifactId>maven-git-versioning-extension</artifactId>
-        <version>9.8.1</version>
+        <version>9.12.0</version>
     </extension>
 
 </extensions>
@@ -156,35 +155,36 @@ You can configure the version and properties adjustments for specific branches a
 
 ℹ Final `version` will be slugified automatically, so no need to use `${….slug}` placeholders in `<version>` format.
 
-ℹ define placeholder default value (placeholder is not defined) like this `${name:-DEFAULT_VALUE}`<br>
-e.g `${env.BUILD_NUMBER:-0}` or `${env.BUILD_NUMBER:-local}`
+ℹ define placeholder default value (placeholder is not defined `-` or not defined or empty `:-`) like this `${name:-DEFAULT_VALUE}`<br>
+e.g `${env.BUILD_NUMBER-0}` or `${env.BUILD_NUMBER:-local}`
 
-ℹ define placeholder overwrite value (placeholder is defined) like this `${name:+OVERWRITE_VALUE}`<br>
+ℹ define placeholder overwrite value (placeholder is defined `+` or defined and non-empty `:+`) like this `${name:+OVERWRITE_VALUE}`<br>
 e.g `${dirty:+-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
 
-ℹ placeholder default values and overwrite values containing the `:` character can escape it by doubling it
-in case the value matches with a function name. For example, `${env.VAR:-hello::slug}` resolves to `hello:slug`
-if `env.VAR` is not defined.
+ℹ When a placeholder name contains `-` or `+`, an existing exact name takes precedence over a modifier without a colon.
 
-###### Placeholders functions
-Placeholders can contain functions with the form: `${key:functionname}` where the function `functionname` is applied to
+ℹ Escape `:` in placeholder default and overwrite values by doubling it. For example,
+`${env.VAR:-hello::slug}` resolves to `hello:slug` if `env.VAR` is not defined.
+
+###### Placeholder functions
+Placeholders can contain functions with the form `${key:functionname}`, where `functionname` is applied to
 the value referenced by `key`.
 
-They can be combined with format placeholders and combined, e.g. `${key:-abc/def/42:slug:uppercase:next}` will give
-`ABD-DEF-43` if key is absent.
+Functions can be combined with format placeholders and chained, e.g. `${key:-abc/def/42:slug:uppercase:next}` gives
+`ABC-DEF-43` if `key` is absent.
 
 Defined functions:
-- `slug`: replaces all sequences of characters that are not alphanumeric or underscore or hyphen with and hyphen and
-  eliminate duplicated hyphens from the value.
+- `slug`: replaces all sequences of characters that are not alphanumeric, underscore or hyphen with a hyphen and
+  eliminates duplicated hyphens from the value.
 - `slug+dot`: does the same thing as `slug` but does not replace `.` characters.
-- `slug+hyphen`: does the same thing as `slug` but replaces also `_` with `-`.
+- `slug+hyphen`: does the same thing as `slug` but also replaces `_` with `-`.
 - `slug+hyphen+dot`: does the same thing as `slug+hyphen` but does not replace `.` characters.
 - `word`: does the same thing as `slug` but replaces `-` and all non-alphanumeric characters with `_`.
 - `word+dot`: does the same thing as `word` but does not replace `.` characters.
-- `uppercase`: transform the value to uppercase.
-- `lowercase`: transform the value to lowercase.
-- `next`: if the value ends with a number, it is incremented, else it appends `.1` at the end of the value.
-- `incrementlast`: if the value contains a number, increments it, else does nothing, e.g. if `x` has value `rc.1-something`
+- `uppercase`: transforms the value to uppercase.
+- `lowercase`: transforms the value to lowercase.
+- `next`: if the value ends with a number, it is incremented; otherwise, `.1` is appended to the value.
+- `incrementlast`: if the value contains a number, increments the last one; otherwise, does nothing. For example, if `x` has value `rc.1-something`,
   `${x:incrementlast}` returns `rc.2-something`.
 
 ###### Placeholders
@@ -201,8 +201,16 @@ Defined functions:
     - `${version.minor.next}` the `${version.minor}` increased by 1 e.g. '3'
   - `${version.patch}` the patch version component of `${version}` e.g. '3'
     - `${version.patch.next}` the `${version.patch}` increased by 1 e.g. '4'
+  - `${version.build}` the build version component (optional 4th dot-segment) of `${version}` e.g. '4'
+    - `${version.build.next}` the `${version.build}` increased by 1 e.g. '5'
   - `${version.label}` the version label of `${version}` e.g. 'SNAPSHOT'
     - `${version.label.prefixed}` like `${version.label}` with label separator e.g. '-SNAPSHOT'
+  - `${version.next}` `${version}` with one numeric segment bumped by 1.
+    Bumps the trailing numeric suffix of the label if a label is present (`RC1` → `RC2`); a label with no
+    trailing numeric is treated as having `0` at the end (`alpha` → `alpha1`); otherwise bumps the
+    rightmost numeric core component (build → patch → minor → major).
+    Only *trailing* digits of the label are considered — `RC1-final` bumps to `RC1-final1`, not `RC2-final`.
+    e.g. '1.2.3' → '1.2.4', '1.2.3.4' → '1.2.3.5', '1.2.3-RC1' → '1.2.3-RC2', '1.2.3-alpha' → '1.2.3-alpha1'
 - Project Version Pattern Groups
   - Content of regex groups in `<projectVersionPattern>` can be addressed like this:
   - `${version.GROUP_NAME}`
@@ -246,6 +254,7 @@ Defined functions:
 - `${commit.timestamp.minute}` commit minute of hour e.g. '59'
 - `${commit.timestamp.second}` commit second of minute e.g. '30'
 - `${commit.timestamp.datetime}` commit timestamp formatted as `yyyyMMdd.HHmmss`e.g. '20190616.161442'
+- `${commit.timestamp.iso}` commit timestamp formatted as `yyyy-MM-ddTHH:mm:ssZ`e.g. '2019-06-16T16:14:42Z'
       <br><br>
 
 - `${build.timestamp}` maven-build-timestamp (epoch seconds) e.g. '1560694278'
@@ -257,13 +266,14 @@ Defined functions:
 - `${build.timestamp.minute}` maven-build-timestamp minute of hour e.g. '59'
 - `${build.timestamp.second}` maven-build-timestamp second of minute e.g. '30'
 - `${build.timestamp.datetime}` maven-build-timestamp formatted as `yyyyMMdd.HHmmss`e.g. '20190616.161442'
+- `${build.timestamp.iso}` commit timestamp formatted as `yyyy-MM-ddTHH:mm:ssZ`e.g. '2019-06-16T16:14:42Z'
      <br><br>
 
 - `${describe}` Will resolve to `git describe` output
 - `${describe.distance}` The distance count to last matching tag
 - `${describe.distance.snapshot}` Empty string on matching tag, `-SNAPSHOT` if `describe.distance > 0` 
 - `${describe.tag}` The matching tag of `git describe`
-  - `${describe.tag.version}` the tag version determined by regex `(?<version>(?<core>(?<major>\d+)(?:\.(?<minor>\d+)(?:\.(?<patch>\d+))?)?)(?:-(?<label>.*))?)`
+  - `${describe.tag.version}` the tag version determined by regex `(?<version>(?<core>(?<major>\d+)(?:\.(?<minor>\d+)(?:\.(?<patch>\d+))?)?)(?:\.(?<build>\d+))?(?:-(?<label>.*))?)`
     - `${describe.tag.version.core}` the core version component of `${describe.tag.version}` e.g. '1.2.3' 
     - `${describe.tag.version.major}` the major version component of `${describe.tag.version}` e.g. '1'
       - `${describe.tag.version.major.next}` the `${describe.tag.version.major}` increased by 1 e.g. '2'
@@ -273,10 +283,20 @@ Defined functions:
       - `${describe.tag.version.patch.next}` the `${describe.tag.version.patch}` increased by 1 e.g. '4'
       - `${describe.tag.version.patch.plus.describe.distance}` the `${describe.tag.version.patch}` increased by `${describe.distance}` e.g. '2'
       - `${describe.tag.version.patch.next.plus.describe.distance}` the `${describe.tag.version.patch.next}` increased by `${describe.distance}` e.g. '3'
+    - `${describe.tag.version.build}` the build version component (optional 4th dot-segment) of `${describe.tag.version}` e.g. '4'
+      - `${describe.tag.version.build.next}` the `${describe.tag.version.build}` converted to an integer and increased by 1 e.g. '5'
+      - `${describe.tag.version.build.plus.describe.distance}` the `${describe.tag.version.build}` increased by `${describe.distance}` e.g. '6'
+      - `${describe.tag.version.build.next.plus.describe.distance}` the `${describe.tag.version.build.next}` increased by `${describe.distance}` e.g. '7'
     - `${describe.tag.version.label}` the label version component of `${describe.tag.version}` e.g. 'SNAPSHOT'
       - `${describe.tag.version.label.next}` the `${describe.tag.version.label}` converted to an integer and increased by 1 e.g. '6'
       - `${describe.tag.version.label.plus.describe.distance}` the `${describe.tag.version.label}` increased by `${describe.distance}` e.g. '2'
       - `${describe.tag.version.label.next.plus.describe.distance}` the `${describe.tag.version.label.next}` increased by `${describe.distance}` e.g. '3'
+  - `${describe.tag.version.next}` `${describe.tag.version}` with one numeric segment bumped by 1.
+    Bumps the trailing numeric suffix of the label if a label is present (`RC1` → `RC2`); a label with no
+    trailing numeric is treated as having `0` at the end (`alpha` → `alpha1`); otherwise bumps the
+    rightmost numeric core component (build → patch → minor → major).
+    Only *trailing* digits of the label are considered — `RC1-final` bumps to `RC1-final1`, not `RC2-final`.
+    e.g. '1.2.3' → '1.2.4', '1.2.3.4' → '1.2.3.5', '1.2.3-RC1' → '1.2.3-RC2', '1.2.3-alpha' → '1.2.3-alpha1'
 - Describe Tag Pattern Groups
     - Content of regex groups in `<describeTagPattern>` can be addressed like this:
     - `${describe.tag.GROUP_NAME}` `${describe.tag.GROUP_NAME.slug}`
@@ -300,6 +320,12 @@ Defined functions:
 
 
 ### Parameters & Environment Variables
+
+- Set configuration Filename
+  - **Environment Variables**
+  - `export VERSIONING_CONFIG_FILE=myConfig.xml`
+  - **Command Line Parameters**
+  - `mvn … -Dversioning.configFile=myConfig.xml`
 
 - Disable Extension
     - **Environment Variables**
@@ -406,14 +432,14 @@ gpg --list-keys
 ```
 
 ```shell
-  ./mvnw verify
+  mvn verify
   # Publishes this plugin to local Maven
-  ./mvnw install
+  mvn install
   # Run integration tests after install, 
   # integration tests will run with LATEST version of extension installed
-  ./mvnw failsafe:integration-test
+  mvn failsafe:integration-test
   # Publishes this plugin to OSS Nexus.
-  GPG_TTY=$(tty) ./mvnw clean deploy -P release -Dgpg.keyname=???
+  GPG_TTY=$(tty) mvn clean deploy -P release -Dgpg.keyname=???
 ```
 
 ##### Debug
