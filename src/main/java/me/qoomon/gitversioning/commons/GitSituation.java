@@ -32,7 +32,9 @@ public class GitSituation {
 
     private final Supplier<Boolean> clean = Lazy.by(this::clean);
 
-    private Pattern describeTagPattern = Pattern.compile(".*");
+    private Supplier<Pattern> describeTagPattern = Lazy.by(() -> Pattern.compile(".*"));
+
+    private String rawDescribeTagPattern = ".*";
 
     private boolean firstParent = true;
 
@@ -121,13 +123,28 @@ public class GitSituation {
         return clean.get();
     }
 
-    public void setDescribeTagPattern(Pattern describeTagPattern) {
+    /**
+     * Returns the describeTagPattern as set in config. It may contain placeholders delimited by <code>{{}}</code>,
+     * e.g. <code>{{ref.myCaptureGroupFromRef}}</code>. In order to get placeholder resolved,
+     * {@link GitSituation#getDescribeTagPattern()} should be used.
+     *
+     * @return the raw expressing for describe tag pattern
+     */
+    public String getRawDescribeTagPattern() {
+        return rawDescribeTagPattern;
+    }
+
+    public void setRawDescribeTagPattern(String rawDescribeTagPattern) {
+        this.rawDescribeTagPattern = requireNonNull(rawDescribeTagPattern);
+    }
+
+    public void setDescribeTagPattern(Supplier<Pattern> describeTagPattern) {
         this.describeTagPattern = requireNonNull(describeTagPattern);
         this.description = Lazy.by(this::describe);
     }
 
     public Pattern getDescribeTagPattern() {
-        return describeTagPattern;
+        return describeTagPattern.get();
     }
 
     public boolean isFirstParent() {
@@ -163,6 +180,6 @@ public class GitSituation {
     }
 
     private GitDescription describe() throws IOException {
-        return GitUtil.describe(head, describeTagPattern, repository, firstParent);
+        return GitUtil.describe(head, describeTagPattern.get(), repository, firstParent);
     }
 }
