@@ -231,7 +231,7 @@ public class GitVersioningModelProcessor implements ModelProcessor {
         logger.info("ref configuration: {} - pattern: {}", gitVersionDetails.getRefType().name(), patchDescription.pattern);
         if (patchDescription.describeTagPattern != null && !patchDescription.describeTagPattern.equals(".*")) {
             logger.info("  describeTagPattern: {}", patchDescription.describeTagPattern);
-            gitSituation.setDescribeTagPattern(patchDescription.describeTagPattern());
+            gitSituation.setDescribeTagPattern(patchDescription.describeTagPattern(), patchDescription.describeTagMaxDepth);
         }
         if (patchDescription.describeTagFirstParent != null) {
             logger.info("  describeTagFirstParent: {}", patchDescription.describeTagFirstParent);
@@ -449,7 +449,7 @@ public class GitVersioningModelProcessor implements ModelProcessor {
                     updateVersion(plugin, versionFormat);
                 }
             }
-            
+
             updatePluginDependencyVersions(model, versionFormat, build.getPlugins());
         }
 
@@ -465,7 +465,7 @@ public class GitVersioningModelProcessor implements ModelProcessor {
                     updateVersion(plugin, versionFormat);
                 }
             }
-            
+
             updatePluginDependencyVersions(model, versionFormat, pluginManagement.getPlugins());
         }
 
@@ -1008,17 +1008,9 @@ public class GitVersioningModelProcessor implements ModelProcessor {
         placeholderMap.put("describe.tag.version.next", Lazy.by(() -> nextVersion(descriptionTagVersionMatcher.get())));
 
         final Lazy<Integer> descriptionDistance = Lazy.by(() -> description.get().getDistance());
-        placeholderMap.put("describe.distance", Lazy.by(() -> String.valueOf(descriptionDistance.get())));
-        placeholderMap.put("describe.distance.snapshot", Lazy.by(() -> (descriptionDistance.get() == 0 ? "" : "-SNAPSHOT")));
-
-        placeholderMap.put("describe.tag.version.patch.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.patch").get(), descriptionDistance.get())));
-        placeholderMap.put("describe.tag.version.patch.next.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.patch.next").get(), descriptionDistance.get())));
-
-        placeholderMap.put("describe.tag.version.build.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.build").get(), descriptionDistance.get())));
-        placeholderMap.put("describe.tag.version.build.next.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.build.next").get(), descriptionDistance.get())));
-
-        placeholderMap.put("describe.tag.version.label.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.label").get(), descriptionDistance.get())));
-        placeholderMap.put("describe.tag.version.label.next.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.label.next").get(), descriptionDistance.get())));
+        setDescribeDistancePlaceholders(placeholderMap, descriptionDistance, "distance");
+        final Lazy<Integer> descriptionDistanceOrZero = Lazy.by(() -> description.get().getDistanceOrZero());
+        setDescribeDistancePlaceholders(placeholderMap, descriptionDistanceOrZero, "distanceOrZero");
 
         // describe tag pattern groups
         final Lazy<Map<String, String>> describeTagPatternValues = Lazy.by(
@@ -1045,6 +1037,20 @@ public class GitVersioningModelProcessor implements ModelProcessor {
         System.getenv().forEach((key, value) -> placeholderMap.put("env." + key, () -> value));
 
         return placeholderMap;
+    }
+
+    private static void setDescribeDistancePlaceholders(Map<String, Supplier<String>> placeholderMap, Lazy<Integer> descriptionDistance, String distanceName) {
+        placeholderMap.put("describe." + distanceName, Lazy.by(() -> String.valueOf(descriptionDistance.get())));
+        placeholderMap.put("describe." + distanceName + ".snapshot", Lazy.by(() -> (descriptionDistance.get() == 0 ? "" : "-SNAPSHOT")));
+
+        placeholderMap.put("describe.tag.version.patch.plus.describe." + distanceName, Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.patch").get(), descriptionDistance.get())));
+        placeholderMap.put("describe.tag.version.patch.next.plus.describe." + distanceName, Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.patch.next").get(), descriptionDistance.get())));
+
+        placeholderMap.put("describe.tag.version.label.plus.describe." + distanceName, Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.label").get(), descriptionDistance.get())));
+        placeholderMap.put("describe.tag.version.label.next.plus.describe." + distanceName, Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.label.next").get(), descriptionDistance.get())));
+
+        placeholderMap.put("describe.tag.version.build.plus.describe." + distanceName, Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.build").get(), descriptionDistance.get())));
+        placeholderMap.put("describe.tag.version.build.next.plus.describe." + distanceName, Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.build.next").get(), descriptionDistance.get())));
     }
 
     private Matcher matchVersion(String input) {
@@ -1086,6 +1092,9 @@ public class GitVersioningModelProcessor implements ModelProcessor {
             }
             if (patchDescription.describeTagFirstParent == null) {
                 patchDescription.describeTagFirstParent = config.describeTagFirstParent;
+            }
+            if (patchDescription.describeTagMaxDepth == null) {
+                patchDescription.describeTagMaxDepth = config.describeTagMaxDepth;
             }
             if (patchDescription.updatePom == null) {
                 patchDescription.updatePom = config.updatePom;
@@ -1385,7 +1394,7 @@ public class GitVersioningModelProcessor implements ModelProcessor {
             if (pluginVersionElement != null) {
                 pluginVersionElement.setText(plugin.getVersion());
             }
-            
+
             Element dependenciesElement = pluginElement.getChild("dependencies");
             List<Dependency> dependencies = plugin.getDependencies();
             if (!dependencies.isEmpty() && dependenciesElement != null) {

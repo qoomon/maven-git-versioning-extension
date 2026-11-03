@@ -4,11 +4,13 @@ public class GitDescription {
     private final String commit;
     private final String tag;
     private final int distance;
+    private final boolean tagFound;
 
-    public GitDescription(String commit, String tag, int distance) {
+    public GitDescription(String commit, String tag, int distance, boolean tagFound) {
         this.commit = commit;
         this.tag = tag;
         this.distance = distance;
+        this.tagFound = tagFound;
     }
 
     public String getCommit() {
@@ -19,8 +21,16 @@ public class GitDescription {
         return tag;
     }
 
+    public boolean isTagFound() {
+        return tagFound;
+    }
+
     public int getDistance() {
         return distance;
+    }
+
+    public int getDistanceOrZero() {
+        return tagFound ? distance : 0;
     }
 
     @Override
