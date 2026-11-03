@@ -32,10 +32,6 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.NoSuchElementException;
-import java.util.Objects;
-import java.util.Properties;
-import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
@@ -55,10 +51,6 @@ import static me.qoomon.gitversioning.commons.StringUtil.substituteText;
 import static me.qoomon.maven.gitversioning.BuildProperties.projectArtifactId;
 import static me.qoomon.maven.gitversioning.GitVersioningMojo.asPlugin;
 import static me.qoomon.maven.gitversioning.MavenUtil.*;
-import static org.apache.maven.shared.utils.StringUtils.leftPad;
-import static org.apache.maven.shared.utils.StringUtils.repeat;
-import static org.apache.maven.shared.utils.StringUtils.rightPad;
-import static org.apache.maven.shared.utils.logging.MessageUtils.buffer;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -68,7 +60,8 @@ import static org.slf4j.LoggerFactory.getLogger;
 @Singleton
 public class GitVersioningModelProcessor implements ModelProcessor {
 
-    private static final Pattern VERSION_PATTERN = Pattern.compile(".*?(?<version>(?<core>(?<major>\\d+)(?:\\.(?<minor>\\d+)(?:\\.(?<patch>\\d+))?)?)(?:-(?<label>.*))?)|");
+    static final Pattern VERSION_PATTERN = Pattern.compile(".*?(?<version>(?<core>(?<major>\\d+)(?:\\.(?<minor>\\d+)(?:\\.(?<patch>\\d+))?)?)(?:\\.(?<build>\\d+))?(?:-(?<label>.*))?)|");
+    private static final Pattern LABEL_TRAILING_NUM = Pattern.compile("^(.*?)(\\d*)$");
     private static final Pattern PATTERN_PLACEHOLDERS_EXPRESSION = Pattern.compile("\\{\\{((?!describe\\.?)[^}]+)}}");
 
     private static final String OPTION_NAME_GIT_REF = "git.ref";
@@ -76,6 +69,7 @@ public class GitVersioningModelProcessor implements ModelProcessor {
     private static final String OPTION_NAME_GIT_BRANCH = "git.branch";
     private static final String OPTION_NAME_DISABLE = "versioning.disable";
     private static final String OPTION_UPDATE_POM = "versioning.updatePom";
+    private static final String OPTION_CONFIG_FILE_NAME = "versioning.configFile";
 
     static final String GIT_VERSIONING_POM_NAME = ".git-versioned-pom.xml";
 
@@ -176,7 +170,13 @@ public class GitVersioningModelProcessor implements ModelProcessor {
         logger.debug("pom file: {}", pomFile);
         mvnDirectory = findMvnDirectory(pomFile);
         logger.debug(".mvn directory: {}", mvnDirectory);
-        final File configFile = new File(mvnDirectory, projectArtifactId() + ".xml");
+
+        String configFileName = getCommandOption(OPTION_CONFIG_FILE_NAME);
+        if(configFileName == null){
+            configFileName = projectArtifactId() + ".xml";
+        }
+
+        final File configFile = new File(mvnDirectory, configFileName);
         logger.debug("read config from {}", configFile);
         config = readConfig(configFile);
 
@@ -223,7 +223,7 @@ public class GitVersioningModelProcessor implements ModelProcessor {
             logger.warn("  branch: {}", gitSituation.getBranch());
             logger.warn("  tags: {}", gitSituation.getTags());
             logger.warn("defined ref configurations:");
-            config.refs.list.forEach(ref -> logger.warn("  {} - pattern: {}", rightPad(ref.type.name(), 6), ref.pattern));
+            config.refs.list.forEach(ref -> logger.warn("  {} - pattern: {}", String.format("%-6s", ref.type.name()), ref.pattern));
             disabled = true;
             return;
         }
@@ -270,7 +270,7 @@ public class GitVersioningModelProcessor implements ModelProcessor {
         // determine related projects
         relatedProjects = determineRelatedProjects(projectModel);
         if (logger.isDebugEnabled()) {
-            logger.debug(buffer().strong("related projects:").toString());
+            logger.debug(LogStyle.strong("related projects:"));
             relatedProjects.forEach(gav -> logger.debug("  {}", gav));
         }
 
@@ -328,6 +328,15 @@ public class GitVersioningModelProcessor implements ModelProcessor {
         }
 
         updateModel(projectModel, gitVersionDetails.getPatchDescription());
+
+        // related project pom resolved from a repository (e.g. module excluded from reactor),
+        // there is no local project pom to generate a git versioned pom file from
+        if (!isRelatedPom(projectModel.getPomFile())) {
+            logger.debug("skip git versioned pom file generation - not a local project pom file - {}",
+                    projectModel.getPomFile());
+            logger.info("");
+            return projectModel;
+        }
 
         File gitVersionedPomFile = writePomFile(projectModel);
         if (updatePom) {
@@ -447,6 +456,8 @@ public class GitVersioningModelProcessor implements ModelProcessor {
                     updateVersion(plugin, versionFormat);
                 }
             }
+
+            updatePluginDependencyVersions(model, versionFormat, build.getPlugins());
         }
 
         // plugin management section
@@ -461,6 +472,8 @@ public class GitVersioningModelProcessor implements ModelProcessor {
                     updateVersion(plugin, versionFormat);
                 }
             }
+
+            updatePluginDependencyVersions(model, versionFormat, pluginManagement.getPlugins());
         }
 
         // reporting section
@@ -474,6 +487,20 @@ public class GitVersioningModelProcessor implements ModelProcessor {
                 for (ReportPlugin plugin : relatedPlugins) {
                     updateVersion(plugin, versionFormat);
                 }
+            }
+        }
+    }
+
+
+    private void updatePluginDependencyVersions(ModelBase model, String versionFormat, List<Plugin> plugins) {
+        List<Dependency> pluginDepsList = filterRelatedDependencies(plugins.stream().map(Plugin::getDependencies).flatMap(List::stream).collect(toList()));
+
+        if (!pluginDepsList.isEmpty()) {
+            if (logger.isDebugEnabled()) {
+                logger.debug(sectionLogHeader("plugins dependencies", model));
+            }
+            for (Dependency dep : pluginDepsList) {
+                updateVersion(dep, versionFormat);
             }
         }
     }
@@ -867,11 +894,16 @@ public class GitVersioningModelProcessor implements ModelProcessor {
         placeholderMap.put("version.patch", Lazy.by(() -> requireNonNullElse(versionComponents.get().group("patch"), "0")));
         placeholderMap.put("version.patch.next", Lazy.by(() -> increase(placeholderMap.get("version.patch").get(), 1)));
 
+        placeholderMap.put("version.build", Lazy.by(() -> requireNonNullElse(versionComponents.get().group("build"), "")));
+        placeholderMap.put("version.build.next", Lazy.by(() -> increase(placeholderMap.get("version.build").get(), 1)));
+
         placeholderMap.put("version.label", Lazy.by(() -> requireNonNullElse(versionComponents.get().group("label"), "")));
         placeholderMap.put("version.label.prefixed", Lazy.by(() -> {
             String label = placeholderMap.get("version.label").get();
             return !label.isEmpty() ? "-" + label : "";
         }));
+
+        placeholderMap.put("version.next", Lazy.by(() -> nextVersion(versionComponents.get())));
 
         // deprecated
         placeholderMap.put("version.release", Lazy.by(() -> projectVersion.replaceFirst("-.*$", "")));
@@ -908,25 +940,29 @@ public class GitVersioningModelProcessor implements ModelProcessor {
         placeholderMap.put("commit.timestamp", Lazy.by(() -> String.valueOf(headCommitDateTime.get().toEpochSecond())));
         placeholderMap.put("commit.timestamp.year", Lazy.by(() -> String.valueOf(headCommitDateTime.get().getYear())));
         placeholderMap.put("commit.timestamp.year.2digit", Lazy.by(() -> String.valueOf(headCommitDateTime.get().getYear() % 100)));
-        placeholderMap.put("commit.timestamp.month", Lazy.by(() -> leftPad(String.valueOf(headCommitDateTime.get().getMonthValue()), 2, "0")));
-        placeholderMap.put("commit.timestamp.day", Lazy.by(() -> leftPad(String.valueOf(headCommitDateTime.get().getDayOfMonth()), 2, "0")));
-        placeholderMap.put("commit.timestamp.hour", Lazy.by(() -> leftPad(String.valueOf(headCommitDateTime.get().getHour()), 2, "0")));
-        placeholderMap.put("commit.timestamp.minute", Lazy.by(() -> leftPad(String.valueOf(headCommitDateTime.get().getMinute()), 2, "0")));
-        placeholderMap.put("commit.timestamp.second", Lazy.by(() -> leftPad(String.valueOf(headCommitDateTime.get().getSecond()), 2, "0")));
+        placeholderMap.put("commit.timestamp.month", Lazy.by(() -> String.format("%02d", headCommitDateTime.get().getMonthValue())));
+        placeholderMap.put("commit.timestamp.day", Lazy.by(() -> String.format("%02d", headCommitDateTime.get().getDayOfMonth())));
+        placeholderMap.put("commit.timestamp.hour", Lazy.by(() -> String.format("%02d", headCommitDateTime.get().getHour())));
+        placeholderMap.put("commit.timestamp.minute", Lazy.by(() -> String.format("%02d", headCommitDateTime.get().getMinute())));
+        placeholderMap.put("commit.timestamp.second", Lazy.by(() -> String.format("%02d", headCommitDateTime.get().getSecond())));
         placeholderMap.put("commit.timestamp.datetime", Lazy.by(() -> headCommitDateTime.get().toEpochSecond() > 0
-                ? headCommitDateTime.get().format(DateTimeFormatter.ofPattern("yyyyMMdd.HHmmss")) : "00000000.000000"));
+                ? headCommitDateTime.get().format(DateTimeFormatter.ofPattern("yyyyMMdd.HHmmss")) : "00000101.000000"));
+        placeholderMap.put("commit.timestamp.iso", Lazy.by(() -> headCommitDateTime.get().toEpochSecond() > 0
+                ? headCommitDateTime.get().format(DateTimeFormatter.ISO_INSTANT) : "0000-01-01T00:00:00Z"));
 
         final Lazy<ZonedDateTime> buildCommitDateTime = Lazy.by(() -> mavenSession.getStartTime().toInstant().atZone(ZoneId.systemDefault()));
         placeholderMap.put("build.timestamp", Lazy.by(() -> String.valueOf(buildCommitDateTime.get().toEpochSecond())));
         placeholderMap.put("build.timestamp.year", Lazy.by(() -> String.valueOf(buildCommitDateTime.get().getYear())));
         placeholderMap.put("build.timestamp.year.2digit", Lazy.by(() -> String.valueOf(buildCommitDateTime.get().getYear() % 100)));
-        placeholderMap.put("build.timestamp.month", Lazy.by(() -> leftPad(String.valueOf(buildCommitDateTime.get().getMonthValue()), 2, "0")));
-        placeholderMap.put("build.timestamp.day", Lazy.by(() -> leftPad(String.valueOf(buildCommitDateTime.get().getDayOfMonth()), 2, "0")));
-        placeholderMap.put("build.timestamp.hour", Lazy.by(() -> leftPad(String.valueOf(buildCommitDateTime.get().getHour()), 2, "0")));
-        placeholderMap.put("build.timestamp.minute", Lazy.by(() -> leftPad(String.valueOf(buildCommitDateTime.get().getMinute()), 2, "0")));
-        placeholderMap.put("build.timestamp.second", Lazy.by(() -> leftPad(String.valueOf(buildCommitDateTime.get().getSecond()), 2, "0")));
+        placeholderMap.put("build.timestamp.month", Lazy.by(() -> String.format("%02d", buildCommitDateTime.get().getMonthValue())));
+        placeholderMap.put("build.timestamp.day", Lazy.by(() -> String.format("%02d", buildCommitDateTime.get().getDayOfMonth())));
+        placeholderMap.put("build.timestamp.hour", Lazy.by(() -> String.format("%02d", buildCommitDateTime.get().getHour())));
+        placeholderMap.put("build.timestamp.minute", Lazy.by(() -> String.format("%02d", buildCommitDateTime.get().getMinute())));
+        placeholderMap.put("build.timestamp.second", Lazy.by(() -> String.format("%02d", buildCommitDateTime.get().getSecond())));
         placeholderMap.put("build.timestamp.datetime", Lazy.by(() -> buildCommitDateTime.get().toEpochSecond() > 0
                 ? buildCommitDateTime.get().format(DateTimeFormatter.ofPattern("yyyyMMdd.HHmmss")) : "00000000.000000"));
+        placeholderMap.put("build.timestamp.iso", Lazy.by(() -> buildCommitDateTime.get().toEpochSecond() > 0
+                ? headCommitDateTime.get().format(DateTimeFormatter.ISO_INSTANT) : "0000-01-01T00:00:00Z"));
 
         final String refName = gitVersionDetails.getRefName();
         final Lazy<String> refNameSlug = Lazy.by(() -> slugify(refName));
@@ -976,8 +1012,13 @@ public class GitVersioningModelProcessor implements ModelProcessor {
         placeholderMap.put("describe.tag.version.patch", Lazy.by(() -> requireNonNullElse(descriptionTagVersionMatcher.get().group("patch"), "0")));
         placeholderMap.put("describe.tag.version.patch.next", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.patch").get(), 1)));
 
+        placeholderMap.put("describe.tag.version.build", Lazy.by(() -> requireNonNullElse(descriptionTagVersionMatcher.get().group("build"), "")));
+        placeholderMap.put("describe.tag.version.build.next", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.build").get(), 1)));
+
         placeholderMap.put("describe.tag.version.label", Lazy.by(() -> requireNonNullElse(descriptionTagVersionMatcher.get().group("label"), "")));
         placeholderMap.put("describe.tag.version.label.next", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.label").get(), 1)));
+
+        placeholderMap.put("describe.tag.version.next", Lazy.by(() -> nextVersion(descriptionTagVersionMatcher.get())));
 
         final Lazy<Integer> descriptionDistance = Lazy.by(() -> description.get().getDistance());
         placeholderMap.put("describe.distance", Lazy.by(() -> String.valueOf(descriptionDistance.get())));
@@ -985,6 +1026,9 @@ public class GitVersioningModelProcessor implements ModelProcessor {
 
         placeholderMap.put("describe.tag.version.patch.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.patch").get(), descriptionDistance.get())));
         placeholderMap.put("describe.tag.version.patch.next.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.patch.next").get(), descriptionDistance.get())));
+
+        placeholderMap.put("describe.tag.version.build.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.build").get(), descriptionDistance.get())));
+        placeholderMap.put("describe.tag.version.build.next.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.build.next").get(), descriptionDistance.get())));
 
         placeholderMap.put("describe.tag.version.label.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.label").get(), descriptionDistance.get())));
         placeholderMap.put("describe.tag.version.label.next.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.label.next").get(), descriptionDistance.get())));
@@ -1374,6 +1418,12 @@ public class GitVersioningModelProcessor implements ModelProcessor {
             if (pluginVersionElement != null) {
                 pluginVersionElement.setText(plugin.getVersion());
             }
+
+            Element dependenciesElement = pluginElement.getChild("dependencies");
+            List<Dependency> dependencies = plugin.getDependencies();
+            if (!dependencies.isEmpty() && dependenciesElement != null) {
+                updateDependencyVersions(dependenciesElement, dependencies);
+            }
         });
     }
 
@@ -1421,9 +1471,7 @@ public class GitVersioningModelProcessor implements ModelProcessor {
         String metaInfo = "[core extension]";
 
         String plainLog = extension + " " + metaInfo;
-        String formattedLog = buffer()
-                .a(" ").mojo(extension).a(" ").strong(metaInfo).a(" ")
-                .toString();
+        String formattedLog = " " + LogStyle.mojo(extension) + " " + LogStyle.strong(metaInfo) + " ";
 
         return padLogHeaderPadding(plainLog, formattedLog);
     }
@@ -1433,22 +1481,20 @@ public class GitVersioningModelProcessor implements ModelProcessor {
         int padding = max(6, 72 - 2 - plainLog.length());
         int paddingLeft = (int) floor(padding / 2.0);
         int paddingRight = (int) ceil(padding / 2.0);
-        return buffer()
-                .strong(repeat(pad, paddingLeft))
-                .a(formattedLog)
-                .strong(repeat(pad, paddingRight))
-                .toString();
+        return LogStyle.strong(pad.repeat(paddingLeft))
+                + formattedLog
+                + LogStyle.strong(pad.repeat(paddingRight));
     }
 
     private static String projectLogHeader(GAV projectGAV) {
         String project = projectGAV.getProjectId();
-        return buffer().project(project).toString();
+        return LogStyle.project(project);
     }
 
     private static String sectionLogHeader(String title, ModelBase model) {
         String header = title + ":";
         if (model instanceof Profile) {
-            header = buffer().strong("profile " + ((Profile) model).getId() + " ") + header;
+            header = LogStyle.strong("profile " + ((Profile) model).getId() + " ") + header;
         }
         return header;
     }
@@ -1478,5 +1524,24 @@ public class GitVersioningModelProcessor implements ModelProcessor {
     private static String increase(String number, long increment) {
         String sanitized = number.isEmpty() ? "0" : number;
         return String.format("%0" + sanitized.length() + "d", Long.parseLong(number.isEmpty() ? "0" : number) + increment);
+    }
+
+    static String nextVersion(Matcher m) {
+        String label = m.group("label");
+        if (label != null && !label.isEmpty()) {
+            Matcher tail = LABEL_TRAILING_NUM.matcher(label);
+            tail.matches();
+            String coreAndBuild = m.group("core") + (m.group("build") != null ? "." + m.group("build") : "");
+            return coreAndBuild + "-" + tail.group(1) + increase(tail.group(2), 1);
+        }
+        if (m.group("build") != null) {
+            return m.group("major") + "." + m.group("minor") + "." + m.group("patch") + "." + increase(m.group("build"), 1);
+        } else if (m.group("patch") != null) {
+            return m.group("major") + "." + m.group("minor") + "." + increase(m.group("patch"), 1);
+        } else if (m.group("minor") != null) {
+            return m.group("major") + "." + increase(m.group("minor"), 1);
+        } else {
+            return increase(requireNonNullElse(m.group("major"), "0"), 1);
+        }
     }
 }

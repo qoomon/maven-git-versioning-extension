@@ -5,10 +5,13 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import me.qoomon.gitversioning.commons.GitRefType;
 import me.qoomon.maven.gitversioning.Configuration.PatchDescription;
 import me.qoomon.maven.gitversioning.Configuration.RefPatchDescription;
+
+import org.apache.maven.model.Build;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.DependencyManagement;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;
+import org.apache.maven.model.Plugin;
 import org.apache.maven.shared.verifier.VerificationException;
 import org.apache.maven.shared.verifier.Verifier;
 import org.eclipse.jgit.api.Git;
@@ -22,14 +25,19 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Stream;
 
 import static me.qoomon.gitversioning.commons.GitRefType.BRANCH;
 import static me.qoomon.gitversioning.commons.GitRefType.TAG;
 import static me.qoomon.maven.gitversioning.GitVersioningModelProcessor.GIT_VERSIONING_POM_NAME;
 import static me.qoomon.maven.gitversioning.MavenUtil.readModel;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
 import static org.eclipse.jgit.lib.Constants.MASTER;
 
@@ -67,8 +75,21 @@ class GitVersioningExtensionIT {
         verifier.verifyFileNotPresent(GIT_VERSIONING_POM_NAME);
     }
 
-    private static Verifier getVerifier(Path projectDir) throws VerificationException {
-        return new Verifier(projectDir.toFile().getAbsolutePath(), true);
+    private static Verifier getVerifier(Path projectDir) throws Exception {
+        Path settingsFile = writeIsolatedSettings(projectDir);
+        Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath(), settingsFile.toString(), true);
+        verifier.addCliArguments("-s", settingsFile.toString());
+        return verifier;
+    }
+
+    private static Path writeIsolatedSettings(Path projectDir) throws IOException {
+        Path settingsFile = projectDir.resolve("test-settings.xml");
+        Path localRepo = Paths.get(System.getProperty("user.home"), ".m2", "repository");
+        Files.write(settingsFile, ("" +
+                "<settings>\n" +
+                "  <localRepository>" + localRepo + "</localRepository>\n" +
+                "</settings>\n").getBytes());
+        return settingsFile;
     }
 
     @Test
@@ -123,6 +144,7 @@ class GitVersioningExtensionIT {
             Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
             assertThat(gitVersionedPomModel.getVersion()).isEqualTo(expectedVersion);
         }
+
     }
 
     @Test
@@ -180,6 +202,49 @@ class GitVersioningExtensionIT {
 
             Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
             assertThat(gitVersionedPomModel.getVersion()).isEqualTo(expectedVersion);
+        }
+    }
+    @Test
+    void branchVersioningPluginWithDeps() throws Exception {
+
+        try (Git git = Git.init().setInitialBranch("feature/test").setDirectory(projectDir.toFile()).call()) {
+            // Given
+            git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+
+
+            // Put there just some dummy plugin with some dummy dependency
+            Plugin plugin = new Plugin();
+            Dependency dependency = new Dependency();
+            dependency.setGroupId(pomModel.getGroupId());
+            dependency.setArtifactId(pomModel.getArtifactId());
+            dependency.setVersion(pomModel.getVersion());
+            plugin.setArtifactId("maven-enforcer-plugin");
+            plugin.addDependency(dependency);
+            Build build = new Build();
+            build.addPlugin(plugin);
+            pomModel.setBuild(build);
+
+            writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
+            writeExtensionsFile(projectDir);
+            writeExtensionConfigFile(projectDir, new Configuration() {{
+                refs.list.add(createBranchVersionDescription());
+            }});
+
+            // When
+            Verifier verifier = getVerifier(projectDir);
+            verifier.addCliArgument("verify");
+            verifier.execute();
+
+            // Then
+            System.err.println(String.join("\n", verifier.loadFile(verifier.getBasedir(), verifier.getLogFileName(), false)));
+            verifier.verifyErrorFreeLog();
+            String expectedVersion = "feature-test-gitVersioning";
+            verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
+
+            System.out.println(new String(Files.readAllBytes(projectDir.resolve(GIT_VERSIONING_POM_NAME))));
+            Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
+            assertThat(gitVersionedPomModel.getVersion()).isEqualTo(expectedVersion);
+            assertThat(gitVersionedPomModel.getBuild().getPlugins().get(0).getDependencies().get(0).getVersion()).isEqualTo(expectedVersion);
         }
     }
 
@@ -259,7 +324,7 @@ class GitVersioningExtensionIT {
         }
     }
 
-    private void verifyOutputVersion(final String outputVersion) throws VerificationException, IOException {
+    private void verifyOutputVersion(final String outputVersion) throws Exception {
         Verifier verifier = getVerifier(projectDir);
         verifier.addCliArgument("verify");
         verifier.execute();
@@ -383,9 +448,8 @@ class GitVersioningExtensionIT {
             }});
 
             // When
-            Verifier verifier = new Verifier(projectDir.toFile().getAbsolutePath()) {{
-                setEnvironmentVariable("VERSIONING_GIT_BRANCH", "v1.0.0");
-            }};
+            Verifier verifier = getVerifier(projectDir);
+            verifier.setEnvironmentVariable("VERSIONING_GIT_BRANCH", "v1.0.0");
             verifier.addCliArgument("verify");
             verifier.execute();
 
@@ -685,6 +749,83 @@ class GitVersioningExtensionIT {
 
             Model gitVersionedLogicPomModel = readModel(logicProjectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
             assertThat(gitVersionedLogicPomModel.getVersion()).isEqualTo(expectedVersion);
+        }
+    }
+
+    @Test
+    void branchVersioning_multiModuleProject_siblingModuleFromLocalRepository() throws Exception {
+        // unique groupId, because installed artifacts end up in the shared local repository
+        pomModel.setGroupId("test.siblingModuleFromLocalRepository");
+        Path localRepoGroupDir = Paths.get(System.getProperty("user.home"), ".m2", "repository")
+                .resolve(pomModel.getGroupId().replace('.', File.separatorChar));
+        try (Git git = Git.init().setInitialBranch("master").setDirectory(projectDir.toFile()).call()) {
+            // Given
+            git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+
+            pomModel.setPackaging("pom");
+            pomModel.addModule("api");
+            pomModel.addModule("logic");
+
+            writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
+            writeExtensionsFile(projectDir);
+
+            writeExtensionConfigFile(projectDir, new Configuration() {{
+                // keep original version, so installed sibling module poms still match related project GAVs
+                refs.list.add(createVersionDescription(BRANCH, "${version}"));
+            }});
+
+            Path apiProjectDir = Files.createDirectories(projectDir.resolve("api"));
+            Model apiPomModel = writeModel(apiProjectDir.resolve("pom.xml").toFile(), new Model() {{
+                setModelVersion(pomModel.getModelVersion());
+                setParent(new Parent() {{
+                    setGroupId(pomModel.getGroupId());
+                    setArtifactId(pomModel.getArtifactId());
+                    setVersion(pomModel.getVersion());
+                }});
+                setArtifactId("api");
+            }});
+
+            Path logicProjectDir = Files.createDirectories(projectDir.resolve("logic"));
+            Model logicPomModel = writeModel(logicProjectDir.resolve("pom.xml").toFile(), new Model() {{
+                setModelVersion(pomModel.getModelVersion());
+                setParent(new Parent() {{
+                    setGroupId(pomModel.getGroupId());
+                    setArtifactId(pomModel.getArtifactId());
+                    setVersion(pomModel.getVersion());
+                }});
+                setArtifactId("logic");
+                addDependency(new Dependency() {{
+                    setGroupId(pomModel.getGroupId());
+                    setArtifactId(apiPomModel.getArtifactId());
+                    setVersion("${project.version}");
+                }});
+            }});
+
+            Verifier installVerifier = getVerifier(projectDir);
+            installVerifier.addCliArgument("install");
+            installVerifier.execute();
+            installVerifier.verifyErrorFreeLog();
+
+            // When
+            // build module only, sibling module api gets resolved from local repository
+            Verifier verifier = getVerifier(logicProjectDir);
+            verifier.addCliArgument("verify");
+            verifier.execute();
+
+            // Then
+            List<String> log = verifier.loadFile(verifier.getBasedir(), verifier.getLogFileName(), false);
+            System.err.println(String.join("\n", log));
+            verifier.verifyErrorFreeLog();
+            String expectedVersion = pomModel.getVersion();
+            verifier.verifyTextInLog("Building " + logicPomModel.getArtifactId() + " " + expectedVersion);
+            assertThat(log).noneMatch(line -> line.contains("Non-readable POM") || line.contains("is invalid"));
+
+            Path apiLocalRepoDir = localRepoGroupDir.resolve(apiPomModel.getArtifactId()).resolve(expectedVersion);
+            assertThat(apiLocalRepoDir.resolve(apiPomModel.getArtifactId() + "-" + expectedVersion + ".pom"))
+                    .exists();
+            assertThat(apiLocalRepoDir.resolve(GIT_VERSIONING_POM_NAME)).doesNotExist();
+        } finally {
+            deleteRecursively(localRepoGroupDir);
         }
     }
 
@@ -1044,6 +1185,200 @@ class GitVersioningExtensionIT {
         }
     }
 
+    @Test
+    void apply_UseDescribeTagVersion_FourSegmentIncluded() throws Exception {
+        assertDescribeTagVersionResolves("1.0.0.3", "${describe.tag.version}", "1.0.0.3");
+    }
+
+    @Test
+    void apply_UseDescribeTagVersionBuild() throws Exception {
+        assertDescribeTagVersionResolves("1.0.0.3", "${describe.tag.version.build}", "3");
+    }
+
+    @Test
+    void apply_UseDescribeTagVersionBuildNext() throws Exception {
+        assertDescribeTagVersionResolves("1.0.0.3", "${describe.tag.version.build.next}", "4");
+    }
+
+    @Test
+    void apply_UseDescribeTagVersionBuild_threeSegmentTag() throws Exception {
+        assertDescribeTagVersionResolves("1.0.0", "${describe.tag.version.build.next}", "1");
+    }
+
+    @Test
+    void apply_UseDescribeTagVersionBuildPlusDistance() throws Exception {
+        assertDescribeTagVersionResolvesWithDistance("1.0.0.3", 2, "${describe.tag.version.build.plus.describe.distance}", "5");
+    }
+
+    @Test
+    void apply_UseDescribeTagVersionBuildNextPlusDistance() throws Exception {
+        assertDescribeTagVersionResolvesWithDistance("1.0.0.3", 2, "${describe.tag.version.build.next.plus.describe.distance}", "6");
+    }
+
+    @Test
+    void apply_UseDescribeTagVersionNext_threeSegmentTag() throws Exception {
+        assertDescribeTagVersionResolves("1.2.3", "${describe.tag.version.next}", "1.2.4");
+    }
+
+    @Test
+    void apply_UseDescribeTagVersionNext_fourSegmentTag() throws Exception {
+        assertDescribeTagVersionResolves("1.2.3.4", "${describe.tag.version.next}", "1.2.3.5");
+    }
+
+    @Test
+    void apply_UseDescribeTagVersionNext_twoSegmentTag() throws Exception {
+        assertDescribeTagVersionResolves("1.2", "${describe.tag.version.next}", "1.3");
+    }
+
+    @Test
+    void apply_UseDescribeTagVersionNext_labelWithTrailingNum() throws Exception {
+        assertDescribeTagVersionResolves("1.2.3-RC1", "${describe.tag.version.next}", "1.2.3-RC2");
+    }
+
+    @Test
+    void apply_UseDescribeTagVersionNext_labelWithMultiDigitNum() throws Exception {
+        assertDescribeTagVersionResolves("1.2.3-RC10", "${describe.tag.version.next}", "1.2.3-RC11");
+    }
+
+    @Test
+    void apply_UseDescribeTagVersionNext_labelNoTrailingNum() throws Exception {
+        assertDescribeTagVersionResolves("1.2.3-alpha", "${describe.tag.version.next}", "1.2.3-alpha1");
+    }
+
+    @Test
+    void apply_UseDescribeTagVersionNext_fourSegmentWithLabel() throws Exception {
+        assertDescribeTagVersionResolves("1.2.3.4-RC1", "${describe.tag.version.next}", "1.2.3.4-RC2");
+    }
+
+    @Test
+    void apply_UseVersionBuild() throws Exception {
+        pomModel.setVersion("1.0.0.3-SNAPSHOT");
+        assertProjectVersionResolves("${version.build}", "3");
+    }
+
+    @Test
+    void apply_UseVersionBuildNext() throws Exception {
+        pomModel.setVersion("1.0.0.3-SNAPSHOT");
+        assertProjectVersionResolves("${version.build.next}", "4");
+    }
+
+    @Test
+    void apply_UseVersionNext_threeSegment() throws Exception {
+        pomModel.setVersion("1.2.3");
+        assertProjectVersionResolves("${version.next}", "1.2.4");
+    }
+
+    @Test
+    void apply_UseVersionNext_fourSegment() throws Exception {
+        pomModel.setVersion("1.2.3.4");
+        assertProjectVersionResolves("${version.next}", "1.2.3.5");
+    }
+
+    @Test
+    void apply_VersionBuildGroup_inProjectVersionPattern_throws() throws Exception {
+        assertProjectVersionPatternGroupCollides("build");
+    }
+
+    @Test
+    void apply_VersionNextGroup_inProjectVersionPattern_throws() throws Exception {
+        assertProjectVersionPatternGroupCollides("next");
+    }
+
+    // -----------------------------------------------------------------------------------------------------------------
+
+    private void assertDescribeTagVersionResolves(String tagName, String versionTemplate, String expectedVersion) throws Exception {
+        try (Git git = Git.init().setInitialBranch("master").setDirectory(projectDir.toFile()).call()) {
+            git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+            git.tag().setAnnotated(true).setName(tagName).call();
+
+            writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
+            writeExtensionsFile(projectDir);
+            writeExtensionConfigFile(projectDir, new Configuration() {{
+                refs.list.add(createVersionDescription(BRANCH, versionTemplate));
+            }});
+
+            Verifier verifier = getVerifier(projectDir);
+            verifier.addCliArgument("verify");
+            verifier.execute();
+
+            System.err.println(String.join("\n", verifier.loadFile(verifier.getBasedir(), verifier.getLogFileName(), false)));
+            verifier.verifyErrorFreeLog();
+            verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
+
+            Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
+            assertThat(gitVersionedPomModel.getVersion()).isEqualTo(expectedVersion);
+        }
+    }
+
+    private void assertDescribeTagVersionResolvesWithDistance(String tagName, int commitsPastTag, String versionTemplate, String expectedVersion) throws Exception {
+        try (Git git = Git.init().setInitialBranch("master").setDirectory(projectDir.toFile()).call()) {
+            git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+            git.tag().setAnnotated(true).setName(tagName).call();
+            for (int i = 0; i < commitsPastTag; i++) {
+                git.commit().setMessage("commit " + (i + 1)).setAllowEmpty(true).call();
+            }
+
+            writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
+            writeExtensionsFile(projectDir);
+            writeExtensionConfigFile(projectDir, new Configuration() {{
+                refs.list.add(createVersionDescription(BRANCH, versionTemplate));
+            }});
+
+            Verifier verifier = getVerifier(projectDir);
+            verifier.addCliArgument("verify");
+            verifier.execute();
+
+            System.err.println(String.join("\n", verifier.loadFile(verifier.getBasedir(), verifier.getLogFileName(), false)));
+            verifier.verifyErrorFreeLog();
+            verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
+
+            Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
+            assertThat(gitVersionedPomModel.getVersion()).isEqualTo(expectedVersion);
+        }
+    }
+
+    private void assertProjectVersionResolves(String versionTemplate, String expectedVersion) throws Exception {
+        try (Git git = Git.init().setInitialBranch("master").setDirectory(projectDir.toFile()).call()) {
+            git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+
+            writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
+            writeExtensionsFile(projectDir);
+            writeExtensionConfigFile(projectDir, new Configuration() {{
+                refs.list.add(createVersionDescription(BRANCH, versionTemplate));
+            }});
+
+            Verifier verifier = getVerifier(projectDir);
+            verifier.addCliArgument("verify");
+            verifier.execute();
+
+            System.err.println(String.join("\n", verifier.loadFile(verifier.getBasedir(), verifier.getLogFileName(), false)));
+            verifier.verifyErrorFreeLog();
+            verifier.verifyTextInLog("Building " + pomModel.getArtifactId() + " " + expectedVersion);
+
+            Model gitVersionedPomModel = readModel(projectDir.resolve(GIT_VERSIONING_POM_NAME).toFile());
+            assertThat(gitVersionedPomModel.getVersion()).isEqualTo(expectedVersion);
+        }
+    }
+
+    private void assertProjectVersionPatternGroupCollides(String groupName) throws Exception {
+        try (Git git = Git.init().setInitialBranch("master").setDirectory(projectDir.toFile()).call()) {
+            git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+
+            writeModel(projectDir.resolve("pom.xml").toFile(), pomModel);
+            writeExtensionsFile(projectDir);
+            writeExtensionConfigFile(projectDir, new Configuration() {{
+                projectVersionPattern = "(?<" + groupName + ">\\d+).*";
+                refs.list.add(createVersionDescription(BRANCH, "${version}"));
+            }});
+
+            Verifier verifier = getVerifier(projectDir);
+            verifier.addCliArgument("verify");
+
+            assertThatThrownBy(verifier::execute).isInstanceOf(VerificationException.class);
+            verifier.verifyTextInLog("project version pattern capture group can not be named '" + groupName + "'");
+        }
+    }
+
     // -----------------------------------------------------------------------------------------------------------------
 
     private File writeExtensionsFile(Path projectDir) throws IOException {
@@ -1053,7 +1388,7 @@ class GitVersioningExtensionIT {
                 "  <extension>\n" +
                 "    <groupId>me.qoomon</groupId>\n" +
                 "    <artifactId>maven-git-versioning-extension</artifactId>\n" +
-                "    <version>LATEST</version>\n" +
+                "    <version>" + BuildProperties.projectVersion() + "</version>\n" +
                 "  </extension>\n" +
                 "</extensions>").getBytes()).toFile();
     }
@@ -1092,5 +1427,16 @@ class GitVersioningExtensionIT {
     private Model writeModel(File pomFile, Model pomModel) throws IOException {
         MavenUtil.writeModel(pomFile, pomModel);
         return pomModel;
+    }
+
+    private static void deleteRecursively(Path dir) throws IOException {
+        if (!Files.exists(dir)) {
+            return;
+        }
+        try (Stream<Path> paths = Files.walk(dir)) {
+            for (Path path : (Iterable<Path>) paths.sorted(Comparator.reverseOrder())::iterator) {
+                Files.delete(path);
+            }
+        }
     }
 }

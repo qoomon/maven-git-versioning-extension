@@ -53,6 +53,13 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
+            <xs:element name="userProperties" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="skip"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
         </xs:all>
     </xs:complexType>
 
@@ -65,6 +72,13 @@
 
             <xs:element name="version" type="xs:string" minOccurs="0"/>
             <xs:element name="properties" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="skip"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="userProperties" minOccurs="0">
                 <xs:complexType>
                     <xs:sequence>
                         <xs:any minOccurs="0" maxOccurs="unbounded" processContents="skip"/>
