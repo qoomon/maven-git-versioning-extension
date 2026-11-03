@@ -12,7 +12,7 @@ public final class StringUtil {
 
     public static String substituteText(String text, Map<String, Supplier<String>> replacements) {
         StringBuffer result = new StringBuffer();
-        Pattern placeholderPattern = Pattern.compile("\\$\\{(?<key>[^}:]+)(?::(?<modifier>[-+])(?<value>[^}]*))?}");
+        Pattern placeholderPattern = Pattern.compile("\\$\\{(?<key>[^}:]+)(?<modifier>:?[-+])?(?<value>[^}]*)?}");
         Matcher placeholderMatcher = placeholderPattern.matcher(text);
         while (placeholderMatcher.find()) {
             String placeholderKey = placeholderMatcher.group("key");
@@ -24,6 +24,12 @@ public final class StringUtil {
                     replacement = placeholderMatcher.group("value");
                 }
                 if (placeholderModifier.equals("+") && replacement != null) {
+                    replacement = placeholderMatcher.group("value");
+                }
+                if (placeholderModifier.equals(":-") && (replacement == null || replacement.isEmpty())) {
+                    replacement = placeholderMatcher.group("value");
+                }
+                if (placeholderModifier.equals(":+") && replacement != null && !replacement.isEmpty()) {
                     replacement = placeholderMatcher.group("value");
                 }
             }

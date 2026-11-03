@@ -2,12 +2,12 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <prerequisites>
-        <maven>3.6.4</maven>
+        <maven>maven-plugin-plugin</maven>
     </prerequisites>
 
     <groupId>me.qoomon</groupId>
     <artifactId>maven-git-versioning-extension</artifactId>
-    <version>9.8.2</version>
+    <version>9.12.3</version>
     <packaging>maven-plugin</packaging>
 
     <name>Maven Git Versioning Extension</name>
@@ -38,10 +38,10 @@
     </developers>
 
     <properties>
+        <it.maven.distributions.dir>${project.build.directory}/it-maven-distributions</it.maven.distributions.dir>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
+        <maven.compiler.release>11</maven.compiler.release>
     </properties>
 
 
@@ -50,7 +50,7 @@
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-plugin-api</artifactId>
-            <version>3.9.8</version>
+            <version>3.10.0</version>
             <scope>provided</scope>
         </dependency>
 
@@ -58,27 +58,27 @@
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-core</artifactId>
             <!-- BREAKING CHANGE in https://maven.apache.org/docs/3.9.8/release-notes.html -->
-            <version>3.9.7</version>
+            <version>3.10.0</version>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.maven.plugin-tools</groupId>
             <artifactId>maven-plugin-annotations</artifactId>
-            <version>3.15.0</version>
+            <version>3.16.0</version>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.eclipse.jgit</groupId>
             <artifactId>org.eclipse.jgit</artifactId>
-            <version>6.10.0.202406032230-r</version>
+            <version>7.8.0.202609011348-r</version>
         </dependency>
 
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-xml</artifactId>
-            <version>2.17.2</version>
+            <version>2.22.4</version>
         </dependency>
 
         <dependency>
@@ -92,21 +92,28 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
-            <version>5.10.2</version>
+            <version>5.12.1</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
-            <version>5.10.2</version>
+            <version>5.12.1</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <version>5.12.1</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
-            <version>3.26.3</version>
+            <version>3.27.7</version>
             <scope>test</scope>
         </dependency>
 
@@ -120,7 +127,7 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
-            <version>2.0.13</version>
+            <version>2.0.20</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -142,22 +149,86 @@
                 <configuration>
                     <goalPrefix>${project.name}</goalPrefix>
                 </configuration>
-                <version>3.13.1</version>
+                <version>3.16.0</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.2.5</version>
+                <version>3.6.0</version>
+                <configuration>
+                    <systemPropertyVariables>
+                        <maven.home>${maven.home}</maven.home>
+                    </systemPropertyVariables>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>3.4.0</version>
+                <version>3.6.0</version>
+                <configuration>
+                    <systemPropertyVariables>
+                        <it.maven.distributions.dir>${it.maven.distributions.dir}</it.maven.distributions.dir>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+            <plugin>
+                <!-- Maven distributions to run MavenCompatibilityIT against -->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.11.0</version>
+                <executions>
+                    <execution>
+                        <id>unpack-it-maven-distributions</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${it.maven.distributions.dir}</outputDirectory>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.apache.maven</groupId>
+                                    <artifactId>apache-maven</artifactId>
+                                    <version>3.10.0</version>
+                                    <classifier>bin</classifier>
+                                    <type>zip</type>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.apache.maven</groupId>
+                                    <artifactId>apache-maven</artifactId>
+                                    <version>3.10.0</version>
+                                    <classifier>bin</classifier>
+                                    <type>zip</type>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.apache.maven</groupId>
+                                    <artifactId>apache-maven</artifactId>
+                                    <version>3.10.0</version>
+                                    <classifier>bin</classifier>
+                                    <type>zip</type>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.13.0</version>
+                <version>3.14.0</version>
+            </plugin>
+            <plugin>
+                <groupId>org.eclipse.sisu</groupId>
+                <artifactId>sisu-maven-plugin</artifactId>
+                <version>1.1.0</version>
+                <executions>
+                    <execution>
+                        <id>index-project</id>
+                        <goals>
+                            <goal>main-index</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
@@ -170,7 +241,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-enforcer-plugin</artifactId>
-                        <version>3.4.1</version>
+                        <version>3.6.3</version>
                         <executions>
                             <execution>
                                 <id>enforce-no-snapshots</id>
@@ -191,7 +262,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-source-plugin</artifactId>
-                        <version>3.3.1</version>
+                        <version>3.4.0</version>
                         <executions>
                             <execution>
                                 <id>attach-sources</id>
@@ -205,7 +276,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>3.8.0</version>
+                        <version>3.12.0</version>
                         <executions>
                             <execution>
                                 <id>attach-javadocs</id>
@@ -219,7 +290,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <version>3.2.4</version>
+                        <version>3.2.8</version>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>
@@ -237,14 +308,13 @@
                         </executions>
                     </plugin>
                     <plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.7.0</version>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>0.11.0</version>
                         <extensions>true</extensions>
                         <configuration>
-                            <serverId>sonatype-nexus-staging</serverId>
-                            <nexusUrl>https://oss.sonatype.org</nexusUrl>
-                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                            <publishingServerId>central</publishingServerId>
+                            <autoPublish>true</autoPublish>
                         </configuration>
                     </plugin>
                 </plugins>
