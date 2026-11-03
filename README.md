@@ -155,11 +155,37 @@ You can configure the version and properties adjustments for specific branches a
 
 ℹ Final `version` will be slugified automatically, so no need to use `${….slug}` placeholders in `<version>` format.
 
-ℹ define placeholder default value (placeholder is not defined '-' or empty ':-') like this `${name:-DEFAULT_VALUE}`<br>
+ℹ define placeholder default value (placeholder is not defined `-` or not defined or empty `:-`) like this `${name:-DEFAULT_VALUE}`<br>
 e.g `${env.BUILD_NUMBER-0}` or `${env.BUILD_NUMBER:-local}`
 
-ℹ define placeholder overwrite value (placeholder is defined '+' and non-empty ':+' ) like this `${name:+OVERWRITE_VALUE}`<br>
-e.g `${dirty:+SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
+ℹ define placeholder overwrite value (placeholder is defined `+` or defined and non-empty `:+`) like this `${name:+OVERWRITE_VALUE}`<br>
+e.g `${dirty:+-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
+
+ℹ When a placeholder name contains `-` or `+`, an existing exact name takes precedence over a modifier without a colon.
+
+ℹ Escape `:` in placeholder default and overwrite values by doubling it. For example,
+`${env.VAR:-hello::slug}` resolves to `hello:slug` if `env.VAR` is not defined.
+
+###### Placeholder functions
+Placeholders can contain functions with the form `${key:functionname}`, where `functionname` is applied to
+the value referenced by `key`.
+
+Functions can be combined with format placeholders and chained, e.g. `${key:-abc/def/42:slug:uppercase:next}` gives
+`ABC-DEF-43` if `key` is absent.
+
+Defined functions:
+- `slug`: replaces all sequences of characters that are not alphanumeric, underscore or hyphen with a hyphen and
+  eliminates duplicated hyphens from the value.
+- `slug+dot`: does the same thing as `slug` but does not replace `.` characters.
+- `slug+hyphen`: does the same thing as `slug` but also replaces `_` with `-`.
+- `slug+hyphen+dot`: does the same thing as `slug+hyphen` but does not replace `.` characters.
+- `word`: does the same thing as `slug` but replaces `-` and all non-alphanumeric characters with `_`.
+- `word+dot`: does the same thing as `word` but does not replace `.` characters.
+- `uppercase`: transforms the value to uppercase.
+- `lowercase`: transforms the value to lowercase.
+- `next`: if the value ends with a number, it is incremented; otherwise, `.1` is appended to the value.
+- `incrementlast`: if the value contains a number, increments the last one; otherwise, does nothing. For example, if `x` has value `rc.1-something`,
+  `${x:incrementlast}` returns `rc.2-something`.
 
 ###### Placeholders
 
